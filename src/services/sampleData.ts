@@ -8,6 +8,8 @@ export const DEFAULT_STUDIO: StudioProfile = {
   waTemplate: `Halo kak {client_name}! Pilihan foto kamu sudah masuk di Tandain.
 Total: {total_selected} dari {quota} foto.
 Status: Siap diproses untuk tahap editing RAW! ✨`,
+  supabaseUrl: 'https://iwkxcppbhxdkiuborexk.supabase.co',
+  supabaseAnonKey: 'sb_publishable_gIFstRxDA5Et-svM70T9Tg_jAAtNp95',
 };
 
 export const SAMPLE_GRADUATION_PHOTOS: Photo[] = [

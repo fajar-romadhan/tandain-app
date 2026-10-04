@@ -2,8 +2,8 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Project } from '../types';
 
 // Default environment variables (if provided in .env or Vercel environment variables)
-const DEFAULT_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
-const DEFAULT_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const DEFAULT_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://iwkxcppbhxdkiuborexk.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_gIFstRxDA5Et-svM70T9Tg_jAAtNp95';
 
 let supabaseInstance: SupabaseClient | null = null;
 

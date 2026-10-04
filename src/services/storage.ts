@@ -95,7 +95,13 @@ export const loadStudioProfile = (): StudioProfile => {
     return DEFAULT_STUDIO;
   }
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    return {
+      ...DEFAULT_STUDIO,
+      ...parsed,
+      supabaseUrl: parsed.supabaseUrl || DEFAULT_STUDIO.supabaseUrl,
+      supabaseAnonKey: parsed.supabaseAnonKey || DEFAULT_STUDIO.supabaseAnonKey,
+    };
   } catch {
     return DEFAULT_STUDIO;
   }
