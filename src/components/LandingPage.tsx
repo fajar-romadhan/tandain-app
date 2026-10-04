@@ -11,7 +11,6 @@ import {
   MessageSquare,
   ShieldCheck,
   Zap,
-  LogIn,
 } from 'lucide-react';
 import { SAMPLE_GRADUATION_PHOTOS } from '../services/sampleData';
 import type { AuthUser } from '../types';
@@ -19,14 +18,14 @@ import type { AuthUser } from '../types';
 interface LandingPageProps {
   onCreateGallery: () => void;
   onOpenDashboard: () => void;
-  onOpenLogin: () => void;
+  onOpenLogin?: () => void;
   user: AuthUser | null;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onCreateGallery,
   onOpenDashboard,
-  onOpenLogin,
+  onOpenLogin: _onOpenLogin,
   user,
 }) => {
   // Mini interactive state for the hero preview card
@@ -86,11 +85,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </button>
             ) : (
               <button
-                onClick={onOpenLogin}
+                onClick={onOpenDashboard}
                 className="pill-btn pill-btn-ghost"
                 style={{ height: '38px', fontSize: '13.5px', fontWeight: 600, gap: '6px' }}
               >
-                <LogIn size={15} /> Masuk
+                <Laptop size={16} /> Dashboard Fotografer
               </button>
             )}
 
