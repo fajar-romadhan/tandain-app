@@ -28,10 +28,15 @@ export const FgAuthModal: React.FC<FgAuthModalProps> = ({
     try {
       await signInWithGoogle();
     } catch (err: any) {
-      // If Supabase is not configured yet
-      setErrorMsg(
-        err.message || 'Supabase belum terhubung. Kamu tetap bisa lanjut sebagai tamu di mode lokal!'
-      );
+      if (err.message?.toLowerCase().includes('provider') || err.message?.toLowerCase().includes('not enabled')) {
+        setErrorMsg(
+          'Google Provider belum diaktifkan di Supabase. Kamu bisa langsung klik "Lanjut sebagai Tamu (Mode Lokal)" di bawah untuk menggunakan seluruh fitur!'
+        );
+      } else {
+        setErrorMsg(
+          err.message || 'Supabase belum terhubung. Kamu tetap bisa lanjut sebagai tamu di mode lokal!'
+        );
+      }
       setIsLoading(false);
     }
   };
