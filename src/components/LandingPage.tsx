@@ -410,7 +410,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
           <div>
             <div style={{ fontSize: '32px', fontWeight: 800, color: '#34C759' }}>100%</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>Gratis tanpa biaya token</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>Bebas kuota tanpa sistem token</div>
           </div>
           <div>
             <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text)' }}>5 dtk</div>
@@ -573,7 +573,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
               <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Auto-Ambil RAW di Laptop</h3>
               <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                Cukup buka di laptop via Chrome/Edge, sistem otomatis mencari file master RAW (.CR3, .ARW, .NEF) di harddiskmu dan menyalinnya ke folder baru. Gratis!
+                Cukup buka di laptop via Chrome/Edge, sistem otomatis mencari file master RAW (.CR3, .ARW, .NEF) di harddiskmu dan menyalinnya ke folder baru secara instan.
               </p>
             </div>
 

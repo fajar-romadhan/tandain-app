@@ -49,7 +49,7 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
           Pengaturan Studio
         </h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-          Atur nama brand, nomor WhatsApp konfirmasi, warna aksen, dan integrasi cloud gratis.
+          Atur nama brand, nomor WhatsApp konfirmasi, warna aksen, dan integrasi cloud.
         </p>
       </div>
 
@@ -206,7 +206,7 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
               <div>
                 <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Key size={14} /> Google Drive API Key (Gratis 10jt req/hari)
+                    <Key size={14} /> Google Drive API Key (Kapasitas 10jt req/hari)
                   </span>
                   <a
                     href="https://console.cloud.google.com/apis/credentials"
@@ -214,7 +214,7 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
                     rel="noreferrer"
                     style={{ fontSize: '11.5px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '3px' }}
                   >
-                    Dapatkan Key Gratis <ExternalLink size={11} />
+                    Dapatkan Key Resmi <ExternalLink size={11} />
                   </a>
                 </label>
                 <input

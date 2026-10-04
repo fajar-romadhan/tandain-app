@@ -86,7 +86,7 @@ export const FgAuthModal: React.FC<FgAuthModalProps> = ({
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ShieldCheck size={16} color="#007AFF" />
-            <span>Data aman & gratis selamanya (Rp0)</span>
+            <span>Data aman & tersinkronisasi otomatis</span>
           </div>
         </div>
 
