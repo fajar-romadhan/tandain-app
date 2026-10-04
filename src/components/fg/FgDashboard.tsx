@@ -1,0 +1,361 @@
+import React, { useState } from 'react';
+import {
+  Plus,
+  Search,
+  Share2,
+  Check,
+  ChevronRight,
+  FolderKanban,
+  Sliders,
+  ExternalLink,
+} from 'lucide-react';
+import { StatusBadge } from '../StatusBadge';
+import { FgNewProjectModal } from './FgNewProjectModal';
+import { FgStudioSettings } from './FgStudioSettings';
+import type { Project, StudioProfile } from '../../types';
+
+interface FgDashboardProps {
+  projects: Project[];
+  studio: StudioProfile;
+  onSelectProject: (project: Project) => void;
+  onCreateProject: (newProject: Project) => void;
+  onUpdateStudio: (updated: StudioProfile) => void;
+  onOpenClientView: (slug: string) => void;
+  onOpenLanding?: () => void;
+}
+
+export const FgDashboard: React.FC<FgDashboardProps> = ({
+  projects,
+  studio,
+  onSelectProject,
+  onCreateProject,
+  onUpdateStudio,
+  onOpenClientView,
+  onOpenLanding,
+}) => {
+  const [activeTab, setActiveTab] = useState<'projects' | 'settings'>('projects');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const filteredProjects = projects.filter((p) => {
+    if (filterStatus !== 'all' && p.status !== filterStatus) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      return p.clientName.toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  const handleCopyLink = (p: Project, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = `${origin}/?p=${p.slug}`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(p.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', paddingBottom: '80px' }}>
+      {/* Top Navbar */}
+      <header
+        className="safe-top"
+        style={{
+          backgroundColor: 'var(--surface)',
+          borderBottom: '1px solid var(--border-light)',
+          padding: '16px 20px',
+          boxShadow: 'var(--shadow-sm)',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: '1100px',
+            margin: '0 auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+        >
+          {/* Logo / Studio Name */}
+          <div
+            onClick={onOpenLanding}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              cursor: onOpenLanding ? 'pointer' : 'default',
+            }}
+            title="Kembali ke Beranda"
+          >
+            <span style={{ fontSize: '24px' }}>📸</span>
+            <div>
+              <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.3px' }}>
+                Tandain
+              </span>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                {studio.studioName}
+              </p>
+            </div>
+          </div>
+
+          {/* Navigation Tabs */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => setActiveTab('projects')}
+              className={`pill-btn ${activeTab === 'projects' ? 'pill-btn-primary' : 'pill-btn-ghost'}`}
+              style={{ height: '38px', fontSize: '13px', gap: '6px' }}
+            >
+              <FolderKanban size={16} /> Project ({projects.length})
+            </button>
+
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`pill-btn ${activeTab === 'settings' ? 'pill-btn-primary' : 'pill-btn-ghost'}`}
+              style={{ height: '38px', fontSize: '13px', gap: '6px' }}
+            >
+              <Sliders size={16} /> Pengaturan
+            </button>
+
+            <button
+              onClick={() => setIsNewProjectModalOpen(true)}
+              className="pill-btn pill-btn-heart"
+              style={{ height: '38px', fontSize: '13px', gap: '6px' }}
+            >
+              <Plus size={16} /> Project Baru
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 16px' }}>
+        {activeTab === 'settings' ? (
+          <FgStudioSettings studio={studio} onSave={onUpdateStudio} />
+        ) : (
+          <div>
+            {/* Search & Filter Bar */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '14px',
+                marginBottom: '20px',
+              }}
+            >
+              {/* Search */}
+              <div style={{ position: 'relative', flex: '1 1 260px', maxWidth: '360px' }}>
+                <Search
+                  size={16}
+                  style={{
+                    position: 'absolute',
+                    left: '14px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--text-tertiary)',
+                  }}
+                />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari nama client atau sesi..."
+                  style={{
+                    width: '100%',
+                    height: '42px',
+                    paddingLeft: '38px',
+                    paddingRight: '14px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    outline: 'none',
+                    fontSize: '14px',
+                  }}
+                />
+              </div>
+
+              {/* Status Chips */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                {[
+                  { id: 'all', label: 'Semua' },
+                  { id: 'belum_dibuka', label: 'Belum dibuka' },
+                  { id: 'lagi_milih', label: 'Lagi milih' },
+                  { id: 'udah_kirim', label: 'Udah kirim' },
+                  { id: 'selesai', label: 'Selesai' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setFilterStatus(tab.id)}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '9999px',
+                      fontSize: '13px',
+                      fontWeight: filterStatus === tab.id ? 600 : 500,
+                      backgroundColor: filterStatus === tab.id ? 'var(--text)' : 'var(--surface)',
+                      color: filterStatus === tab.id ? '#FFFFFF' : 'var(--text-secondary)',
+                      border: '1px solid var(--border)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Project List */}
+            {filteredProjects.length === 0 ? (
+              <div className="card-ios" style={{ textAlign: 'center', padding: '60px 20px' }}>
+                <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                  Belum ada project di kategori ini.
+                </p>
+                <p style={{ fontSize: '14px', color: 'var(--text-tertiary)', marginBottom: '20px' }}>
+                  Buat project pertamamu dan bagikan link galeri ke klien dalam hitungan detik!
+                </p>
+                <button
+                  onClick={() => setIsNewProjectModalOpen(true)}
+                  className="pill-btn pill-btn-primary"
+                >
+                  <Plus size={16} /> Buat Project Baru
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {filteredProjects.map((project) => {
+                  const coverPhoto = project.photos[0];
+                  const progressPercent = Math.min(100, (project.selectedFileNames.length / project.quota) * 100);
+
+                  return (
+                    <div
+                      key={project.id}
+                      onClick={() => onSelectProject(project)}
+                      className="card-ios"
+                      style={{
+                        padding: '16px 20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '16px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {/* Left: Thumbnail & Title */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '240px' }}>
+                        {coverPhoto ? (
+                          <img
+                            src={coverPhoto.url}
+                            alt=""
+                            style={{
+                              width: '56px',
+                              height: '56px',
+                              borderRadius: '12px',
+                              objectFit: 'cover',
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: '56px',
+                              height: '56px',
+                              borderRadius: '12px',
+                              backgroundColor: 'var(--surface-subtle)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '20px',
+                            }}
+                          >
+                            📁
+                          </div>
+                        )}
+
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text)' }}>
+                              {project.clientName}
+                            </h3>
+                            <StatusBadge status={project.status} />
+                          </div>
+                          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                            {project.photos.length} total foto di Drive
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Middle: Selection Progress Bar */}
+                      <div style={{ flex: '1 1 200px', maxWidth: '300px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>
+                            {project.selectedFileNames.length}/{project.quota} foto dipilih
+                          </span>
+                          <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                            {Math.round(progressPercent)}%
+                          </span>
+                        </div>
+                        <div
+                          style={{
+                            width: '100%',
+                            height: '5px',
+                            borderRadius: '9999px',
+                            backgroundColor: 'var(--border-light)',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: `${progressPercent}%`,
+                              height: '100%',
+                              backgroundColor: project.status === 'udah_kirim' || project.status === 'selesai' ? 'var(--status-green-text)' : 'var(--heart)',
+                              transition: 'width 0.25s ease',
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Right: Actions */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={(e) => handleCopyLink(project, e)}
+                          className={`pill-btn ${copiedId === project.id ? 'pill-btn-heart' : 'pill-btn-secondary'}`}
+                          style={{ height: '36px', fontSize: '13px', padding: '0 14px' }}
+                          title="Salin link galeri klien"
+                        >
+                          {copiedId === project.id ? <Check size={14} /> : <Share2 size={14} />}
+                          {copiedId === project.id ? 'Tersalin' : 'Salin Link'}
+                        </button>
+
+                        <button
+                          onClick={() => onOpenClientView(project.slug)}
+                          className="pill-btn pill-btn-ghost"
+                          style={{ height: '36px', width: '36px', padding: 0 }}
+                          title="Buka galeri klien"
+                        >
+                          <ExternalLink size={16} />
+                        </button>
+
+                        <ChevronRight size={18} color="var(--text-tertiary)" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* New Project Modal */}
+      <FgNewProjectModal
+        isOpen={isNewProjectModalOpen}
+        onClose={() => setIsNewProjectModalOpen(false)}
+        onProjectCreated={onCreateProject}
+      />
+    </div>
+  );
+};

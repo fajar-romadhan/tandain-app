@@ -1,0 +1,225 @@
+/* ==========================================================
+   TANDAIN — DESIGN SYSTEM & TOKENS (Modern Soft iOS-Like)
+   ========================================================== */
+
+:root {
+  /* Colors */
+  --bg: #F5F5F7;
+  --surface: #FFFFFF;
+  --surface-subtle: #FBFBFD;
+  --text: #1D1D1F;
+  --text-secondary: #6E6E73;
+  --text-tertiary: #86868B;
+  --border: #E5E5EA;
+  --border-light: #F2F2F7;
+  --heart: #FF2D55;
+  --heart-light: #FFF0F3;
+  --heart-glow: rgba(255, 45, 85, 0.25);
+  --accent: #1D1D1F;
+  --accent-foreground: #FFFFFF;
+  --lightbox: #000000;
+
+  /* Status Colors */
+  --status-gray-text: #6E6E73;
+  --status-gray-bg: #F2F2F7;
+  --status-amber-text: #B25E00;
+  --status-amber-bg: #FFF4E0;
+  --status-pink-text: #D70040;
+  --status-pink-bg: #FFE8EE;
+  --status-green-text: #1F8A3B;
+  --status-green-bg: #E6F6EA;
+
+  /* Radii */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.08);
+  --shadow-float: 0 12px 36px rgba(0, 0, 0, 0.12);
+
+  /* Transitions */
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  min-height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: 16px; /* prevent iOS auto-zoom */
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D1D1D6;
+  border-radius: var(--radius-pill);
+}
+
+/* ==========================================================
+   KEYFRAME ANIMATIONS
+   ========================================================== */
+
+@keyframes heartPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+@keyframes heartBurstBig {
+  0% { transform: scale(0.3) rotate(-15deg); opacity: 0; }
+  50% { transform: scale(1.25) rotate(0deg); opacity: 1; }
+  75% { transform: scale(1) rotate(0deg); opacity: 0.9; }
+  100% { transform: scale(1.4) rotate(10deg); opacity: 0; }
+}
+
+@keyframes slideUpFade {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes floatGentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-heart-pop {
+  animation: heartPop 0.25s var(--ease-spring);
+}
+
+.animate-heart-burst {
+  animation: heartBurstBig 0.75s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUpFade 0.3s var(--ease-smooth) forwards;
+}
+
+/* ==========================================================
+   UI UTILITY CLASSES
+   ========================================================== */
+
+.pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--radius-pill);
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.pill-btn-primary {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+.pill-btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+.pill-btn-primary:active {
+  transform: scale(0.98);
+}
+
+.pill-btn-secondary {
+  background-color: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.pill-btn-secondary:hover {
+  background-color: #F8F8FA;
+  border-color: #D1D1D6;
+}
+
+.pill-btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.pill-btn-ghost:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+  color: var(--text);
+}
+
+.pill-btn-heart {
+  background-color: var(--heart);
+  color: #FFFFFF;
+}
+.pill-btn-heart:hover {
+  opacity: 0.92;
+  box-shadow: 0 4px 16px var(--heart-glow);
+}
+
+.card-ios {
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.card-ios:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* Safe area insets for iOS devices */
+.safe-bottom {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.safe-top {
+  padding-top: max(16px, env(safe-area-inset-top));
+}
