@@ -4,6 +4,7 @@ import { FgDashboard } from './components/fg/FgDashboard';
 import { FgProjectDetail } from './components/fg/FgProjectDetail';
 import { ClientGallery } from './components/client/ClientGallery';
 import { FgNewProjectModal } from './components/fg/FgNewProjectModal';
+import { FgAuthModal } from './components/fg/FgAuthModal';
 import {
   loadProjects,
   saveProjects,
@@ -14,18 +15,37 @@ import {
   broadcastEvent,
   getDeviceId,
 } from './services/storage';
-import type { Project, StudioProfile } from './types';
+import {
+  getCurrentAuthUser,
+  subscribeAuthChanges,
+  signOutUser,
+  saveProjectToCloud,
+  fetchProjectFromCloud,
+  subscribeProjectFromCloud,
+} from './services/supabase';
+import type { Project, StudioProfile, AuthUser } from './types';
 
 export function App() {
   const [projects, setProjects] = useState<Project[]>(() => loadProjects());
   const [studio, setStudio] = useState<StudioProfile>(() => loadStudioProfile());
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'landing' | 'dashboard' | 'project_detail' | 'client'>('landing');
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  // Sync projects and subscribe to cross-tab real-time updates
+  // Sync projects and subscribe to cross-tab & auth updates
   useEffect(() => {
-    // Check URL query parameters for ?p=slug (client view) or ?view=fg
+    // 1. Check existing logged-in Google user
+    getCurrentAuthUser().then((authUser) => {
+      if (authUser) setUser(authUser);
+    });
+
+    const unsubscribeAuth = subscribeAuthChanges((authUser) => {
+      setUser(authUser);
+    });
+
+    // 2. Check URL query parameters for ?p=slug (client view) or ?view=fg
     const params = new URLSearchParams(window.location.search);
     const clientSlug = params.get('p');
     const viewParam = params.get('view');
@@ -45,6 +65,7 @@ export function App() {
           };
           updateProject(updated);
           setProjects(loadProjects());
+          saveProjectToCloud(updated);
           broadcastEvent({
             type: 'SELECTION_CHANGE',
             projectId: match.id,
@@ -52,20 +73,56 @@ export function App() {
             deviceId: getDeviceId(),
           });
         }
+      } else {
+        // Not in local storage, attempt to fetch from Supabase Cloud
+        fetchProjectFromCloud(clientSlug).then((cloudProj) => {
+          if (cloudProj) {
+            const updated = [cloudProj, ...loadProjects()];
+            setProjects(updated);
+            saveProjects(updated);
+            setActiveProjectId(cloudProj.id);
+            setCurrentView('client');
+
+            if (cloudProj.status === 'belum_dibuka') {
+              const openedProj: Project = {
+                ...cloudProj,
+                status: 'lagi_milih',
+                lastOpenedAt: new Date().toISOString(),
+              };
+              updateProject(openedProj);
+              saveProjectToCloud(openedProj);
+            }
+          }
+        });
       }
     } else if (viewParam === 'fg') {
       setCurrentView('dashboard');
     }
 
-    const unsubscribe = subscribeRealtime((_event) => {
+    const unsubscribeStorage = subscribeRealtime((_event) => {
       // Reload projects from storage to get the fresh state
       setProjects(loadProjects());
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      unsubscribeStorage();
+    };
   }, []);
 
   const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
+
+  // Real-time Cloud subscription for active project if in client or project_detail view
+  useEffect(() => {
+    if (!activeProject?.slug) return;
+    const unsubscribeCloud = subscribeProjectFromCloud(activeProject.slug, (cloudUpdated) => {
+      updateProject(cloudUpdated);
+      setProjects(loadProjects());
+    });
+    return () => {
+      unsubscribeCloud();
+    };
+  }, [activeProject?.slug]);
 
   // Handlers for Photographer actions
   const handleSelectProject = (project: Project) => {
@@ -79,11 +136,13 @@ export function App() {
     saveProjects(updated);
     setActiveProjectId(newProject.id);
     setCurrentView('project_detail');
+    saveProjectToCloud(newProject);
   };
 
   const handleUpdateProject = (updated: Project) => {
     updateProject(updated);
     setProjects(loadProjects());
+    saveProjectToCloud(updated);
     broadcastEvent({
       type: 'PROJECT_LOCKED_CHANGE',
       projectId: updated.id,
@@ -104,6 +163,11 @@ export function App() {
     saveStudioProfile(updated);
   };
 
+  const handleLogout = async () => {
+    await signOutUser();
+    setUser(null);
+  };
+
   // Handlers for Client actions
   const handleClientUpdateSelections = (fileNames: string[]) => {
     if (!activeProject) return;
@@ -116,6 +180,7 @@ export function App() {
     };
     updateProject(updated);
     setProjects(loadProjects());
+    saveProjectToCloud(updated);
     broadcastEvent({
       type: 'SELECTION_CHANGE',
       projectId: activeProject.id,
@@ -142,6 +207,7 @@ export function App() {
     };
     updateProject(updated);
     setProjects(loadProjects());
+    saveProjectToCloud(updated);
     broadcastEvent({
       type: 'PROJECT_SUBMITTED',
       projectId: activeProject.id,
@@ -158,6 +224,7 @@ export function App() {
     };
     updateProject(updated);
     setProjects(loadProjects());
+    saveProjectToCloud(updated);
     broadcastEvent({
       type: 'SELECTOR_TAKEOVER',
       projectId: activeProject.id,
@@ -200,6 +267,8 @@ export function App() {
         <LandingPage
           onCreateGallery={() => setIsCreateModalOpen(true)}
           onOpenDashboard={handleOpenDashboard}
+          onOpenLogin={() => setIsAuthModalOpen(true)}
+          user={user}
         />
       )}
 
@@ -207,11 +276,14 @@ export function App() {
         <FgDashboard
           projects={projects}
           studio={studio}
+          user={user}
           onSelectProject={handleSelectProject}
           onCreateProject={handleCreateProject}
           onUpdateStudio={handleUpdateStudio}
           onOpenClientView={handleOpenClientView}
           onOpenLanding={handleOpenLanding}
+          onOpenLogin={() => setIsAuthModalOpen(true)}
+          onLogout={handleLogout}
         />
       )}
 
@@ -242,6 +314,15 @@ export function App() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onProjectCreated={handleProjectCreatedFromLanding}
+        studio={studio}
+      />
+
+      {/* Photographer Google Login Modal */}
+      <FgAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onContinueAsGuest={() => setIsAuthModalOpen(false)}
+        studio={studio}
       />
     </div>
   );

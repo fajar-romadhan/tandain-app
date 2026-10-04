@@ -7,9 +7,22 @@ const DEFAULT_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 let supabaseInstance: SupabaseClient | null = null;
 
+const getStoredStudioCredentials = () => {
+  if (typeof window === 'undefined') return { url: '', key: '' };
+  try {
+    const raw = localStorage.getItem('tandain_studio_profile');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { url: (parsed.supabaseUrl || '').trim(), key: (parsed.supabaseAnonKey || '').trim() };
+    }
+  } catch {}
+  return { url: '', key: '' };
+};
+
 export const getSupabaseClient = (customUrl?: string, customKey?: string): SupabaseClient | null => {
-  const url = customUrl || DEFAULT_SUPABASE_URL;
-  const key = customKey || DEFAULT_SUPABASE_ANON_KEY;
+  const stored = getStoredStudioCredentials();
+  const url = customUrl || DEFAULT_SUPABASE_URL || stored.url;
+  const key = customKey || DEFAULT_SUPABASE_ANON_KEY || stored.key;
 
   if (!url || !key) return null;
 
@@ -26,7 +39,8 @@ export const getSupabaseClient = (customUrl?: string, customKey?: string): Supab
 };
 
 export const isCloudEnabled = (): boolean => {
-  return !!(DEFAULT_SUPABASE_URL && DEFAULT_SUPABASE_ANON_KEY);
+  const stored = getStoredStudioCredentials();
+  return !!((DEFAULT_SUPABASE_URL && DEFAULT_SUPABASE_ANON_KEY) || (stored.url && stored.key));
 };
 
 /**
@@ -190,5 +204,77 @@ export const subscribeProjectFromCloud = (
 
   return () => {
     client.removeChannel(channel);
+  };
+};
+
+/**
+ * Authentication Methods for Photographers
+ */
+export const signInWithGoogle = async (): Promise<void> => {
+  const client = getSupabaseClient();
+  if (!client) {
+    throw new Error('Supabase belum dikonfigurasi. Isi Supabase URL & Key di Pengaturan Studio.');
+  }
+
+  const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/?view=fg` : '';
+  const { error } = await client.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: redirectUrl,
+    },
+  });
+
+  if (error) throw error;
+};
+
+export const signOutUser = async (): Promise<void> => {
+  const client = getSupabaseClient();
+  if (client) {
+    await client.auth.signOut();
+  }
+};
+
+export const getCurrentAuthUser = async (): Promise<{ id: string; email?: string; name?: string; avatarUrl?: string } | null> => {
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  try {
+    const { data } = await client.auth.getUser();
+    const user = data?.user;
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.user_metadata?.full_name || user.email?.split('@')[0],
+      avatarUrl: user.user_metadata?.avatar_url,
+    };
+  } catch (err) {
+    console.warn('Error fetching current user:', err);
+    return null;
+  }
+};
+
+export const subscribeAuthChanges = (
+  callback: (user: { id: string; email?: string; name?: string; avatarUrl?: string } | null) => void
+): (() => void) => {
+  const client = getSupabaseClient();
+  if (!client) return () => {};
+
+  const { data } = client.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) {
+      callback({
+        id: session.user.id,
+        email: session.user.email,
+        name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
+        avatarUrl: session.user.user_metadata?.avatar_url,
+      });
+    } else {
+      callback(null);
+    }
+  });
+
+  return () => {
+    data.subscription.unsubscribe();
   };
 };

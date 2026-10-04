@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Plus,
   Search,
@@ -8,30 +8,38 @@ import {
   FolderKanban,
   Sliders,
   ExternalLink,
+  LogIn,
+  LogOut,
 } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import { FgNewProjectModal } from './FgNewProjectModal';
 import { FgStudioSettings } from './FgStudioSettings';
-import type { Project, StudioProfile } from '../../types';
+import type { Project, StudioProfile, AuthUser } from '../../types';
 
 interface FgDashboardProps {
   projects: Project[];
   studio: StudioProfile;
+  user?: AuthUser | null;
   onSelectProject: (project: Project) => void;
   onCreateProject: (newProject: Project) => void;
   onUpdateStudio: (updated: StudioProfile) => void;
   onOpenClientView: (slug: string) => void;
   onOpenLanding?: () => void;
+  onOpenLogin?: () => void;
+  onLogout?: () => void;
 }
 
 export const FgDashboard: React.FC<FgDashboardProps> = ({
   projects,
   studio,
+  user,
   onSelectProject,
   onCreateProject,
   onUpdateStudio,
   onOpenClientView,
   onOpenLanding,
+  onOpenLogin,
+  onLogout,
 }) => {
   const [activeTab, setActiveTab] = useState<'projects' | 'settings'>('projects');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -118,6 +126,25 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
             >
               <Sliders size={16} /> Pengaturan
             </button>
+
+            {user ? (
+              <button
+                onClick={onLogout}
+                className="pill-btn pill-btn-ghost"
+                style={{ height: '38px', fontSize: '12.5px', gap: '5px', color: 'var(--text-secondary)' }}
+                title={`Keluar (${user.email || user.name})`}
+              >
+                <LogOut size={15} /> Keluar
+              </button>
+            ) : (
+              <button
+                onClick={onOpenLogin}
+                className="pill-btn pill-btn-ghost"
+                style={{ height: '38px', fontSize: '12.5px', gap: '5px' }}
+              >
+                <LogIn size={15} /> Masuk Google
+              </button>
+            )}
 
             <button
               onClick={() => setIsNewProjectModalOpen(true)}
@@ -355,6 +382,7 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
         isOpen={isNewProjectModalOpen}
         onClose={() => setIsNewProjectModalOpen(false)}
         onProjectCreated={onCreateProject}
+        studio={studio}
       />
     </div>
   );

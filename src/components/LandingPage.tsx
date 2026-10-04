@@ -11,15 +11,24 @@ import {
   MessageSquare,
   ShieldCheck,
   Zap,
+  LogIn,
 } from 'lucide-react';
 import { SAMPLE_GRADUATION_PHOTOS } from '../services/sampleData';
+import type { AuthUser } from '../types';
 
 interface LandingPageProps {
   onCreateGallery: () => void;
   onOpenDashboard: () => void;
+  onOpenLogin: () => void;
+  user: AuthUser | null;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onCreateGallery, onOpenDashboard }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({
+  onCreateGallery,
+  onOpenDashboard,
+  onOpenLogin,
+  user,
+}) => {
   // Mini interactive state for the hero preview card
   const [previewSelected, setPreviewSelected] = useState<number[]>([0, 2, 4, 6]);
   const previewPhotos = SAMPLE_GRADUATION_PHOTOS.slice(0, 8);
@@ -67,13 +76,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateGallery, onOpe
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button
-              onClick={onOpenDashboard}
-              className="pill-btn pill-btn-ghost"
-              style={{ height: '38px', fontSize: '13.5px', fontWeight: 600 }}
-            >
-              <Laptop size={16} /> Dashboard
-            </button>
+            {user ? (
+              <button
+                onClick={onOpenDashboard}
+                className="pill-btn pill-btn-ghost"
+                style={{ height: '38px', fontSize: '13.5px', fontWeight: 600, gap: '6px' }}
+              >
+                <Laptop size={16} /> {user.name || 'Dashboard'}
+              </button>
+            ) : (
+              <button
+                onClick={onOpenLogin}
+                className="pill-btn pill-btn-ghost"
+                style={{ height: '38px', fontSize: '13.5px', fontWeight: 600, gap: '6px' }}
+              >
+                <LogIn size={15} /> Masuk
+              </button>
+            )}
+
             <button
               onClick={onCreateGallery}
               className="pill-btn pill-btn-primary"
