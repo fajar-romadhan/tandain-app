@@ -146,7 +146,12 @@ Berikut adalah catatan lingkungan sistem dan error yang pernah terjadi beserta p
 - Menjalankan Cloudflare Quick Tunnel daemon dengan sertifikat SSL/HTTPS resmi publik:
   - **Public Link:** `https://stephen-mls-invisible-charlotte.trycloudflare.com`
 - Aplikasi sekarang dapat diakses secara publik oleh siapa saja (teman, klien, smartphone mana pun) dengan HMR aktif langsung dari laptop.
-- Status HTTP/2 200 OK diverifikasi via curl.
+### Sesi 6 (GitHub Push & Repository Setup) - 2026-10-04, 23:23 WIB
+- Membersihkan boilerplate tidak terpakai (`src/App.css`, `hero.png`, `.oxlintrc.json`, react/vite svg).
+- Membuat `README.md` baru yang profesional, clean, dan informatif.
+- Menginisialisasi Git lokal dan menghubungkan ke remote repository GitHub via SSH:
+  - **Repo URL:** `https://github.com/fajar-romadhan/tandain-app`
+- Push branch `main` sukses 100% (hanya file inti dan penting yang di-track).
 
 ---
 
