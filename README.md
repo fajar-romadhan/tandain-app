@@ -1,32 +1,56 @@
-# React + TypeScript + Vite
+# 📸 Tandain
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+> **Modern Photo Selector & Instant RAW Matcher untuk Fotografer**  
+> Solusi kurasi foto klien tanpa repot rekap chat manual dan tanpa perlu upload file RAW ke cloud.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ⚡ Fitur Utama
 
-## React Compiler
+- **Tanpa Upload Ulang:** Fotografer cukup menggunakan folder Google Drive publik yang sudah ada.
+- **Pengalaman Klien Instan:** Klien memilih foto di HP tanpa perlu login/instal aplikasi (mendukung tap love ❤️, double-tap, dan Mode Swipe).
+- **Auto-Ambil RAW di Laptop:** Menggunakan browser File System Access API untuk mencocokkan nama file pilihan klien dan otomatis menyalin file master RAW (`.CR3`, `.ARW`, `.NEF`, `.DNG`) dari harddisk/SD Card ke subfolder baru dalam 5 detik.
+- **Integrasi Adobe Lightroom:** Format string filter siap pakai untuk ditempelkan ke Library Filter Lightroom Classic.
+- **Bermerek Studio:** Nama dan branding studio fotografer terpampang di galeri klien.
+- **Biaya Rp0:** Tanpa biaya langganan, tanpa sistem token per galeri.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+- **Frontend:** React 19, TypeScript
+- **Bundler:** Vite
+- **Styling:** Pure Vanilla CSS (CSS Variables, Apple/iOS design tokens)
+- **Icons:** Lucide React
+- **Local Storage & Sync:** BroadcastChannel API & LocalStorage
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+---
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## 🚀 Menjalankan Secara Lokal
+
+1. **Clone repository:**
+   ```bash
+   git clone https://github.com/fajar-romadhan/tandain-app.git
+   cd tandain-app
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Jalankan development server:**
+   ```bash
+   npm run dev
+   ```
+
+4. **Build untuk production:**
+   ```bash
+   npm run build
+   ```
+
+---
+
+## 📄 Lisensi
+
+Distributed under the MIT License.
