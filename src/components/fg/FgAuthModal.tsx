@@ -8,6 +8,7 @@ interface FgAuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onContinueAsGuest: () => void;
+  onOpenSettings?: () => void;
   studio?: StudioProfile;
 }
 
@@ -15,6 +16,7 @@ export const FgAuthModal: React.FC<FgAuthModalProps> = ({
   isOpen,
   onClose,
   onContinueAsGuest,
+  onOpenSettings,
   studio,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -91,7 +93,7 @@ export const FgAuthModal: React.FC<FgAuthModalProps> = ({
         {errorMsg && (
           <div
             style={{
-              padding: '12px',
+              padding: '12px 14px',
               borderRadius: '12px',
               backgroundColor: '#FFF4E5',
               border: '1px solid #FFE0B2',
@@ -99,13 +101,34 @@ export const FgAuthModal: React.FC<FgAuthModalProps> = ({
               fontSize: '12.5px',
               marginBottom: '16px',
               display: 'flex',
-              alignItems: 'center',
+              flexDirection: 'column',
               gap: '8px',
               textAlign: 'left',
             }}
           >
-            <AlertCircle size={16} style={{ flexShrink: 0 }} />
-            <span>{errorMsg}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              <span style={{ fontWeight: 600 }}>{errorMsg}</span>
+            </div>
+            {onOpenSettings && (
+              <button
+                type="button"
+                onClick={onOpenSettings}
+                style={{
+                  alignSelf: 'flex-start',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#9E4E00',
+                  textDecoration: 'underline',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                ⚙️ Buka Pengaturan Studio untuk Mengisi Key →
+              </button>
+            )}
           </div>
         )}
 

@@ -31,6 +31,7 @@ export function App() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'landing' | 'dashboard' | 'project_detail' | 'client'>('landing');
+  const [dashboardTab, setDashboardTab] = useState<'projects' | 'settings'>('projects');
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -277,6 +278,7 @@ export function App() {
           projects={projects}
           studio={studio}
           user={user}
+          defaultTab={dashboardTab}
           onSelectProject={handleSelectProject}
           onCreateProject={handleCreateProject}
           onUpdateStudio={handleUpdateStudio}
@@ -321,7 +323,16 @@ export function App() {
       <FgAuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
-        onContinueAsGuest={() => setIsAuthModalOpen(false)}
+        onContinueAsGuest={() => {
+          setIsAuthModalOpen(false);
+          setDashboardTab('projects');
+          setCurrentView('dashboard');
+        }}
+        onOpenSettings={() => {
+          setIsAuthModalOpen(false);
+          setDashboardTab('settings');
+          setCurrentView('dashboard');
+        }}
         studio={studio}
       />
     </div>

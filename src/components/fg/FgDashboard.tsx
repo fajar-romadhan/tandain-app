@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Plus,
   Search,
@@ -20,6 +20,7 @@ interface FgDashboardProps {
   projects: Project[];
   studio: StudioProfile;
   user?: AuthUser | null;
+  defaultTab?: 'projects' | 'settings';
   onSelectProject: (project: Project) => void;
   onCreateProject: (newProject: Project) => void;
   onUpdateStudio: (updated: StudioProfile) => void;
@@ -33,6 +34,7 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
   projects,
   studio,
   user,
+  defaultTab,
   onSelectProject,
   onCreateProject,
   onUpdateStudio,
@@ -41,11 +43,18 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
   onOpenLogin,
   onLogout,
 }) => {
-  const [activeTab, setActiveTab] = useState<'projects' | 'settings'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'settings'>(defaultTab || 'projects');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Sync tab if defaultTab changes externally
+  useEffect(() => {
+    if (defaultTab) {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab]);
 
   const filteredProjects = projects.filter((p) => {
     if (filterStatus !== 'all' && p.status !== filterStatus) return false;
