@@ -45,6 +45,9 @@ export interface StudioProfile {
   logoUrl?: string;
   accentColor: string;
   waTemplate: string;
+  googleApiKey?: string;
+  supabaseUrl?: string;
+  supabaseAnonKey?: string;
 }
 
 export interface MatchingResult {

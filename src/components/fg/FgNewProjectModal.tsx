@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, PlusCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, PlusCircle, FolderOpen, Loader2, CheckCircle2 } from 'lucide-react';
 import { Modal } from '../Modal';
-import { extractDriveFolderId, getPhotosForDriveFolder } from '../../services/drive';
-import type { Project } from '../../types';
+import { extractDriveFolderId, getPhotosForDriveFolder, scanLocalPreviewFolder } from '../../services/drive';
+import type { Project, StudioProfile, Photo } from '../../types';
 
 interface FgNewProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onProjectCreated: (project: Project) => void;
+  studio?: StudioProfile;
 }
 
 export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
   isOpen,
   onClose,
   onProjectCreated,
+  studio,
 }) => {
   const [driveUrl, setDriveUrl] = useState('');
   const [clientName, setClientName] = useState('');
@@ -24,8 +26,26 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
   const [pinValue, setPinValue] = useState('');
   const [watermarkEnabled, setWatermarkEnabled] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [localPhotos, setLocalPhotos] = useState<Photo[]>([]);
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleScanLocalFolder = async () => {
+    try {
+      setErrorMsg('');
+      const photos = await scanLocalPreviewFolder();
+      if (photos.length === 0) {
+        setErrorMsg('Tidak ditemukan file foto (JPG/PNG) di folder yang dipilih.');
+        return;
+      }
+      setLocalPhotos(photos);
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        setErrorMsg(err.message || 'Gagal memindai folder lokal.');
+      }
+    }
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!driveUrl.trim()) {
       setErrorMsg('Tolong masukkan link Google Drive publik.');
@@ -46,35 +66,51 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
       return;
     }
 
-    const slug = clientName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)+/g, '') + '-' + Math.random().toString(36).substring(2, 6);
+    setIsLoading(true);
+    setErrorMsg('');
 
-    const photos = getPhotosForDriveFolder(folderId, clientName);
+    try {
+      let finalPhotos: Photo[] = [];
 
-    const newProject: Project = {
-      id: 'proj_' + Date.now(),
-      slug,
-      clientName: clientName.trim(),
-      sessionDate: sessionDate || undefined,
-      driveFolderUrl: driveUrl.trim(),
-      driveFolderId: folderId,
-      quota: Number(quota),
-      pin: pinEnabled && pinValue.trim() ? pinValue.trim() : undefined,
-      hasWatermark: watermarkEnabled,
-      status: 'belum_dibuka',
-      locked: false,
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 86400000 * 30).toISOString(), // 30 days
-      photos,
-      selectedFileNames: [],
-      revisionRound: 1,
-      submissionHistory: [],
-    };
+      if (localPhotos.length > 0) {
+        finalPhotos = localPhotos;
+      } else {
+        const result = await getPhotosForDriveFolder(folderId, clientName, studio?.googleApiKey);
+        finalPhotos = result.photos;
+      }
 
-    onProjectCreated(newProject);
-    onClose();
+      const slug = clientName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '') + '-' + Math.random().toString(36).substring(2, 6);
+
+      const newProject: Project = {
+        id: 'proj_' + Date.now(),
+        slug,
+        clientName: clientName.trim(),
+        sessionDate: sessionDate || undefined,
+        driveFolderUrl: driveUrl.trim(),
+        driveFolderId: folderId,
+        quota: Number(quota),
+        pin: pinEnabled && pinValue.trim() ? pinValue.trim() : undefined,
+        hasWatermark: watermarkEnabled,
+        status: 'belum_dibuka',
+        locked: false,
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 86400000 * 30).toISOString(), // 30 days
+        photos: finalPhotos,
+        selectedFileNames: [],
+        revisionRound: 1,
+        submissionHistory: [],
+      };
+
+      onProjectCreated(newProject);
+      onClose();
+    } catch (err: any) {
+      setErrorMsg('Terjadi kesalahan saat memproses galeri: ' + err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -106,14 +142,49 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
             }}
           />
           <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-            Pastikan akses folder diatur ke "Siapa saja yang memiliki link".
+            Pastikan akses folder Google Drive disetel ke "Siapa saja yang memiliki link".
           </p>
+        </div>
+
+        {/* Local Folder Scan Option (Zero Upload, 100% Accurate Filenames) */}
+        <div
+          style={{
+            padding: '12px 14px',
+            borderRadius: '12px',
+            backgroundColor: localPhotos.length > 0 ? '#E8F5E9' : '#F5F5F7',
+            border: localPhotos.length > 0 ? '1px solid #C8E6C9' : '1px solid var(--border-light)',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+        >
+          <div style={{ fontSize: '12.5px' }}>
+            {localPhotos.length > 0 ? (
+              <span style={{ color: '#2E7D32', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <CheckCircle2 size={16} /> {localPhotos.length} foto lokal terdeteksi
+              </span>
+            ) : (
+              <span style={{ color: 'var(--text-secondary)' }}>
+                Scan nama file JPG langsung dari folder laptop (opsional)
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={handleScanLocalFolder}
+            className="pill-btn pill-btn-ghost"
+            style={{ height: '32px', fontSize: '12px', padding: '0 12px', gap: '6px', whiteSpace: 'nowrap' }}
+          >
+            <FolderOpen size={14} /> {localPhotos.length > 0 ? 'Ganti Folder' : 'Pilih Folder'}
+          </button>
         </div>
 
         {/* Client Name */}
         <div style={{ marginBottom: '16px' }}>
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-            Nama Client / Project*
+            Nama Klien / Acara*
           </label>
           <input
             type="text"
@@ -123,7 +194,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
               setClientName(e.target.value);
               setErrorMsg('');
             }}
-            placeholder="Misal: Rani — Wisuda UI atau Andi & Rina Wedding"
+            placeholder="Misal: Wisuda Rani & Aditya / Wedding Sarah"
             style={{
               width: '100%',
               height: '46px',
@@ -140,9 +211,9 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
         {/* Quota */}
         <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-            Batas Kuota Foto (Paket)*
+            Batas Maksimal Foto yang Boleh Dipilih (Kuota)*
           </label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <input
               type="number"
               min={1}
@@ -162,12 +233,12 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
                 fontWeight: 700,
               }}
             />
-            <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>foto yang boleh dipilih</span>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Foto</span>
           </div>
         </div>
 
-        {/* Advanced Options Accordion */}
-        <div style={{ marginBottom: '20px', borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
+        {/* Advanced Accordion */}
+        <div style={{ marginBottom: '24px', borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
           <button
             type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
@@ -176,20 +247,24 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               width: '100%',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
               fontSize: '13px',
               fontWeight: 600,
-              color: 'var(--text-secondary)',
             }}
           >
-            <span>Opsi Lanjutan (PIN, Tanggal, Watermark)</span>
+            <span>Pengaturan Lanjutan (Tanggal, PIN, Watermark)</span>
             {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
 
           {showAdvanced && (
-            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {/* Session Date */}
+            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Date */}
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
                   Tanggal Sesi Foto
                 </label>
                 <input
@@ -268,10 +343,19 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
 
         <button
           type="submit"
+          disabled={isLoading}
           className="pill-btn pill-btn-primary"
-          style={{ width: '100%', height: '48px', fontSize: '16px' }}
+          style={{ width: '100%', height: '48px', fontSize: '16px', gap: '8px' }}
         >
-          <PlusCircle size={18} /> Buat Project & Dapatkan Link
+          {isLoading ? (
+            <>
+              <Loader2 size={18} className="animate-spin" /> Memproses Galeri...
+            </>
+          ) : (
+            <>
+              <PlusCircle size={18} /> Buat Project & Dapatkan Link
+            </>
+          )}
         </button>
       </form>
     </Modal>
