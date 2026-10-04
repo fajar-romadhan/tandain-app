@@ -362,6 +362,38 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
                     }}
                   />
 
+                  {/* Anti-Screenshot Studio Watermark */}
+                  {project.hasWatermark && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        pointerEvents: 'none',
+                        zIndex: 1,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <span
+                        style={{
+                          transform: 'rotate(-25deg)',
+                          fontSize: '13.5px',
+                          fontWeight: 800,
+                          letterSpacing: '1.5px',
+                          color: 'rgba(255, 255, 255, 0.45)',
+                          textShadow: '0 1px 4px rgba(0, 0, 0, 0.6)',
+                          textTransform: 'uppercase',
+                          userSelect: 'none',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {studio.studioName || 'PREVIEW TANDAIN'}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Corner Heart Button (44x44px touch target) */}
                   <button
                     onClick={(e) => {

@@ -164,6 +164,23 @@ export function App() {
     saveStudioProfile(updated);
   };
 
+  const handleStudioLogin = (studioName: string, whatsapp: string) => {
+    const updatedStudio: StudioProfile = {
+      ...studio,
+      studioName: studioName.trim(),
+      whatsapp: whatsapp ? whatsapp.replace(/[^0-9]/g, '') : studio.whatsapp,
+    };
+    setStudio(updatedStudio);
+    saveStudioProfile(updatedStudio);
+    setUser({
+      id: `studio_${Date.now()}`,
+      name: studioName.trim(),
+    });
+    setIsAuthModalOpen(false);
+    setDashboardTab('projects');
+    setCurrentView('dashboard');
+  };
+
   const handleLogout = async () => {
     await signOutUser();
     setUser(null);
@@ -319,10 +336,11 @@ export function App() {
         studio={studio}
       />
 
-      {/* Photographer Google Login Modal */}
+      {/* Photographer Google & Studio Login Modal */}
       <FgAuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
+        onStudioLogin={handleStudioLogin}
         onContinueAsGuest={() => {
           setIsAuthModalOpen(false);
           setDashboardTab('projects');
