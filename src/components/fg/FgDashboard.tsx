@@ -11,10 +11,14 @@ import {
   LogIn,
   LogOut,
   MessageCircle,
+  BookOpen,
+  Sparkles,
+  X,
 } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import { FgNewProjectModal } from './FgNewProjectModal';
 import { FgStudioSettings } from './FgStudioSettings';
+import { FgGuideModal } from './FgGuideModal';
 import type { Project, StudioProfile, AuthUser } from '../../types';
 
 interface FgDashboardProps {
@@ -48,7 +52,24 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
+  const [showGuideBanner, setShowGuideBanner] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('tandain_dismiss_guide_banner') !== 'true';
+    } catch {
+      return true;
+    }
+  });
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleDismissGuideBanner = () => {
+    setShowGuideBanner(false);
+    try {
+      localStorage.setItem('tandain_dismiss_guide_banner', 'true');
+    } catch {
+      // ignore
+    }
+  };
 
   // Sync tab if defaultTab changes externally
   useEffect(() => {
@@ -137,6 +158,23 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
               <Sliders size={16} /> Pengaturan
             </button>
 
+            <button
+              onClick={() => setIsGuideModalOpen(true)}
+              className="pill-btn pill-btn-ghost"
+              style={{
+                height: '38px',
+                fontSize: '13px',
+                gap: '6px',
+                border: '1px solid rgba(0, 122, 255, 0.28)',
+                backgroundColor: 'rgba(0, 122, 255, 0.06)',
+                color: 'var(--accent)',
+                fontWeight: 600,
+              }}
+              title="Buka panduan singkat & tutorial alur kerja sampai download RAW"
+            >
+              <BookOpen size={16} /> Panduan & Tutorial
+            </button>
+
             {user ? (
               <button
                 onClick={onLogout}
@@ -169,6 +207,78 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
 
       {/* Main Content */}
       <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 16px' }}>
+        {/* Quick-Start Workflow Banner */}
+        {showGuideBanner && (
+          <div
+            style={{
+              marginBottom: '20px',
+              padding: '16px 20px',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, rgba(0, 122, 255, 0.08) 0%, rgba(52, 199, 89, 0.06) 100%)',
+              border: '1px solid rgba(0, 122, 255, 0.22)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+              flexWrap: 'wrap',
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: '1 1 300px' }}>
+              <div
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(0, 122, 255, 0.12)',
+                  color: 'var(--accent)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '14.5px', fontWeight: 700, color: 'var(--text)' }}>
+                  Panduan Cepat Fotografer (Workflow 5 Menit)
+                </h3>
+                <p style={{ margin: '3px 0 0 0', fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                  Siapkan Google Drive ➔ Buat Proyek ➔ Klien Pilih di HP ➔ Ambil RAW Otomatis di Laptop Anda!
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={() => setIsGuideModalOpen(true)}
+                className="pill-btn pill-btn-primary"
+                style={{ height: '36px', fontSize: '12.5px', gap: '6px' }}
+              >
+                <BookOpen size={14} /> Pelajari Panduan Lengkap
+              </button>
+              <button
+                onClick={handleDismissGuideBanner}
+                className="pill-btn pill-btn-ghost"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  padding: 0,
+                  borderRadius: '50%',
+                  color: 'var(--text-tertiary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                title="Tutup banner ini"
+                aria-label="Tutup banner ini"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        )}
         {activeTab === 'settings' ? (
           <FgStudioSettings studio={studio} onSave={onUpdateStudio} />
         ) : (
@@ -434,6 +544,13 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
         onClose={() => setIsNewProjectModalOpen(false)}
         onProjectCreated={onCreateProject}
         studio={studio}
+      />
+
+      {/* Workflow & Dashboard Guide Modal */}
+      <FgGuideModal
+        isOpen={isGuideModalOpen}
+        onClose={() => setIsGuideModalOpen(false)}
+        onOpenNewProject={() => setIsNewProjectModalOpen(true)}
       />
     </div>
   );

@@ -15,9 +15,11 @@ import {
   ShieldAlert,
   MessageCircle,
   Download,
+  BookOpen,
 } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import { FgRawModal } from './FgRawModal';
+import { FgGuideModal } from './FgGuideModal';
 import { formatAsTxtList, downloadBlobFile } from '../../services/exportList';
 import { downloadPhotoHd } from '../../services/photoDownload';
 import { fetchProjectFromCloud } from '../../services/supabase';
@@ -41,6 +43,7 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
   onDeleteProject,
 }) => {
   const [isRawModalOpen, setIsRawModalOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedNames, setCopiedNames] = useState(false);
   const [copiedWaText, setCopiedWaText] = useState(false);
@@ -166,6 +169,22 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={() => setIsGuideOpen(true)}
+            className="pill-btn pill-btn-ghost"
+            style={{
+              height: '38px',
+              fontSize: '13px',
+              gap: '6px',
+              border: '1px solid rgba(0, 122, 255, 0.28)',
+              backgroundColor: 'rgba(0, 122, 255, 0.06)',
+              color: 'var(--accent)',
+              fontWeight: 600,
+            }}
+            title="Buka panduan alur kerja & fungsi fitur"
+          >
+            <BookOpen size={15} /> Panduan
+          </button>
           <button
             onClick={() => onOpenClientView(project.slug)}
             className="pill-btn pill-btn-primary"
@@ -516,6 +535,12 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
           <span>{actionToast}</span>
         </div>
       )}
+
+      {/* Guide Modal */}
+      <FgGuideModal
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+      />
     </div>
   );
 };
