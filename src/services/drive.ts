@@ -72,35 +72,67 @@ export const fetchPhotosFromGoogleDriveAPI = async (
   });
 };
 
+export interface SmartDriveFolderInfo {
+  folderTitle: string;
+  activeFolder: string;
+  subfolders: Array<{ id: string; name: string }>;
+  photos: Photo[];
+  totalFound: number;
+}
+
+/**
+ * Smart automatic detector for Google Drive folders
+ * Extracts real filenames and photos directly via /api/drive (Zero config, Rp0, no API key needed)
+ */
+export const detectDriveFolder = async (
+  folderId: string,
+  subfolderId?: string
+): Promise<SmartDriveFolderInfo> => {
+  const query = new URLSearchParams({ folderId });
+  if (subfolderId) query.set('subfolderId', subfolderId);
+
+  const res = await fetch(`/api/drive?${query.toString()}`);
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || `Gagal membaca folder Google Drive (${res.status})`);
+  }
+
+  return {
+    folderTitle: data.folderTitle || '',
+    activeFolder: data.activeFolder || '',
+    subfolders: data.subfolders || [],
+    photos: data.photos || [],
+    totalFound: data.photos?.length || 0,
+  };
+};
+
 /**
  * Main photo loader for Drive folder
- * Tries live API if apiKey is present, otherwise returns client-tailored sample set
+ * Automatically resolves live Google Drive photos without requiring photographer API keys
  */
 export const getPhotosForDriveFolder = async (
   folderId: string,
-  clientName: string,
-  apiKey?: string
+  _clientName: string,
+  _apiKey?: string,
+  subfolderId?: string
 ): Promise<DriveFetchResult> => {
-  // Try live Google Drive API if key is provided
-  const activeKey = apiKey || import.meta.env.VITE_GOOGLE_DRIVE_API_KEY || '';
-
-  if (activeKey && folderId) {
-    try {
-      const livePhotos = await fetchPhotosFromGoogleDriveAPI(folderId, activeKey);
-      if (livePhotos.length > 0) {
-        return {
-          photos: livePhotos,
-          isLive: true,
-          totalFound: livePhotos.length,
-        };
-      }
-    } catch (err: any) {
-      console.warn('Live Google Drive fetch error, using fallback:', err.message);
+  try {
+    const live = await detectDriveFolder(folderId, subfolderId);
+    if (live.photos.length > 0) {
+      return {
+        photos: live.photos,
+        isLive: true,
+        totalFound: live.photos.length,
+      };
     }
+  } catch (err: any) {
+    console.warn('Smart Google Drive fetch error:', err.message);
+    throw err;
   }
 
-  // Graceful fallback: customized sample photo sets
-  const isWisuda = clientName.toLowerCase().includes('wisuda') || clientName.toLowerCase().includes('grad');
+  // Fallback in case folder is empty
+  const isWisuda = _clientName.toLowerCase().includes('wisuda') || _clientName.toLowerCase().includes('grad');
   const baseSample = isWisuda ? SAMPLE_GRADUATION_PHOTOS : SAMPLE_WEDDING_PHOTOS;
 
   const simulatedPhotos = baseSample.map((p, idx) => {

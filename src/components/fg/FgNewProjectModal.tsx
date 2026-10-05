@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ChevronDown, ChevronUp, PlusCircle, FolderOpen, Loader2, CheckCircle2 } from 'lucide-react';
 import { Modal } from '../Modal';
-import { extractDriveFolderId, getPhotosForDriveFolder, scanLocalPreviewFolder } from '../../services/drive';
+import {
+  extractDriveFolderId,
+  getPhotosForDriveFolder,
+  detectDriveFolder,
+  scanLocalPreviewFolder,
+  type SmartDriveFolderInfo,
+} from '../../services/drive';
 import type { Project, StudioProfile, Photo } from '../../types';
 
 interface FgNewProjectModalProps {
@@ -15,7 +21,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
   isOpen,
   onClose,
   onProjectCreated,
-  studio,
+  studio: _studio,
 }) => {
   const [driveUrl, setDriveUrl] = useState('');
   const [clientName, setClientName] = useState('');
@@ -27,7 +33,61 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
   const [watermarkEnabled, setWatermarkEnabled] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [detectedInfo, setDetectedInfo] = useState<SmartDriveFolderInfo | null>(null);
+  const [selectedSubfolderId, setSelectedSubfolderId] = useState<string>('');
   const [localPhotos, setLocalPhotos] = useState<Photo[]>([]);
+  const detectTimeoutRef = useRef<any>(null);
+
+  const triggerDetect = async (url: string, subId?: string) => {
+    const fId = extractDriveFolderId(url);
+    if (!fId) {
+      setDetectedInfo(null);
+      return;
+    }
+
+    setIsDetecting(true);
+    setErrorMsg('');
+
+    try {
+      const info = await detectDriveFolder(fId, subId);
+      setDetectedInfo(info);
+      if (!subId && info.subfolders.length > 0) {
+        const activeSub = info.subfolders.find((s) => s.name === info.activeFolder) || info.subfolders[0];
+        setSelectedSubfolderId(activeSub.id);
+      }
+      // Auto-populate client name if currently empty
+      if (!clientName.trim() && info.folderTitle) {
+        const cleaned = info.folderTitle
+          .replace(/^[0-9]+[\.\-\_\s]+/g, '')
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+        setClientName(cleaned.trim());
+      }
+    } catch (err: any) {
+      console.warn('Auto-detect drive error:', err.message);
+      setErrorMsg(err.message || 'Gagal membaca folder Google Drive.');
+      setDetectedInfo(null);
+    } finally {
+      setIsDetecting(false);
+    }
+  };
+
+  const handleDriveUrlChange = (val: string) => {
+    setDriveUrl(val);
+    setErrorMsg('');
+
+    if (detectTimeoutRef.current) {
+      clearTimeout(detectTimeoutRef.current);
+    }
+
+    if (val.trim()) {
+      detectTimeoutRef.current = setTimeout(() => {
+        triggerDetect(val);
+      }, 500);
+    } else {
+      setDetectedInfo(null);
+    }
+  };
 
   const handleScanLocalFolder = async () => {
     try {
@@ -74,8 +134,10 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
 
       if (localPhotos.length > 0) {
         finalPhotos = localPhotos;
+      } else if (detectedInfo && detectedInfo.photos.length > 0) {
+        finalPhotos = detectedInfo.photos;
       } else {
-        const result = await getPhotosForDriveFolder(folderId, clientName, studio?.googleApiKey);
+        const result = await getPhotosForDriveFolder(folderId, clientName, undefined, selectedSubfolderId);
         finalPhotos = result.photos;
       }
 
@@ -125,9 +187,12 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
             type="text"
             required
             value={driveUrl}
-            onChange={(e) => {
-              setDriveUrl(e.target.value);
-              setErrorMsg('');
+            onChange={(e) => handleDriveUrlChange(e.target.value)}
+            onPaste={(e) => {
+              const pasted = e.clipboardData.getData('text');
+              if (pasted) {
+                handleDriveUrlChange(pasted);
+              }
             }}
             placeholder="https://drive.google.com/drive/folders/..."
             style={{
@@ -141,7 +206,83 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
               fontSize: '14px',
             }}
           />
-          <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+
+          {/* Smart detection indicator */}
+          {isDetecting && (
+            <div
+              style={{
+                marginTop: '8px',
+                padding: '8px 12px',
+                borderRadius: '10px',
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '12.5px',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
+              <span>Mendeteksi & membaca foto Google Drive otomatis...</span>
+            </div>
+          )}
+
+          {detectedInfo && !isDetecting && (
+            <div
+              style={{
+                marginTop: '8px',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                backgroundColor: '#E8F5E9',
+                border: '1px solid #C8E6C9',
+                fontSize: '12.5px',
+                color: '#1B5E20',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CheckCircle2 size={16} color="#2E7D32" />
+                  {detectedInfo.photos.length} Foto Siap ({detectedInfo.folderTitle || 'Google Drive'})
+                </span>
+                {detectedInfo.subfolders.length > 1 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '11.5px', color: '#2E7D32' }}>Subfolder:</span>
+                    <select
+                      value={selectedSubfolderId}
+                      onChange={(e) => {
+                        setSelectedSubfolderId(e.target.value);
+                        triggerDetect(driveUrl, e.target.value);
+                      }}
+                      style={{
+                        padding: '3px 8px',
+                        fontSize: '11.5px',
+                        fontWeight: 600,
+                        borderRadius: '6px',
+                        border: '1px solid #A5D6A7',
+                        backgroundColor: '#FFFFFF',
+                        color: '#1B5E20',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {detectedInfo.subfolders.map((sub) => (
+                        <option key={sub.id} value={sub.id}>
+                          📁 {sub.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+              {detectedInfo.photos.length > 0 && (
+                <p style={{ margin: '4px 0 0 22px', fontSize: '11px', color: '#388E3C' }}>
+                  File: {detectedInfo.photos.slice(0, 3).map((p) => p.name).join(', ')}
+                  {detectedInfo.photos.length > 3 ? `, +${detectedInfo.photos.length - 3} lainnya` : ''}
+                </p>
+              )}
+            </div>
+          )}
+
+          <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '6px' }}>
             Pastikan akses folder Google Drive disetel ke "Siapa saja yang memiliki link".
           </p>
         </div>
