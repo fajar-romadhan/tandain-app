@@ -40,7 +40,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
   const [clientName, setClientName] = useState('');
   const [studioName, setStudioName] = useState(studio?.studioName || '');
   const [whatsapp, setWhatsapp] = useState(studio?.whatsapp || '');
-  const [quota, setQuota] = useState<number>(50);
+  const [quota, setQuota] = useState<string>('50');
   const [sessionDate, setSessionDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [pinEnabled, setPinEnabled] = useState(false);
@@ -177,7 +177,8 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
       return;
     }
 
-    if (quota <= 0) {
+    const quotaNum = parseInt(quota, 10);
+    if (!quota.trim() || isNaN(quotaNum) || quotaNum <= 0) {
       setErrorMsg('Kuota foto minimal 1.');
       return;
     }
@@ -217,7 +218,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
         sessionDate: sessionDate || undefined,
         driveFolderUrl: driveUrl.trim(),
         driveFolderId: folderId,
-        quota: Number(quota),
+        quota: quotaNum,
         pin: pinEnabled && pinValue.trim() ? pinValue.trim() : undefined,
         hasWatermark: watermarkEnabled,
         status: 'belum_dibuka',
@@ -736,12 +737,21 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <input
-                type="number"
-                min={1}
-                max={1000}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 required
                 value={quota}
-                onChange={(e) => setQuota(Number(e.target.value))}
+                onChange={(e) => {
+                  // Allow only digits, allow empty string (so user can clear and retype)
+                  const val = e.target.value.replace(/[^0-9]/g, '');
+                  setQuota(val);
+                }}
+                onBlur={() => {
+                  // On blur, if empty or 0, reset to '1'
+                  const n = parseInt(quota, 10);
+                  if (!quota || isNaN(n) || n <= 0) setQuota('1');
+                }}
                 style={{
                   width: '120px',
                   height: '46px',
