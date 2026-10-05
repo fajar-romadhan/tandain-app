@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Heart,
   Search,
@@ -14,7 +14,7 @@ import { ClientSwipeMode } from './ClientSwipeMode';
 import { ClientReviewModal } from './ClientReviewModal';
 import { ClientPinModal } from './ClientPinModal';
 import { StatusBadge } from '../StatusBadge';
-import type { Project, StudioProfile } from '../../types';
+import type { Project, StudioProfile, Photo } from '../../types';
 import { getDeviceId } from '../../services/storage';
 
 interface ClientGalleryProps {
@@ -42,6 +42,7 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
   const [gridColumns, setGridColumns] = useState<2 | 3 | 4>(2);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [isSwipeMode, setIsSwipeMode] = useState(false);
+  const [swipeInitialIndex, setSwipeInitialIndex] = useState<number>(0);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [burstPhotoId, setBurstPhotoId] = useState<string | null>(null);
   const [showSecurityToast, setShowSecurityToast] = useState(false);
@@ -90,27 +91,23 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
     return list;
   }, [project.photos, project.selectedFileNames, filterMode, searchQuery]);
 
-  // Double tap handler per photo
-  const tapTimesRef = useRef<{ [key: string]: number }>({});
+  // Stable multi-column partition (Pinterest-style: eliminates column-count splitting bugs and layout shift)
+  const photoColumns = useMemo(() => {
+    const count = gridColumns;
+    const cols: { photo: Photo; globalIndex: number }[][] = Array.from(
+      { length: count },
+      () => []
+    );
+    displayedPhotos.forEach((photo, idx) => {
+      cols[idx % count].push({ photo, globalIndex: idx });
+    });
+    return cols;
+  }, [displayedPhotos, gridColumns]);
 
-  const handlePhotoClick = (index: number, photoName: string) => {
-    const now = Date.now();
-    const lastTap = tapTimesRef.current[photoName] || 0;
-    const diff = now - lastTap;
-
-    if (diff < 300 && diff > 0) {
-      // Double tap detected -> toggle select!
-      handleTogglePhoto(photoName);
-      tapTimesRef.current[photoName] = 0;
-    } else {
-      // Single tap -> open lightbox after short delay if no 2nd tap
-      tapTimesRef.current[photoName] = now;
-      setTimeout(() => {
-        if (Date.now() - tapTimesRef.current[photoName] >= 280 && tapTimesRef.current[photoName] !== 0) {
-          setLightboxIndex(index);
-        }
-      }, 290);
-    }
+  // Tapping any photo instantly opens Swipe Mode starting from that photo!
+  const handlePhotoClick = (index: number) => {
+    setSwipeInitialIndex(index);
+    setIsSwipeMode(true);
   };
 
   const handleTogglePhoto = (filename: string) => {
@@ -369,154 +366,182 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
         ) : (
           <div
             style={{
-              columnCount: gridColumns,
-              columnGap: '12px',
+              display: 'flex',
+              gap: '12px',
+              alignItems: 'flex-start',
             }}
           >
-            {displayedPhotos.map((photo, index) => {
-              const isSelected = project.selectedFileNames.includes(photo.name);
-              const isBurst = burstPhotoId === photo.name;
+            {photoColumns.map((colPhotos, colIdx) => (
+              <div
+                key={colIdx}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  minWidth: 0,
+                }}
+              >
+                {colPhotos.map(({ photo, globalIndex }) => {
+                  const isSelected = project.selectedFileNames.includes(photo.name);
+                  const isBurst = burstPhotoId === photo.name;
+                  const thumbUrl =
+                    photo.thumbnailUrl ||
+                    (photo.url?.includes('lh3.googleusercontent.com')
+                      ? photo.url.replace('=w1200', '=w600')
+                      : photo.url);
 
-              return (
-                <div
-                  key={photo.id}
-                  className="no-save-preview"
-                  onClick={() => handlePhotoClick(index, photo.name)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setShowSecurityToast(true);
-                    setTimeout(() => setShowSecurityToast(false), 2800);
-                  }}
-                  style={{
-                    breakInside: 'avoid',
-                    marginBottom: '12px',
-                    position: 'relative',
-                    borderRadius: '16px',
-                    overflow: 'hidden',
-                    backgroundColor: '#E5E5EA',
-                    cursor: 'pointer',
-                    boxShadow: isSelected
-                      ? '0 0 0 3px var(--heart), 0 8px 20px var(--heart-glow)'
-                      : '0 2px 8px rgba(0, 0, 0, 0.04)',
-                    transition: 'all 0.2s var(--ease-spring)',
-                    transform: isSelected ? 'scale(0.985)' : 'scale(1)',
-                  }}
-                >
-                  <img
-                    src={photo.url}
-                    alt={photo.name}
-                    loading="lazy"
-                    draggable={false}
-                    style={{
-                      width: '100%',
-                      display: 'block',
-                      objectFit: 'cover',
-                      pointerEvents: 'none',
-                    }}
-                  />
-
-                  {/* Anti-Download Shield Layer to block mobile long press save */}
-                  <div className="photo-shield-layer" style={{ pointerEvents: 'none' }} />
-
-                  {/* Anti-Screenshot Studio Watermark */}
-                  {project.hasWatermark && (
+                  return (
                     <div
+                      key={photo.id}
+                      className="no-save-preview"
+                      onClick={() => handlePhotoClick(globalIndex)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setShowSecurityToast(true);
+                        setTimeout(() => setShowSecurityToast(false), 2800);
+                      }}
                       style={{
-                        position: 'absolute',
-                        inset: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        pointerEvents: 'none',
-                        zIndex: 3,
+                        position: 'relative',
+                        borderRadius: '16px',
                         overflow: 'hidden',
+                        backgroundColor: '#EAEAEA',
+                        cursor: 'pointer',
+                        boxShadow: isSelected
+                          ? '0 0 0 3px var(--heart), 0 8px 24px var(--heart-glow)'
+                          : '0 2px 10px rgba(0, 0, 0, 0.05)',
+                        transition: 'all 0.18s var(--ease-spring)',
+                        transform: isSelected ? 'scale(0.985)' : 'scale(1)',
+                        contain: 'content',
                       }}
                     >
-                      <div style={{ textAlign: 'center', transform: 'rotate(-25deg)', userSelect: 'none' }}>
-                        <span
+                      <img
+                        src={thumbUrl}
+                        alt={photo.name}
+                        loading="lazy"
+                        decoding="async"
+                        draggable={false}
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (photo.id && !target.src.includes('drive.google.com/thumbnail')) {
+                            target.src = `https://drive.google.com/thumbnail?id=${photo.id}&sz=w600`;
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          height: 'auto',
+                          display: 'block',
+                          objectFit: 'cover',
+                          pointerEvents: 'none',
+                        }}
+                      />
+
+                      {/* Anti-Download Shield Layer to block mobile long press save */}
+                      <div className="photo-shield-layer" style={{ pointerEvents: 'none' }} />
+
+                      {/* Anti-Screenshot Studio Watermark */}
+                      {project.hasWatermark && (
+                        <div
                           style={{
-                            display: 'block',
-                            fontSize: 'clamp(14px, 3.5vw, 20px)',
-                            fontWeight: 800,
-                            letterSpacing: '1.5px',
-                            color: 'rgba(255, 255, 255, 0.48)',
-                            textShadow: '0 1px 5px rgba(0, 0, 0, 0.7)',
-                            textTransform: 'uppercase',
-                            whiteSpace: 'nowrap',
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            pointerEvents: 'none',
+                            zIndex: 3,
+                            overflow: 'hidden',
                           }}
                         >
-                          {activeStudioName}
-                        </span>
-                        <span
+                          <div style={{ textAlign: 'center', transform: 'rotate(-25deg)', userSelect: 'none' }}>
+                            <span
+                              style={{
+                                display: 'block',
+                                fontSize: 'clamp(14px, 3.5vw, 20px)',
+                                fontWeight: 800,
+                                letterSpacing: '1.5px',
+                                color: 'rgba(255, 255, 255, 0.48)',
+                                textShadow: '0 1px 5px rgba(0, 0, 0, 0.7)',
+                                textTransform: 'uppercase',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {activeStudioName}
+                            </span>
+                            <span
+                              style={{
+                                display: 'block',
+                                fontSize: '9px',
+                                fontWeight: 600,
+                                letterSpacing: '0.8px',
+                                color: 'rgba(255, 255, 255, 0.4)',
+                                textShadow: '0 1px 3px rgba(0, 0, 0, 0.7)',
+                                marginTop: '2px',
+                              }}
+                            >
+                              PREVIEW ONLY
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Corner Heart Button (Touch target 44x44px for instant like without opening swipe) */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTogglePhoto(photo.name);
+                        }}
+                        style={{
+                          position: 'absolute',
+                          bottom: '10px',
+                          right: '10px',
+                          width: '44px',
+                          height: '44px',
+                          borderRadius: '50%',
+                          backgroundColor: isSelected ? 'var(--heart)' : 'rgba(255, 255, 255, 0.94)',
+                          color: isSelected ? '#FFFFFF' : 'var(--text-secondary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+                          backdropFilter: 'blur(8px)',
+                          transition: 'all 0.18s var(--ease-spring)',
+                          zIndex: 4,
+                        }}
+                        aria-label={isSelected ? 'Batal pilih' : 'Pilih foto'}
+                      >
+                        <Heart
+                          size={20}
+                          fill={isSelected ? '#FFFFFF' : 'none'}
+                          color={isSelected ? '#FFFFFF' : 'var(--text)'}
+                          className={isSelected ? 'animate-heart-pop' : ''}
+                        />
+                      </button>
+
+                      {/* Big Heart Burst Animation on toggle */}
+                      {isBurst && (
+                        <div
+                          className="animate-heart-burst"
                           style={{
-                            display: 'block',
-                            fontSize: '9px',
-                            fontWeight: 600,
-                            letterSpacing: '0.8px',
-                            color: 'rgba(255, 255, 255, 0.4)',
-                            textShadow: '0 1px 3px rgba(0, 0, 0, 0.7)',
-                            marginTop: '2px',
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            pointerEvents: 'none',
+                            zIndex: 10,
+                            filter: 'drop-shadow(0 6px 18px rgba(255,45,85,0.8))',
                           }}
                         >
-                          PREVIEW ONLY
-                        </span>
-                      </div>
+                          <Heart size={64} fill="var(--heart)" color="var(--heart)" />
+                        </div>
+                      )}
                     </div>
-                  )}
-
-                  {/* Corner Heart Button (44x44px touch target) */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleTogglePhoto(photo.name);
-                    }}
-                    style={{
-                      position: 'absolute',
-                      bottom: '10px',
-                      right: '10px',
-                      width: '44px',
-                      height: '44px',
-                      borderRadius: '50%',
-                      backgroundColor: isSelected ? 'var(--heart)' : 'rgba(255, 255, 255, 0.92)',
-                      color: isSelected ? '#FFFFFF' : 'var(--text-secondary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                      backdropFilter: 'blur(8px)',
-                      transition: 'all 0.18s var(--ease-spring)',
-                      zIndex: 2,
-                    }}
-                    aria-label={isSelected ? 'Batal pilih' : 'Pilih foto'}
-                  >
-                    <Heart
-                      size={20}
-                      fill={isSelected ? '#FFFFFF' : 'none'}
-                      color={isSelected ? '#FFFFFF' : 'var(--text)'}
-                      className={isSelected ? 'animate-heart-pop' : ''}
-                    />
-                  </button>
-
-                  {/* Big Heart Burst in Center on double tap */}
-                  {isBurst && (
-                    <div
-                      className="animate-heart-burst"
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        pointerEvents: 'none',
-                        zIndex: 10,
-                      }}
-                    >
-                      <Heart size={64} fill="var(--heart)" color="var(--heart)" />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            ))}
           </div>
         )}
       </main>
@@ -621,16 +646,17 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
         />
       )}
 
-      {/* Swipe Mode Screen */}
+      {/* Swipe Mode Screen - Auto triggered upon tapping any photo */}
       {isSwipeMode && (
         <ClientSwipeMode
-          photos={project.photos}
+          photos={displayedPhotos}
           selectedFileNames={project.selectedFileNames}
           quota={project.quota}
           onToggleSelect={handleTogglePhoto}
           onClose={() => setIsSwipeMode(false)}
           hasWatermark={project.hasWatermark}
           studioName={activeStudioName}
+          initialIndex={swipeInitialIndex}
         />
       )}
 
