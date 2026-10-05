@@ -12,7 +12,7 @@ import {
   ShieldCheck,
   Zap,
 } from 'lucide-react';
-import { SAMPLE_GRADUATION_PHOTOS } from '../services/sampleData';
+import { SAMPLE_GRADUATION_PHOTOS, SAMPLE_WEDDING_PHOTOS } from '../services/sampleData';
 import type { AuthUser } from '../types';
 
 interface LandingPageProps {
@@ -28,17 +28,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onOpenLogin: _onOpenLogin,
   user,
 }) => {
-  // Mini interactive state for the hero preview card
-  const [previewSelected, setPreviewSelected] = useState<number[]>([0, 2, 4, 6]);
-  const previewPhotos = SAMPLE_GRADUATION_PHOTOS.slice(0, 8);
+  // Mini interactive state for the hero preview card (Wedding & Wisuda)
+  const [mockupCategory, setMockupCategory] = useState<'wedding' | 'wisuda'>('wedding');
+  const [weddingSelected, setWeddingSelected] = useState<number[]>([0, 1, 3, 5]);
+  const [wisudaSelected, setWisudaSelected] = useState<number[]>([0, 2, 4, 6]);
+
+  const currentPhotos = (mockupCategory === 'wedding' ? SAMPLE_WEDDING_PHOTOS : SAMPLE_GRADUATION_PHOTOS).slice(0, 8);
+  const currentSelected = mockupCategory === 'wedding' ? weddingSelected : wisudaSelected;
+  const currentQuota = mockupCategory === 'wedding' ? 50 : 30;
 
   const togglePreviewPhoto = (idx: number) => {
-    if (previewSelected.includes(idx)) {
-      setPreviewSelected(previewSelected.filter((i) => i !== idx));
+    if (mockupCategory === 'wedding') {
+      setWeddingSelected((prev) => (prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]));
     } else {
-      if (previewSelected.length < 8) {
-        setPreviewSelected([...previewSelected, idx]);
-      }
+      setWisudaSelected((prev) => (prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]));
     }
   };
 
@@ -245,37 +248,94 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               style={{
                 padding: '16px 20px',
                 borderBottom: '1px solid var(--border-light)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backgroundColor: 'rgba(255, 255, 255, 0.98)',
               }}
             >
-              <div>
-                <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
-                  BUDI VISUAL STORY
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
+                      BUDI VISUAL STORY
+                    </span>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#34C759', display: 'inline-block' }} />
+                    <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#34C759' }}>Online</span>
+                  </div>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text)', marginTop: '2px', letterSpacing: '-0.3px' }}>
+                    {mockupCategory === 'wedding' ? 'The Wedding of Aditya & Sarah' : 'Wisuda Rani Larasati, S.Ked'}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    {mockupCategory === 'wedding' ? 'Akad & Resepsi • Pilih 50 foto album' : 'Universitas Indonesia • Pilih 30 foto'}
+                  </div>
                 </div>
-                <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text)', marginTop: '2px' }}>
-                  Wisuda Rani & Aditya
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  Pilih hingga 50 foto favorit
+
+                {/* Category Pill Switcher */}
+                <div style={{ display: 'flex', backgroundColor: '#F0F0F2', padding: '3px', borderRadius: '10px', gap: '3px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setMockupCategory('wedding')}
+                    style={{
+                      border: 'none',
+                      padding: '5px 11px',
+                      borderRadius: '8px',
+                      fontSize: '11.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      backgroundColor: mockupCategory === 'wedding' ? '#FFFFFF' : 'transparent',
+                      color: mockupCategory === 'wedding' ? 'var(--text)' : 'var(--text-secondary)',
+                      boxShadow: mockupCategory === 'wedding' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    💍 Wedding
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMockupCategory('wisuda')}
+                    style={{
+                      border: 'none',
+                      padding: '5px 11px',
+                      borderRadius: '8px',
+                      fontSize: '11.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      backgroundColor: mockupCategory === 'wisuda' ? '#FFFFFF' : 'transparent',
+                      color: mockupCategory === 'wisuda' ? 'var(--text)' : 'var(--text-secondary)',
+                      boxShadow: mockupCategory === 'wisuda' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    🎓 Wisuda
+                  </button>
                 </div>
               </div>
 
-              <div
-                style={{
-                  padding: '5px 12px',
-                  borderRadius: '9999px',
-                  backgroundColor: '#FFF0F3',
-                  border: '1px solid #FFE0E6',
-                  color: 'var(--heart)',
-                  fontSize: '12.5px',
-                  fontWeight: 700,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {previewSelected.length + 12} <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>/ 50 Dipilih</span>
+              {/* Progress Bar & Counter */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <div style={{ flex: 1, height: '6px', backgroundColor: '#EBEBF0', borderRadius: '9999px', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${Math.min(100, Math.round(((currentSelected.length + (mockupCategory === 'wedding' ? 14 : 10)) / currentQuota) * 100))}%`,
+                      backgroundColor: 'var(--heart)',
+                      borderRadius: '9999px',
+                      transition: 'width 0.3s ease',
+                    }}
+                  />
+                </div>
+                <div
+                  style={{
+                    padding: '3px 10px',
+                    borderRadius: '9999px',
+                    backgroundColor: '#FFF0F3',
+                    border: '1px solid #FFE0E6',
+                    color: 'var(--heart)',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {currentSelected.length + (mockupCategory === 'wedding' ? 14 : 10)} <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>/ {currentQuota}</span>
+                </div>
               </div>
             </div>
 
@@ -289,62 +349,99 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 backgroundColor: '#FAF9F8',
               }}
             >
-              {previewPhotos.map((photo, idx) => {
-                const isSel = previewSelected.includes(idx);
+              {currentPhotos.map((photo, idx) => {
+                const isSel = currentSelected.includes(idx);
                 return (
                   <div
-                    key={photo.id}
+                    key={`${mockupCategory}-${photo.id}`}
                     onClick={() => togglePreviewPhoto(idx)}
                     style={{
                       position: 'relative',
                       aspectRatio: '1',
-                      borderRadius: '8px',
+                      borderRadius: '10px',
                       overflow: 'hidden',
                       cursor: 'pointer',
-                      outline: isSel ? '2.5px solid var(--heart)' : 'none',
+                      outline: isSel ? '2.5px solid var(--heart)' : '1px solid rgba(0,0,0,0.06)',
                       outlineOffset: '-2.5px',
-                      transition: 'transform 0.15s ease',
+                      transform: isSel ? 'scale(0.97)' : 'scale(1)',
+                      transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: isSel ? '0 4px 12px rgba(255, 45, 85, 0.25)' : '0 1px 3px rgba(0,0,0,0.04)',
                     }}
                   >
                     <img
                       src={photo.url}
                       alt={photo.name}
+                      loading="eager"
                       style={{
                         width: '100%',
                         height: '100%',
                         objectFit: 'cover',
+                        display: 'block',
                       }}
                     />
+
+                    {/* Anti-screenshot Watermark Preview */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      <span
+                        style={{
+                          transform: 'rotate(-25deg)',
+                          fontSize: '8px',
+                          fontWeight: 800,
+                          letterSpacing: '1px',
+                          color: '#FFFFFF',
+                          textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+                          opacity: 0.55,
+                          userSelect: 'none',
+                        }}
+                      >
+                        BUDI VISUAL
+                      </span>
+                    </div>
+
+                    {/* Heart badge when selected */}
                     {isSel && (
                       <div
                         style={{
                           position: 'absolute',
-                          top: '5px',
-                          right: '5px',
-                          width: '20px',
-                          height: '20px',
+                          top: '6px',
+                          right: '6px',
+                          width: '22px',
+                          height: '22px',
                           borderRadius: '50%',
                           backgroundColor: 'var(--heart)',
                           color: '#FFFFFF',
                           display: 'grid',
                           placeItems: 'center',
-                          boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                          animation: 'pulse 0.2s ease-in-out',
                         }}
                       >
-                        <Heart size={11} fill="#FFFFFF" />
+                        <Heart size={12} fill="#FFFFFF" />
                       </div>
                     )}
+
+                    {/* Photo index badge */}
                     <div
                       style={{
                         position: 'absolute',
-                        bottom: '4px',
-                        right: '4px',
-                        padding: '1px 4px',
-                        borderRadius: '4px',
-                        backgroundColor: 'rgba(0, 0, 0, 0.55)',
+                        bottom: '5px',
+                        right: '5px',
+                        padding: '1px 5px',
+                        borderRadius: '5px',
+                        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                        backdropFilter: 'blur(4px)',
                         color: '#FFFFFF',
-                        fontSize: '9px',
-                        fontWeight: 600,
+                        fontSize: '9.5px',
+                        fontWeight: 700,
                       }}
                     >
                       {idx + 1}
@@ -358,22 +455,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div
               style={{
                 padding: '12px 18px',
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backgroundColor: 'rgba(255, 255, 255, 0.98)',
                 borderTop: '1px solid var(--border-light)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
               }}
             >
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                Tap foto untuk coba seleksi
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <Sparkles size={13} color="var(--primary)" /> Tap foto untuk coba pilih
               </span>
               <button
                 onClick={onCreateGallery}
                 className="pill-btn pill-btn-primary"
-                style={{ height: '34px', fontSize: '12.5px', padding: '0 14px' }}
+                style={{ height: '34px', fontSize: '12.5px', padding: '0 16px', gap: '5px' }}
               >
-                Kirim Pilihan <ArrowRight size={13} />
+                Kirim Pilihan WA <ArrowRight size={13} />
               </button>
             </div>
           </div>

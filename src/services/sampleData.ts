@@ -16,20 +16,20 @@ export const SAMPLE_GRADUATION_PHOTOS: Photo[] = [
   {
     id: 'wisuda-01',
     name: 'RANI_WISUDA_001.JPG',
-    url: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1200&auto=format&fit=crop',
+    url: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1200&auto=format&fit=crop',
     aspectRatio: 1.5,
   },
   {
     id: 'wisuda-02',
     name: 'RANI_WISUDA_002.JPG',
-    url: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1200&auto=format&fit=crop',
-    aspectRatio: 0.67,
+    url: 'https://images.unsplash.com/photo-1627556704290-2b1f5853ff78?q=80&w=1200&auto=format&fit=crop',
+    aspectRatio: 0.8,
   },
   {
     id: 'wisuda-03',
     name: 'RANI_WISUDA_003.JPG',
-    url: 'https://images.unsplash.com/photo-1627556704290-2b1f5853ff78?q=80&w=1200&auto=format&fit=crop',
-    aspectRatio: 0.8,
+    url: 'https://images.unsplash.com/photo-1590012314607-cda9d9b699ae?q=80&w=1200&auto=format&fit=crop',
+    aspectRatio: 0.75,
   },
   {
     id: 'wisuda-04',
@@ -40,50 +40,50 @@ export const SAMPLE_GRADUATION_PHOTOS: Photo[] = [
   {
     id: 'wisuda-05',
     name: 'RANI_WISUDA_005.JPG',
-    url: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1200&auto=format&fit=crop',
+    url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=1200&auto=format&fit=crop',
     aspectRatio: 0.75,
   },
   {
     id: 'wisuda-06',
     name: 'RANI_WISUDA_006.JPG',
-    url: 'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?q=80&w=1200&auto=format&fit=crop',
-    aspectRatio: 1.5,
+    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1200&auto=format&fit=crop',
+    aspectRatio: 0.7,
   },
   {
     id: 'wisuda-07',
     name: 'RANI_WISUDA_007.JPG',
-    url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop',
-    aspectRatio: 1.4,
-  },
-  {
-    id: 'wisuda-08',
-    name: 'RANI_WISUDA_008.JPG',
-    url: 'https://images.unsplash.com/photo-1576267423445-b2e0074d68a4?q=80&w=1200&auto=format&fit=crop',
-    aspectRatio: 0.7,
-  },
-  {
-    id: 'wisuda-09',
-    name: 'RANI_WISUDA_009.JPG',
-    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1200&auto=format&fit=crop',
-    aspectRatio: 0.67,
-  },
-  {
-    id: 'wisuda-10',
-    name: 'RANI_WISUDA_010.JPG',
     url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1200&auto=format&fit=crop',
     aspectRatio: 0.8,
   },
   {
-    id: 'wisuda-11',
-    name: 'RANI_WISUDA_011.JPG',
+    id: 'wisuda-08',
+    name: 'RANI_WISUDA_008.JPG',
     url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=1200&auto=format&fit=crop',
     aspectRatio: 0.67,
   },
   {
-    id: 'wisuda-12',
-    name: 'RANI_WISUDA_012.JPG',
+    id: 'wisuda-09',
+    name: 'RANI_WISUDA_009.JPG',
+    url: 'https://images.unsplash.com/photo-1576267423445-b2e0074d68a4?q=80&w=1200&auto=format&fit=crop',
+    aspectRatio: 1.2,
+  },
+  {
+    id: 'wisuda-10',
+    name: 'RANI_WISUDA_010.JPG',
+    url: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1200&auto=format&fit=crop',
+    aspectRatio: 1.5,
+  },
+  {
+    id: 'wisuda-11',
+    name: 'RANI_WISUDA_011.JPG',
     url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=1200&auto=format&fit=crop',
     aspectRatio: 0.75,
+  },
+  {
+    id: 'wisuda-12',
+    name: 'RANI_WISUDA_012.JPG',
+    url: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1200&auto=format&fit=crop',
+    aspectRatio: 1.33,
   }
 ];
 
