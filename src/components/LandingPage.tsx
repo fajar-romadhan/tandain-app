@@ -380,33 +380,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       }}
                     />
 
-                    {/* Anti-screenshot Watermark Preview */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        pointerEvents: 'none',
-                      }}
-                    >
-                      <span
-                        style={{
-                          transform: 'rotate(-25deg)',
-                          fontSize: '8px',
-                          fontWeight: 800,
-                          letterSpacing: '1px',
-                          color: '#FFFFFF',
-                          textShadow: '0 1px 3px rgba(0,0,0,0.6)',
-                          opacity: 0.55,
-                          userSelect: 'none',
-                        }}
-                      >
-                        BUDI VISUAL
-                      </span>
-                    </div>
-
                     {/* Heart badge when selected */}
                     {isSel && (
                       <div
