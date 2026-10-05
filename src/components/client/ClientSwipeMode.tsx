@@ -43,10 +43,10 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
     Math.max(0, Math.min(initialIndex, Math.max(0, photos.length - 1)))
   );
 
-  const [history, setHistory] = useState<{ index: number; wasSelectedBefore: boolean }[]>([]);
+  const [, setHistory] = useState<{ index: number; wasSelectedBefore: boolean }[]>([]);
   const [dragOffset, setDragOffset] = useState<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [exitDirection, setExitDirection] = useState<'right' | 'left' | null>(null);
+  const [exitDirection, setExitDirection] = useState<'right' | 'left' | 'back' | null>(null);
   const [quotaToast, setQuotaToast] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadToast, setDownloadToast] = useState<string | null>(null);
@@ -133,7 +133,14 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
   }, [currentIndex, photos]);
 
   const currentPhoto = photos[currentIndex];
-  const nextPhoto = photos[currentIndex + 1];
+  const bgPhoto =
+    exitDirection === 'back'
+      ? currentIndex > 0
+        ? photos[currentIndex - 1]
+        : null
+      : currentIndex + 1 < photos.length
+      ? photos[currentIndex + 1]
+      : null;
   const isSelected = currentPhoto ? selectedFileNames.includes(currentPhoto.name) : false;
 
   // Trigger swipe action (Choose = right, Skip = left)
@@ -192,25 +199,64 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
     [currentIndex, exitDirection, photos, selectedFileNames, quota, onToggleSelect]
   );
 
-  // Undo last swipe
-  const handleUndo = useCallback(() => {
-    if (exitDirection) return;
-    setHistory((prev) => {
-      if (prev.length === 0) return prev;
-      const last = prev[prev.length - 1];
-      const prevPhoto = photos[last.index];
-      if (prevPhoto) {
-        const currentlySelected = selectedFileNames.includes(prevPhoto.name);
-        if (currentlySelected !== last.wasSelectedBefore) {
-          onToggleSelect(prevPhoto.name);
+  // Navigate to previous photo with smooth swipe-back animation
+  const handlePrevPhoto = useCallback(() => {
+    if (exitDirection || currentIndex <= 0) return;
+
+    setExitDirection('back');
+    setDragOffset(0);
+    dragOffsetRef.current = 0;
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
+    currentPanRef.current = { x: 0, y: 0 };
+
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try { navigator.vibrate(12); } catch {}
+    }
+
+    setTimeout(() => {
+      setHistory((prev) => {
+        if (prev.length > 0) {
+          const last = prev[prev.length - 1];
+          const prevPhoto = photos[last.index];
+          if (prevPhoto) {
+            const currentlySelected = selectedFileNames.includes(prevPhoto.name);
+            if (currentlySelected !== last.wasSelectedBefore) {
+              onToggleSelect(prevPhoto.name);
+            }
+          }
+          setCurrentIndex(last.index);
+          return prev.slice(0, -1);
+        } else {
+          // If history is empty, simply move to previous photo cleanly!
+          setCurrentIndex((curr) => Math.max(0, curr - 1));
+          return prev;
         }
-      }
-      setCurrentIndex(last.index);
-      setDragOffset(0);
-      dragOffsetRef.current = 0;
-      return prev.slice(0, -1);
-    });
-  }, [exitDirection, photos, selectedFileNames, onToggleSelect]);
+      });
+      setExitDirection(null);
+    }, 280);
+  }, [exitDirection, currentIndex, photos, selectedFileNames, onToggleSelect]);
+
+  // Navigate to next photo with smooth forward swipe animation
+  const handleNextPhoto = useCallback(() => {
+    if (exitDirection || currentIndex >= photos.length - 1) return;
+
+    setExitDirection('left');
+    setDragOffset(0);
+    dragOffsetRef.current = 0;
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
+    currentPanRef.current = { x: 0, y: 0 };
+
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try { navigator.vibrate(12); } catch {}
+    }
+
+    setTimeout(() => {
+      setCurrentIndex((curr) => Math.min(photos.length - 1, curr + 1));
+      setExitDirection(null);
+    }, 280);
+  }, [exitDirection, currentIndex, photos.length]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -218,11 +264,11 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
       if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowRight') triggerSwipe(true);
       if (e.key === 'ArrowLeft') triggerSwipe(false);
-      if (e.key === 'Backspace' || e.key.toLowerCase() === 'z') handleUndo();
+      if (e.key === 'Backspace' || e.key.toLowerCase() === 'z') handlePrevPhoto();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [triggerSwipe, handleUndo, onClose]);
+  }, [triggerSwipe, handlePrevPhoto, onClose]);
 
   // Auto-dismiss quota toast
   useEffect(() => {
@@ -542,17 +588,17 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
           overflow: 'hidden',
         }}
       >
-        {/* Navigation Arrows for Laptop / Tablet */}
+        {/* Navigation Arrows for Laptop / Desktop */}
         {currentIndex > 0 && currentPhoto && (
           <button
             type="button"
-            onClick={handleUndo}
+            onClick={handlePrevPhoto}
             style={{
               position: 'absolute',
               left: 'max(12px, calc(50% - 245px))',
               zIndex: 30,
-              width: '42px',
-              height: '42px',
+              width: '44px',
+              height: '44px',
               borderRadius: '50%',
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               border: 'none',
@@ -562,24 +608,25 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
               justifyContent: 'center',
               color: '#1C1C1E',
               cursor: 'pointer',
+              transition: 'transform 0.15s ease, background-color 0.15s ease',
             }}
-            title="Undo / Foto Sebelumnya"
-            aria-label="Undo"
+            title="Foto Sebelumnya"
+            aria-label="Foto Sebelumnya"
           >
-            <ChevronLeft size={22} />
+            <ChevronLeft size={24} />
           </button>
         )}
 
-        {currentIndex < photos.length && currentPhoto && (
+        {currentIndex < photos.length - 1 && currentPhoto && (
           <button
             type="button"
-            onClick={() => triggerSwipe(false)}
+            onClick={handleNextPhoto}
             style={{
               position: 'absolute',
               right: 'max(12px, calc(50% - 245px))',
               zIndex: 30,
-              width: '42px',
-              height: '42px',
+              width: '44px',
+              height: '44px',
               borderRadius: '50%',
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               border: 'none',
@@ -589,16 +636,17 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
               justifyContent: 'center',
               color: '#1C1C1E',
               cursor: 'pointer',
+              transition: 'transform 0.15s ease, background-color 0.15s ease',
             }}
-            title="Lewati Foto Ini"
-            aria-label="Lewati"
+            title="Foto Selanjutnya"
+            aria-label="Foto Selanjutnya"
           >
-            <ChevronRight size={22} />
+            <ChevronRight size={24} />
           </button>
         )}
 
         {/* --- Card 2: Background Card (Smoothly scales up from beneath) --- */}
-        {nextPhoto && (
+        {bgPhoto && (
           <div
             style={{
               width: '100%',
@@ -625,8 +673,8 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
             }}
           >
             <img
-              src={nextPhoto.url || nextPhoto.thumbnailUrl}
-              alt={nextPhoto.name}
+              src={bgPhoto.url || bgPhoto.thumbnailUrl}
+              alt={bgPhoto.name}
               style={{
                 width: '100%',
                 height: '100%',
@@ -673,7 +721,7 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
                   : 'grab',
               willChange: 'transform, opacity',
               transform:
-                exitDirection === 'right'
+                exitDirection === 'right' || exitDirection === 'back'
                   ? 'translate3d(min(580px, 110vw), 30px, 0) rotate(16deg)'
                   : exitDirection === 'left'
                   ? 'translate3d(max(-580px, -110vw), 30px, 0) rotate(-16deg)'
@@ -1061,8 +1109,8 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
 
         {/* Undo Button */}
         <button
-          onClick={handleUndo}
-          disabled={history.length === 0 || !!exitDirection}
+          onClick={handlePrevPhoto}
+          disabled={currentIndex <= 0 || !!exitDirection}
           style={{
             width: '46px',
             height: '46px',
@@ -1072,13 +1120,13 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: history.length === 0 ? 'rgba(255, 255, 255, 0.25)' : '#FFCC00',
-            opacity: history.length === 0 ? 0.35 : 1,
-            cursor: history.length === 0 ? 'not-allowed' : 'pointer',
+            color: currentIndex <= 0 ? 'rgba(255, 255, 255, 0.25)' : '#FFCC00',
+            opacity: currentIndex <= 0 ? 0.35 : 1,
+            cursor: currentIndex <= 0 ? 'not-allowed' : 'pointer',
             transition: 'transform 0.15s ease',
           }}
-          aria-label="Batal aksi terakhir"
-          title="Batal aksi sebelumnya"
+          aria-label="Foto sebelumnya"
+          title="Foto Sebelumnya"
         >
           <RotateCcw size={19} />
         </button>
