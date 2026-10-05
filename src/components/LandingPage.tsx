@@ -17,6 +17,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { SAMPLE_GRADUATION_PHOTOS, SAMPLE_WEDDING_PHOTOS } from '../services/sampleData';
+import { downloadPhotoHd } from '../services/photoDownload';
 import type { AuthUser } from '../types';
 
 interface LandingPageProps {
@@ -42,6 +43,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [carouselHearted, setCarouselHearted] = useState<string[]>(['wed-01', 'wisuda-02', 'wed-05', 'wisuda-07']);
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
   const [demoWatermark, setDemoWatermark] = useState<boolean>(true);
+  const [isDownloadingDemo, setIsDownloadingDemo] = useState<boolean>(false);
 
   // Showcase item list
   const showcaseList = [
@@ -525,37 +527,37 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* 1:1 Aspect Ratio Photo Preview Carousel Showcase */}
+      {/* Interactive Client Gallery Showcase */}
       <section
         style={{
           position: 'relative',
-          padding: '76px 0 54px',
+          padding: '80px 0 60px',
           overflow: 'hidden',
-          backgroundColor: '#0C0C12',
-          color: '#FFFFFF',
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          backgroundColor: '#F8F9FA',
+          color: 'var(--text)',
+          borderTop: '1px solid var(--border-light)',
+          borderBottom: '1px solid var(--border-light)',
         }}
       >
-        {/* Soft Ambient Light Blobs (Pure CSS blur, 60 FPS) */}
+        {/* Soft Ambient Light Glows */}
         <div
           className="ambient-glow-circle"
           style={{
-            top: '-40px',
-            left: '15%',
-            width: '340px',
-            height: '340px',
-            background: 'radial-gradient(circle, rgba(255, 45, 85, 0.18) 0%, transparent 70%)',
+            top: '-50px',
+            left: '20%',
+            width: '400px',
+            height: '400px',
+            background: 'radial-gradient(circle, rgba(255, 45, 85, 0.06) 0%, transparent 70%)',
           }}
         />
         <div
           className="ambient-glow-circle"
           style={{
-            bottom: '-40px',
-            right: '15%',
-            width: '380px',
-            height: '380px',
-            background: 'radial-gradient(circle, rgba(0, 122, 255, 0.14) 0%, transparent 70%)',
+            bottom: '-50px',
+            right: '20%',
+            width: '420px',
+            height: '420px',
+            background: 'radial-gradient(circle, rgba(0, 122, 255, 0.05) 0%, transparent 70%)',
           }}
         />
 
@@ -568,19 +570,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 gap: '8px',
                 padding: '6px 14px',
                 borderRadius: '9999px',
-                backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                color: '#FF7A90',
+                backgroundColor: 'rgba(255, 45, 85, 0.08)',
+                border: '1px solid rgba(255, 45, 85, 0.16)',
+                color: 'var(--heart)',
                 fontSize: '11.5px',
                 fontWeight: 700,
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
                 marginBottom: '14px',
-                backdropFilter: 'blur(8px)',
               }}
             >
               <Sparkles size={13} />
-              <span>Preview 1:1 Aspect Ratio • Estetika Modern</span>
+              <span>Pengalaman Galeri Klien</span>
             </div>
 
             <h2
@@ -590,27 +591,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 letterSpacing: '-0.6px',
                 lineHeight: 1.18,
                 marginBottom: '14px',
+                color: 'var(--text)',
               }}
             >
-              Tampilan Galeri 1:1 yang <span style={{ color: 'var(--heart)' }}>Elegan & Cepat</span>
+              Tampilan Galeri yang <span style={{ color: 'var(--heart)' }}>Elegan & Cepat</span>
             </h2>
 
-            <p style={{ fontSize: '15px', color: 'rgba(255, 255, 255, 0.72)', lineHeight: 1.6 }}>
-              Klien foto fokus pada ekspresi dan kehangatan momen tanpa distraksi visual. Animasi halus 60 FPS, proteksi anti-save, serta tap love interaktif.
+            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '640px', margin: '0 auto' }}>
+              Klien foto menikmati pengalaman kurasi yang menyenangkan langsung dari HP. Cukup tap love ❤️ pada foto favorit, preview layar penuh, dan unduh foto resolusi HD asli.
             </p>
 
-            {/* Category Filter Pills */}
+            {/* Category Filter Pills (iOS Segmented Control) */}
             <div
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '4px',
                 marginTop: '22px',
                 padding: '4px',
                 borderRadius: '9999px',
-                backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                backdropFilter: 'blur(10px)',
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                border: '1px solid rgba(0, 0, 0, 0.06)',
               }}
             >
               <button
@@ -620,9 +621,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   padding: '7px 16px',
                   borderRadius: '9999px',
                   fontSize: '12.5px',
-                  fontWeight: 700,
-                  color: carouselCategory === 'all' ? '#0C0C12' : 'rgba(255,255,255,0.7)',
+                  fontWeight: carouselCategory === 'all' ? 700 : 500,
+                  color: carouselCategory === 'all' ? 'var(--text)' : 'var(--text-secondary)',
                   backgroundColor: carouselCategory === 'all' ? '#FFFFFF' : 'transparent',
+                  boxShadow: carouselCategory === 'all' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                  border: 'none',
+                  cursor: 'pointer',
                   transition: 'all 0.18s ease',
                 }}
               >
@@ -635,9 +639,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   padding: '7px 16px',
                   borderRadius: '9999px',
                   fontSize: '12.5px',
-                  fontWeight: 700,
-                  color: carouselCategory === 'prewedding' ? '#0C0C12' : 'rgba(255,255,255,0.7)',
+                  fontWeight: carouselCategory === 'prewedding' ? 700 : 500,
+                  color: carouselCategory === 'prewedding' ? 'var(--text)' : 'var(--text-secondary)',
                   backgroundColor: carouselCategory === 'prewedding' ? '#FFFFFF' : 'transparent',
+                  boxShadow: carouselCategory === 'prewedding' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                  border: 'none',
+                  cursor: 'pointer',
                   transition: 'all 0.18s ease',
                 }}
               >
@@ -650,9 +657,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   padding: '7px 16px',
                   borderRadius: '9999px',
                   fontSize: '12.5px',
-                  fontWeight: 700,
-                  color: carouselCategory === 'wisuda' ? '#0C0C12' : 'rgba(255,255,255,0.7)',
+                  fontWeight: carouselCategory === 'wisuda' ? 700 : 500,
+                  color: carouselCategory === 'wisuda' ? 'var(--text)' : 'var(--text-secondary)',
                   backgroundColor: carouselCategory === 'wisuda' ? '#FFFFFF' : 'transparent',
+                  boxShadow: carouselCategory === 'wisuda' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                  border: 'none',
+                  cursor: 'pointer',
                   transition: 'all 0.18s ease',
                 }}
               >
@@ -690,64 +700,98 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   {/* Anti-Save Transparent Shield */}
                   <div className="photo-shield-layer" />
 
-                  {/* Watermark Tag */}
+                  {/* Category Pill Tag (Top Left) */}
                   <div
                     style={{
                       position: 'absolute',
                       top: '12px',
                       left: '12px',
                       zIndex: 3,
-                      padding: '3px 8px',
-                      borderRadius: '6px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.55)',
-                      backdropFilter: 'blur(6px)',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      letterSpacing: '0.04em',
-                      textTransform: 'uppercase',
+                      padding: '4px 10px',
+                      borderRadius: '9999px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.45)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      color: '#FFFFFF',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      letterSpacing: '0.02em',
+                      border: '1px solid rgba(255, 255, 255, 0.18)',
                     }}
                   >
                     {item.category === 'prewedding' ? '💍 Prewedding' : '🎓 Wisuda'}
                   </div>
 
-                  {/* Top Right Heart Action */}
+                  {/* Top Right Heart Action Button */}
                   <button
                     type="button"
                     onClick={(e) => toggleCarouselHeart(item.id, e)}
+                    aria-label="Pilih foto"
                     style={{
                       position: 'absolute',
-                      top: '10px',
-                      right: '10px',
+                      top: '12px',
+                      right: '12px',
                       zIndex: 4,
-                      width: '36px',
-                      height: '36px',
+                      width: '38px',
+                      height: '38px',
                       borderRadius: '50%',
-                      backgroundColor: isHearted ? 'var(--heart)' : 'rgba(0, 0, 0, 0.45)',
-                      backdropFilter: 'blur(6px)',
+                      backgroundColor: isHearted ? 'var(--heart)' : 'rgba(0, 0, 0, 0.4)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      border: '1px solid rgba(255, 255, 255, 0.22)',
                       color: '#FFFFFF',
                       display: 'grid',
                       placeItems: 'center',
+                      cursor: 'pointer',
                       transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                       transform: isHearted ? 'scale(1.08)' : 'scale(1)',
                     }}
                   >
-                    <Heart size={16} fill={isHearted ? '#FFFFFF' : 'none'} />
+                    <Heart size={16} fill={isHearted ? '#FFFFFF' : 'none'} color="#FFFFFF" />
                   </button>
 
-                  {/* Bottom Vignette & Metadata */}
-                  <div className="overlay-info" style={{ zIndex: 3 }}>
-                    <div />
+                  {/* Bottom Vignette & Metadata (Strictly Bottom Anchored) */}
+                  <div className="overlay-scrim">
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#FFFFFF', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+                      <div
+                        style={{
+                          fontSize: '13px',
+                          fontWeight: 700,
+                          color: '#FFFFFF',
+                          textShadow: '0 1px 3px rgba(0,0,0,0.7)',
+                          letterSpacing: '-0.2px',
+                        }}
+                      >
                         {item.name}
                       </div>
-                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span>{item.vendor}</span>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'rgba(255,255,255,0.9)' }}>
-                          <Eye size={12} /> Tap preview
-                        </span>
+                      <div
+                        style={{
+                          fontSize: '11px',
+                          color: 'rgba(255, 255, 255, 0.85)',
+                          marginTop: '2px',
+                        }}
+                      >
+                        {item.vendor}
                       </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 9px',
+                        borderRadius: '9999px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.22)',
+                        backdropFilter: 'blur(6px)',
+                        WebkitBackdropFilter: 'blur(6px)',
+                        border: '1px solid rgba(255, 255, 255, 0.22)',
+                        color: '#FFFFFF',
+                        fontSize: '10.5px',
+                        fontWeight: 600,
+                      }}
+                    >
+                      <Eye size={12} /> Preview
                     </div>
                   </div>
                 </div>
@@ -756,9 +800,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
 
-        {/* Caption Hint Under Carousel */}
-        <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '12.5px', color: 'rgba(255, 255, 255, 0.55)', padding: '0 20px', position: 'relative', zIndex: 1 }}>
-          💡 Sentuh atau hover foto untuk jeda • Klik foto untuk simulasi preview layar penuh 1:1
+        {/* Sleek Subtext Under Carousel */}
+        <div
+          style={{
+            textAlign: 'center',
+            marginTop: '20px',
+            fontSize: '13px',
+            color: 'var(--text-tertiary)',
+            padding: '0 20px',
+            position: 'relative',
+            zIndex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+            <Heart size={14} style={{ color: 'var(--heart)' }} fill="var(--heart)" /> Klik love untuk simulasi seleksi foto
+          </span>
+          <span>•</span>
+          <span>Klik foto untuk preview resolusi penuh</span>
         </div>
       </section>
 
@@ -966,9 +1029,42 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               marginTop: '16px',
             }}
           >
-            <span style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)' }}>
-              🔒 Mode preview privasi (anti-download)
-            </span>
+            <button
+              type="button"
+              onClick={async () => {
+                if (activeLightboxIndex !== null && filteredShowcase[activeLightboxIndex]) {
+                  const photo = filteredShowcase[activeLightboxIndex];
+                  setIsDownloadingDemo(true);
+                  try {
+                    await downloadPhotoHd(photo);
+                  } catch (err) {
+                    console.error('Demo HD download failed:', err);
+                  } finally {
+                    setIsDownloadingDemo(false);
+                  }
+                }
+              }}
+              disabled={isDownloadingDemo}
+              style={{
+                height: '42px',
+                padding: '0 16px',
+                borderRadius: '9999px',
+                backgroundColor: 'rgba(255, 255, 255, 0.16)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                color: '#FFFFFF',
+                fontSize: '13px',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                border: '1px solid rgba(255, 255, 255, 0.22)',
+                cursor: isDownloadingDemo ? 'wait' : 'pointer',
+              }}
+            >
+              <Download size={15} />
+              {isDownloadingDemo ? 'Mengunduh...' : 'Unduh HD Asli'}
+            </button>
 
             <button
               type="button"
