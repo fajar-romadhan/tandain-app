@@ -78,6 +78,14 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Dynamic document title for client
+  useEffect(() => {
+    document.title = `Silahkan Tandain yaa! — Galeri ${project.clientName} 📸✨`;
+    return () => {
+      document.title = 'Silahkan Tandain yaa! 📸✨';
+    };
+  }, [project.clientName]);
+
   // Filtered photos
   const displayedPhotos = useMemo(() => {
     let list = project.photos;

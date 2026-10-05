@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Eye,
   ShieldCheck,
+  MessageCircle,
 } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import { FgRawModal } from './FgRawModal';
@@ -43,15 +44,27 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
   const [isLightroomModalOpen, setIsLightroomModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedNames, setCopiedNames] = useState(false);
+  const [copiedWaText, setCopiedWaText] = useState(false);
 
   const selectedPhotos = project.photos.filter((p) => project.selectedFileNames.includes(p.name));
 
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const clientUrl = `${origin}/?p=${project.slug}`;
+
+  const getCasualWaText = () => {
+    return `Haii kak ${project.clientName}! 🎉\nFoto-foto kamu udah siap nih~\n\nSilahkan Tandain foto favoritnya di sini yaa:\n${clientUrl}\n\nTinggal buka linknya, geser & tap ❤️ di foto yang kamu suka, terus kirim balik ke kita. Gampang banget langsung dari HP tanpa perlu download app! ✨\n\nKuota pilihan: *${project.quota} foto* yaa!`;
+  };
+
   const handleCopyClientLink = () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const url = `${origin}/?p=${project.slug}`;
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(clientUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const handleCopyWaText = () => {
+    navigator.clipboard.writeText(getCasualWaText());
+    setCopiedWaText(true);
+    setTimeout(() => setCopiedWaText(false), 2500);
   };
 
   const handleCopyRawFilenames = () => {
@@ -194,12 +207,43 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
             </button>
             <button
               onClick={handleCopyClientLink}
-              className={`pill-btn ${copiedLink ? 'pill-btn-heart' : 'pill-btn-primary'}`}
-              style={{ height: '42px', fontSize: '14px' }}
+              className={`pill-btn ${copiedLink ? 'pill-btn-heart' : 'pill-btn-secondary'}`}
+              style={{ height: '42px', fontSize: '13.5px', gap: '6px' }}
+              title="Salin URL link galeri klien saja"
             >
               {copiedLink ? <Check size={16} /> : <Share2 size={16} />}
-              {copiedLink ? 'Link Tersalin!' : 'Salin Link untuk Klien'}
+              {copiedLink ? 'Link Tersalin!' : 'Salin Link'}
             </button>
+            <button
+              onClick={handleCopyWaText}
+              className={`pill-btn ${copiedWaText ? 'pill-btn-heart' : 'pill-btn-primary'}`}
+              style={{ height: '42px', fontSize: '13.5px', gap: '6px' }}
+              title="Salin format chat WA santai siap kirim ke klien"
+            >
+              {copiedWaText ? <Check size={16} /> : <Copy size={16} />}
+              {copiedWaText ? 'Pesan Tersalin!' : 'Salin Chat WA Santai 💬'}
+            </button>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(getCasualWaText())}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pill-btn"
+              style={{
+                height: '42px',
+                fontSize: '13.5px',
+                padding: '0 14px',
+                gap: '6px',
+                backgroundColor: '#25D366',
+                color: '#FFFFFF',
+                boxShadow: '0 2px 8px rgba(37, 211, 102, 0.25)',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+              }}
+              title="Buka WhatsApp langsung dengan teks santai terisi"
+            >
+              <MessageCircle size={16} /> Buka WA
+            </a>
           </div>
         </div>
 

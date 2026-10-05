@@ -5,9 +5,18 @@ export const DEFAULT_STUDIO: StudioProfile = {
   whatsapp: '6281234567890',
   logoUrl: '',
   accentColor: '#1D1D1F',
-  waTemplate: `Halo kak {client_name}! Pilihan foto kamu sudah masuk di Tandain.
-Total: {total_selected} dari {quota} foto.
-Status: Siap diproses untuk tahap editing RAW! ✨`,
+  waTemplate: `Haii kak {client_name}! 🎉
+Foto-foto kamu udah siap buat dipilih nih~
+
+Yuk langsung *Tandain* foto favoritnya di sini:
+{gallery_link}
+
+Tinggal buka linknya, tap ❤️ di foto yang kamu suka, terus kirim pilihan ke kita. Gampang banget, ga perlu install app apa-apa ✨
+
+Jatah pilihan kamu: *{quota} foto* ya kak
+Deadline: {expires_date}
+
+Kalau ada yang mau ditanyain, langsung chat sini aja! 😊`,
   supabaseUrl: 'https://iwkxcppbhxdkiuborexk.supabase.co',
   supabaseAnonKey: 'sb_publishable_gIFstRxDA5Et-svM70T9Tg_jAAtNp95',
 };

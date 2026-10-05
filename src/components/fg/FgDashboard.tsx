@@ -10,6 +10,7 @@ import {
   ExternalLink,
   LogIn,
   LogOut,
+  MessageCircle,
 } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import { FgNewProjectModal } from './FgNewProjectModal';
@@ -365,6 +366,20 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
                           {copiedId === project.id ? <Check size={14} /> : <Share2 size={14} />}
                           {copiedId === project.id ? 'Tersalin' : 'Salin Link'}
                         </button>
+
+                        <a
+                          href={`https://wa.me/?text=${encodeURIComponent(
+                            `Haii kak ${project.clientName}! 🎉\nFoto-foto kamu udah siap nih~\n\nSilahkan Tandain foto favoritnya di sini yaa:\n${typeof window !== 'undefined' ? window.location.origin : ''}/?p=${project.slug}\n\nTinggal buka linknya, geser & tap ❤️ di foto yang kamu suka, terus kirim balik ke kita. Gampang banget langsung dari HP tanpa perlu download app! ✨\n\nKuota pilihan: *${project.quota} foto* yaa!`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="pill-btn pill-btn-secondary"
+                          style={{ height: '36px', width: '36px', padding: 0, color: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          title="Buka WhatsApp dengan teks santai terisi"
+                        >
+                          <MessageCircle size={16} />
+                        </a>
 
                         <button
                           onClick={() => onOpenClientView(project.slug)}

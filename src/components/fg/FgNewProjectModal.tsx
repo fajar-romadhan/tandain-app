@@ -54,6 +54,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
   const [localPhotos, setLocalPhotos] = useState<Photo[]>([]);
   const [createdProject, setCreatedProject] = useState<Project | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedWaText, setCopiedWaText] = useState(false);
   const detectTimeoutRef = useRef<any>(null);
 
   useEffect(() => {
@@ -69,6 +70,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
   const handleModalClose = () => {
     setCreatedProject(null);
     setCopiedLink(false);
+    setCopiedWaText(false);
     setErrorMsg('');
     onClose();
   };
@@ -243,11 +245,24 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const clientUrl = createdProject ? `${origin}/?p=${createdProject.slug}` : '';
 
+  const getCasualWaText = () => {
+    if (!createdProject) return '';
+    return `Haii kak ${createdProject.clientName}! 🎉\nFoto-foto kamu udah siap nih~\n\nSilahkan Tandain foto favoritnya di sini yaa:\n${clientUrl}\n\nTinggal buka linknya, geser & tap ❤️ di foto yang kamu suka, terus kirim balik ke kita. Gampang banget langsung dari HP tanpa perlu download app! ✨\n\nKuota pilihan: *${createdProject.quota} foto* yaa!`;
+  };
+
   const handleCopyLink = () => {
     if (!clientUrl) return;
     navigator.clipboard.writeText(clientUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const handleCopyWaText = () => {
+    const text = getCasualWaText();
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedWaText(true);
+    setTimeout(() => setCopiedWaText(false), 2500);
   };
 
   const handleOpenPreview = () => {
@@ -329,6 +344,40 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
                 {copiedLink ? <Check size={14} color="#2E7D32" /> : <Copy size={14} />}
                 {copiedLink ? 'Tersalin!' : 'Salin'}
               </button>
+            </div>
+
+            {/* Direct WhatsApp Share & Copy Casual Chat */}
+            <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={handleCopyWaText}
+                className={`pill-btn ${copiedWaText ? 'pill-btn-heart' : 'pill-btn-primary'}`}
+                style={{ height: '38px', fontSize: '12.5px', padding: '0 12px', gap: '6px', flex: 1 }}
+                title="Salin format chat WA santai siap kirim ke klien"
+              >
+                {copiedWaText ? <Check size={14} /> : <Copy size={14} />}
+                {copiedWaText ? 'Chat Santai Tersalin!' : 'Salin Chat WA Santai 💬'}
+              </button>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(getCasualWaText())}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pill-btn"
+                style={{
+                  height: '38px',
+                  fontSize: '12.5px',
+                  padding: '0 14px',
+                  gap: '6px',
+                  backgroundColor: '#25D366',
+                  color: '#FFFFFF',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                }}
+                title="Buka WhatsApp langsung dengan teks santai terisi"
+              >
+                <MessageCircle size={15} /> Buka WA
+              </a>
             </div>
           </div>
 
