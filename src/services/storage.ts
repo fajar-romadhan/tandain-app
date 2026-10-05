@@ -163,6 +163,7 @@ export const studioFromProject = (project: Project): StudioProfile => ({
   studioName: project.studioName || 'Studio Foto',
   whatsapp: project.studioWhatsapp || '',
   waTemplate: project.waTemplate || DEFAULT_STUDIO.waTemplate,
+  accentColor: project.accentColor || DEFAULT_STUDIO.accentColor,
 });
 
 /** Remove legacy global keys from the pre-login era so old demo data can't leak in. */

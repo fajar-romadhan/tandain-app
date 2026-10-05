@@ -44,6 +44,7 @@ export const ClientReviewModal: React.FC<ClientReviewModalProps> = ({
 
   const targetWhatsapp = (project.studioWhatsapp || studio.whatsapp || '').replace(/[^0-9]/g, '');
   const targetStudioName = project.studioName || studio.studioName || 'Fotografer';
+  const studioAccent = project.accentColor || studio.accentColor || '#1D1D1F';
 
   const generateWaMessage = () => {
     const defaultMsg = `Halo ${targetStudioName}! Saya ${project.clientName} sudah selesai memilih ${selectedFileNames.length} foto di Tandain.
@@ -177,8 +178,17 @@ Mohon segera diproses ya kak. Terima kasih! ✨`;
             </button>
             <button
               onClick={handleConfirmSubmit}
-              className="pill-btn pill-btn-heart"
-              style={{ flex: 1.5, fontSize: '15px' }}
+              className="pill-btn"
+              style={{
+                flex: 1.5,
+                fontSize: '15px',
+                height: '46px',
+                backgroundColor: studioAccent,
+                color: '#FFFFFF',
+                boxShadow: `0 6px 20px ${studioAccent}55`,
+                fontWeight: 700,
+                transition: 'all 0.2s ease',
+              }}
             >
               Gas Kirim Pilihan 🚀
             </button>

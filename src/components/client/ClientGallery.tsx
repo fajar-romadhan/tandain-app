@@ -54,6 +54,7 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
   const deviceId = getDeviceId();
   const isCurrentDeviceSelector = !project.activeSelectorDeviceId || project.activeSelectorDeviceId === deviceId;
   const activeStudioName = project.studioName || studio.studioName || 'Studio Fotografi';
+  const studioAccent = project.accentColor || studio.accentColor || '#1D1D1F';
 
   const handleDownloadPhoto = async (photo: Photo) => {
     if (!photo || downloadingId) return;
@@ -274,8 +275,16 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
 
             <button
               onClick={() => setIsSwipeMode(true)}
-              className="pill-btn pill-btn-secondary"
-              style={{ height: '38px', fontSize: '13px', gap: '6px' }}
+              className="pill-btn"
+              style={{
+                height: '38px',
+                fontSize: '13px',
+                gap: '6px',
+                backgroundColor: studioAccent !== '#1D1D1F' ? `${studioAccent}12` : 'var(--surface-secondary)',
+                color: studioAccent !== '#1D1D1F' ? studioAccent : 'var(--text)',
+                border: `1px solid ${studioAccent !== '#1D1D1F' ? `${studioAccent}40` : 'var(--border)'}`,
+                fontWeight: 600,
+              }}
             >
               <Layers size={16} /> Mode Swipe
             </button>
@@ -665,7 +674,7 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
                 style={{
                   width: `${progressPercent}%`,
                   height: '100%',
-                  backgroundColor: 'var(--heart)',
+                  backgroundColor: studioAccent,
                   transition: 'width 0.25s var(--ease-spring)',
                 }}
               />
@@ -685,11 +694,17 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
             <button
               onClick={() => setIsReviewOpen(true)}
               disabled={project.selectedFileNames.length === 0}
-              className="pill-btn pill-btn-primary"
+              className="pill-btn"
               style={{
                 height: '44px',
+                backgroundColor: studioAccent,
+                color: '#FFFFFF',
+                boxShadow: `0 4px 16px ${studioAccent}50`,
                 opacity: project.selectedFileNames.length === 0 ? 0.45 : 1,
                 cursor: project.selectedFileNames.length === 0 ? 'not-allowed' : 'pointer',
+                fontWeight: 700,
+                gap: '8px',
+                transition: 'all 0.2s ease',
               }}
             >
               Cek & Kirim <ArrowRight size={16} />

@@ -228,6 +228,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
         clientName: clientName.trim(),
         studioWhatsapp: finalWa,
         studioName: studioName.trim(),
+        accentColor: studio?.accentColor,
         sessionDate: sessionDate || undefined,
         driveFolderUrl: driveUrl.trim(),
         driveFolderId: folderId,

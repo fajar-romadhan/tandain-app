@@ -43,6 +43,7 @@ export interface Project {
   studioName?: string;
   studioWhatsapp?: string;
   waTemplate?: string;
+  accentColor?: string;
 }
 
 export interface StudioProfile {

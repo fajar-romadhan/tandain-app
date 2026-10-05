@@ -135,6 +135,50 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
               </button>
             ))}
           </div>
+
+          {/* Live Button Preview */}
+          <div
+            style={{
+              marginTop: '14px',
+              padding: '12px 16px',
+              borderRadius: '14px',
+              backgroundColor: 'var(--surface-sunken)',
+              border: '1px solid var(--border-light)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div>
+              <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>
+                Preview Tombol Aksi di Galeri Klien:
+              </p>
+              <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
+                Warna ini akan menghiasi tombol "Cek & Kirim" dan progress bar klien.
+              </span>
+            </div>
+            <div
+              style={{
+                height: '36px',
+                padding: '0 16px',
+                borderRadius: '9999px',
+                backgroundColor: accentColor,
+                color: '#FFFFFF',
+                fontSize: '12px',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: `0 4px 14px ${accentColor}50`,
+                transition: 'all 0.2s ease',
+                userSelect: 'none',
+              }}
+            >
+              Cek & Kirim Pilihan ➔
+            </div>
+          </div>
         </div>
 
         {/* Custom Message Template */}

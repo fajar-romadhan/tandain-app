@@ -363,6 +363,7 @@ export function App() {
       studioName: finalStudioName,
       studioWhatsapp: finalWa,
       waTemplate: newProject.waTemplate || studio.waTemplate,
+      accentColor: newProject.accentColor || studio.accentColor,
     };
     commitProjects([stamped, ...projects]);
     setActiveProjectId(stamped.id);
@@ -403,14 +404,28 @@ export function App() {
     setStudio(updated);
     saveCachedStudio(ownerId, updated);
     // Keep the client-facing branding snapshot on every project in sync
-    commitProjects(
-      projects.map((p) => ({
-        ...p,
-        studioName: updated.studioName,
-        studioWhatsapp: updated.whatsapp,
-        waTemplate: updated.waTemplate,
-      }))
-    );
+    const nextProjects = projects.map((p) => ({
+      ...p,
+      studioName: updated.studioName,
+      studioWhatsapp: updated.whatsapp,
+      waTemplate: updated.waTemplate,
+      accentColor: updated.accentColor,
+    }));
+    commitProjects(nextProjects);
+
+    if (clientProject) {
+      setClientProject((prev) =>
+        prev
+          ? {
+              ...prev,
+              studioName: updated.studioName,
+              studioWhatsapp: updated.whatsapp,
+              waTemplate: updated.waTemplate,
+              accentColor: updated.accentColor,
+            }
+          : prev
+      );
+    }
     saveStudioProfileToCloud(ownerId, updated).then((ok) => reportSync(ok, 'menyimpan profil studio'));
   };
 
