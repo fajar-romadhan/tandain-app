@@ -152,7 +152,7 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '16px 20px',
+          padding: 'max(14px, env(safe-area-inset-top)) 16px 10px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -435,7 +435,7 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
           alignItems: 'center',
           justifyContent: 'center',
           gap: '20px',
-          padding: '16px 20px',
+          padding: '12px 20px max(20px, env(safe-area-inset-bottom))',
         }}
       >
         <button

@@ -209,7 +209,7 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
                     backgroundColor: 'var(--surface)',
                     border: '1px solid var(--border)',
                     outline: 'none',
-                    fontSize: '14px',
+                    fontSize: '16px',
                   }}
                 />
               </div>

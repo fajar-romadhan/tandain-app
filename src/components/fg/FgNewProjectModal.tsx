@@ -405,7 +405,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
                   border: '1px solid var(--border)',
                   backgroundColor: 'var(--bg)',
                   outline: 'none',
-                  fontSize: '14px',
+                  fontSize: '16px',
                 }}
               />
               {typeof navigator !== 'undefined' && 'clipboard' in navigator && (
@@ -576,7 +576,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
                 border: '1px solid var(--border)',
                 backgroundColor: 'var(--bg)',
                 outline: 'none',
-                fontSize: '14px',
+                fontSize: '16px',
               }}
             />
           </div>
@@ -618,7 +618,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
                   border: '1px solid var(--border)',
                   backgroundColor: 'var(--bg)',
                   outline: 'none',
-                  fontSize: '14px',
+                  fontSize: '16px',
                 }}
               />
             </div>
@@ -664,7 +664,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
                   border: '1px solid var(--border)',
                   backgroundColor: 'var(--bg)',
                   outline: 'none',
-                  fontSize: '14px',
+                  fontSize: '16px',
                 }}
               />
             </div>
@@ -775,7 +775,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
                           borderRadius: '10px',
                           border: '1px solid var(--border)',
                           backgroundColor: 'var(--bg)',
-                          fontSize: '14px',
+                          fontSize: '16px',
                           fontWeight: 700,
                         }}
                       />

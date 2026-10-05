@@ -135,11 +135,12 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
     >
       {/* Top Header Bar */}
       <div
+        className="safe-top"
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '16px 20px',
+          padding: 'max(14px, env(safe-area-inset-top)) 20px 14px',
           color: '#FFFFFF',
           zIndex: 10,
           background: 'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)',
@@ -377,7 +378,7 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '16px 20px',
+          padding: '12px 20px max(18px, env(safe-area-inset-bottom))',
           zIndex: 10,
           background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)',
           gap: '8px',

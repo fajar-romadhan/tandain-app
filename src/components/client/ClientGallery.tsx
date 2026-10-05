@@ -291,7 +291,7 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
                 backgroundColor: 'var(--bg)',
                 border: '1px solid var(--border)',
                 outline: 'none',
-                fontSize: '14px',
+                fontSize: '16px',
               }}
             />
           </div>
@@ -353,7 +353,7 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
       </header>
 
       {/* Main Photo Gallery Grid */}
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
+      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px 16px calc(110px + env(safe-area-inset-bottom))' }}>
         {displayedPhotos.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
             <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
@@ -551,7 +551,7 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
         className="safe-bottom"
         style={{
           position: 'fixed',
-          bottom: '16px',
+          bottom: 'max(16px, calc(env(safe-area-inset-bottom) + 8px))',
           left: '50%',
           transform: 'translateX(-50%)',
           width: 'calc(100% - 32px)',
