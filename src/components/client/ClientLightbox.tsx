@@ -29,12 +29,33 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
   const isSelected = selectedFileNames.includes(currentPhoto.name);
   const [isZoomed, setIsZoomed] = useState(false);
   const [showHeartBurst, setShowHeartBurst] = useState(false);
+  const [showSecurityToast, setShowSecurityToast] = useState(false);
   const lastTapRef = useRef<number>(0);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Keyboard navigation
+  // Keyboard navigation & screenshot/download prevention
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent Save Page / Image
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        setShowSecurityToast(true);
+        setTimeout(() => setShowSecurityToast(false), 2800);
+        return;
+      }
+      // Prevent Print / PDF
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        setShowSecurityToast(true);
+        setTimeout(() => setShowSecurityToast(false), 2800);
+        return;
+      }
+      // Detect PrintScreen
+      if (e.key === 'PrintScreen') {
+        setShowSecurityToast(true);
+        setTimeout(() => setShowSecurityToast(false), 2800);
+      }
+
       if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowLeft') {
         if (currentIndex > 0) onNavigate(currentIndex - 1);
@@ -170,8 +191,39 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
         </button>
       </div>
 
+      {/* Security Warning Toast */}
+      {showSecurityToast && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '72px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'rgba(20, 20, 22, 0.94)',
+            color: '#FFFFFF',
+            padding: '10px 20px',
+            borderRadius: '9999px',
+            fontSize: '13px',
+            fontWeight: 600,
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
+            zIndex: 100,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          🔒 Mode Preview: Unduhan & tangkapan layar dinonaktifkan untuk privasi vendor.
+        </div>
+      )}
+
       {/* Main Image Container */}
       <div
+        className="no-save-preview"
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setShowSecurityToast(true);
+          setTimeout(() => setShowSecurityToast(false), 2800);
+        }}
         style={{
           flex: 1,
           display: 'flex',
@@ -198,7 +250,10 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
           draggable={false}
         />
 
-        {/* Optional Watermark */}
+        {/* Transparent Shield Layer to block mobile long-press */}
+        <div className="photo-shield-layer" style={{ pointerEvents: 'none' }} />
+
+        {/* Optional Watermark for Anti-Theft Protection */}
         {hasWatermark && (
           <div
             style={{
@@ -208,21 +263,38 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               pointerEvents: 'none',
+              zIndex: 3,
             }}
           >
-            <span
-              style={{
-                fontSize: 'clamp(28px, 6vw, 56px)',
-                fontWeight: 800,
-                color: 'rgba(255, 255, 255, 0.22)',
-                transform: 'rotate(-25deg)',
-                letterSpacing: '6px',
-                textTransform: 'uppercase',
-                userSelect: 'none',
-              }}
-            >
-              {studioName || 'PREVIEW ONLY'}
-            </span>
+            <div style={{ textAlign: 'center', transform: 'rotate(-25deg)', userSelect: 'none' }}>
+              <span
+                style={{
+                  display: 'block',
+                  fontSize: 'clamp(28px, 6vw, 56px)',
+                  fontWeight: 900,
+                  color: 'rgba(255, 255, 255, 0.28)',
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.6)',
+                  letterSpacing: '5px',
+                  textTransform: 'uppercase',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {studioName || 'PREVIEW ONLY'}
+              </span>
+              <span
+                style={{
+                  display: 'block',
+                  fontSize: 'clamp(11px, 2vw, 15px)',
+                  fontWeight: 700,
+                  letterSpacing: '2px',
+                  color: 'rgba(255, 255, 255, 0.22)',
+                  textShadow: '0 1px 4px rgba(0, 0, 0, 0.6)',
+                  marginTop: '4px',
+                }}
+              >
+                HAK CIPTA DILINDUNGI • BUKAN UNTUK DIUNDUH
+              </span>
+            </div>
           </div>
         )}
 

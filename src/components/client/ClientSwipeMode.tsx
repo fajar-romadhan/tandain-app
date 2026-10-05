@@ -8,6 +8,8 @@ interface ClientSwipeModeProps {
   quota: number;
   onToggleSelect: (filename: string) => void;
   onClose: () => void;
+  hasWatermark?: boolean;
+  studioName?: string;
 }
 
 export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
@@ -16,6 +18,8 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
   quota,
   onToggleSelect,
   onClose,
+  hasWatermark = false,
+  studioName,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [history, setHistory] = useState<{ index: number; wasSelectedBefore: boolean }[]>([]);
@@ -147,7 +151,8 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
       >
         {currentPhoto ? (
           <div
-            className="card-ios"
+            className="card-ios no-save-preview"
+            onContextMenu={(e) => e.preventDefault()}
             style={{
               width: '100%',
               maxWidth: '380px',
@@ -172,6 +177,55 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
               }}
               draggable={false}
             />
+
+            {/* Anti-Download Shield Layer */}
+            <div className="photo-shield-layer" style={{ pointerEvents: 'none' }} />
+
+            {/* Anti-Screenshot Studio Watermark */}
+            {hasWatermark && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none',
+                  zIndex: 3,
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{ textAlign: 'center', transform: 'rotate(-25deg)', userSelect: 'none' }}>
+                  <span
+                    style={{
+                      display: 'block',
+                      fontSize: 'clamp(20px, 5vw, 32px)',
+                      fontWeight: 800,
+                      letterSpacing: '2px',
+                      color: 'rgba(255, 255, 255, 0.45)',
+                      textShadow: '0 1px 6px rgba(0, 0, 0, 0.7)',
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {studioName || 'PREVIEW ONLY'}
+                  </span>
+                  <span
+                    style={{
+                      display: 'block',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      letterSpacing: '1px',
+                      color: 'rgba(255, 255, 255, 0.4)',
+                      textShadow: '0 1px 4px rgba(0, 0, 0, 0.7)',
+                      marginTop: '2px',
+                    }}
+                  >
+                    PREVIEW ONLY • JAGA PRIVASI VENDOR
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Gradient Overlay for Title */}
             <div

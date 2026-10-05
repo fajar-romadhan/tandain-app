@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Heart,
   Search,
@@ -7,6 +7,7 @@ import {
   Lock,
   ArrowRight,
   ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 import { ClientLightbox } from './ClientLightbox';
 import { ClientSwipeMode } from './ClientSwipeMode';
@@ -43,9 +44,38 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
   const [isSwipeMode, setIsSwipeMode] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [burstPhotoId, setBurstPhotoId] = useState<string | null>(null);
+  const [showSecurityToast, setShowSecurityToast] = useState(false);
 
   const deviceId = getDeviceId();
   const isCurrentDeviceSelector = !project.activeSelectorDeviceId || project.activeSelectorDeviceId === deviceId;
+  const activeStudioName = project.studioName || studio.studioName || 'Studio Fotografi';
+
+  // Anti-Save & Anti-Screenshot Keyboard Protection
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent Save Page / Image
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        setShowSecurityToast(true);
+        setTimeout(() => setShowSecurityToast(false), 2800);
+        return;
+      }
+      // Prevent Print to PDF
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        setShowSecurityToast(true);
+        setTimeout(() => setShowSecurityToast(false), 2800);
+        return;
+      }
+      // Detect PrintScreen
+      if (e.key === 'PrintScreen') {
+        setShowSecurityToast(true);
+        setTimeout(() => setShowSecurityToast(false), 2800);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Filtered photos
   const displayedPhotos = useMemo(() => {
@@ -172,11 +202,26 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
         >
           {/* Studio & Project Info */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                {studio.studioName}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                {activeStudioName}
               </p>
               <StatusBadge status={project.status} />
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: '#2E7D32',
+                  backgroundColor: '#E8F5E9',
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <ShieldCheck size={12} /> Mode Preview Terlindungi
+              </span>
             </div>
             <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)' }}>
               {project.clientName}
@@ -335,7 +380,13 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
               return (
                 <div
                   key={photo.id}
+                  className="no-save-preview"
                   onClick={() => handlePhotoClick(index, photo.name)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setShowSecurityToast(true);
+                    setTimeout(() => setShowSecurityToast(false), 2800);
+                  }}
                   style={{
                     breakInside: 'avoid',
                     marginBottom: '12px',
@@ -355,12 +406,17 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
                     src={photo.url}
                     alt={photo.name}
                     loading="lazy"
+                    draggable={false}
                     style={{
                       width: '100%',
                       display: 'block',
                       objectFit: 'cover',
+                      pointerEvents: 'none',
                     }}
                   />
+
+                  {/* Anti-Download Shield Layer to block mobile long press save */}
+                  <div className="photo-shield-layer" style={{ pointerEvents: 'none' }} />
 
                   {/* Anti-Screenshot Studio Watermark */}
                   {project.hasWatermark && (
@@ -372,25 +428,39 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
                         alignItems: 'center',
                         justifyContent: 'center',
                         pointerEvents: 'none',
-                        zIndex: 1,
+                        zIndex: 3,
                         overflow: 'hidden',
                       }}
                     >
-                      <span
-                        style={{
-                          transform: 'rotate(-25deg)',
-                          fontSize: '13.5px',
-                          fontWeight: 800,
-                          letterSpacing: '1.5px',
-                          color: 'rgba(255, 255, 255, 0.45)',
-                          textShadow: '0 1px 4px rgba(0, 0, 0, 0.6)',
-                          textTransform: 'uppercase',
-                          userSelect: 'none',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {studio.studioName || 'PREVIEW TANDAIN'}
-                      </span>
+                      <div style={{ textAlign: 'center', transform: 'rotate(-25deg)', userSelect: 'none' }}>
+                        <span
+                          style={{
+                            display: 'block',
+                            fontSize: 'clamp(14px, 3.5vw, 20px)',
+                            fontWeight: 800,
+                            letterSpacing: '1.5px',
+                            color: 'rgba(255, 255, 255, 0.48)',
+                            textShadow: '0 1px 5px rgba(0, 0, 0, 0.7)',
+                            textTransform: 'uppercase',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {activeStudioName}
+                        </span>
+                        <span
+                          style={{
+                            display: 'block',
+                            fontSize: '9px',
+                            fontWeight: 600,
+                            letterSpacing: '0.8px',
+                            color: 'rgba(255, 255, 255, 0.4)',
+                            textShadow: '0 1px 3px rgba(0, 0, 0, 0.7)',
+                            marginTop: '2px',
+                          }}
+                        >
+                          PREVIEW ONLY
+                        </span>
+                      </div>
                     </div>
                   )}
 
@@ -547,7 +617,7 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
           onToggleSelect={handleTogglePhoto}
           onNavigate={(newIdx) => setLightboxIndex(newIdx)}
           hasWatermark={project.hasWatermark}
-          studioName={studio.studioName}
+          studioName={activeStudioName}
         />
       )}
 
@@ -559,7 +629,38 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
           quota={project.quota}
           onToggleSelect={handleTogglePhoto}
           onClose={() => setIsSwipeMode(false)}
+          hasWatermark={project.hasWatermark}
+          studioName={activeStudioName}
         />
+      )}
+
+      {/* Anti-Save / Screenshot Warning Toast */}
+      {showSecurityToast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '90px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'rgba(20, 20, 22, 0.94)',
+            color: '#FFFFFF',
+            padding: '12px 22px',
+            borderRadius: '9999px',
+            fontSize: '13.5px',
+            fontWeight: 600,
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)',
+            zIndex: 3000,
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <ShieldAlert size={18} color="#FFD60A" />
+          <span>Foto dilindungi hak cipta {activeStudioName}. Fitur unduh dinonaktifkan.</span>
+        </div>
       )}
 
       {/* Review Modal */}

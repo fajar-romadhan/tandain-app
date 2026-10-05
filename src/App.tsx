@@ -225,23 +225,25 @@ export function App() {
   const handleCreateProject = (newProject: Project) => {
     if (!ownerId) return;
     const finalWa = newProject.studioWhatsapp || studio.whatsapp;
+    const finalStudioName = newProject.studioName || studio.studioName;
     const stamped: Project = {
       ...newProject,
       ownerId,
-      studioName: newProject.studioName || studio.studioName,
+      studioName: finalStudioName,
       studioWhatsapp: finalWa,
       waTemplate: newProject.waTemplate || studio.waTemplate,
     };
     commitProjects([stamped, ...projects]);
     setActiveProjectId(stamped.id);
     setCurrentView('project_detail');
-    setIsCreateModalOpen(false);
+    // Note: Do not force setIsCreateModalOpen(false) here so the user sees the Success Screen with Preview Button!
     saveProjectToCloud(stamped, ownerId).then((ok) => reportSync(ok, 'menyimpan galeri'));
 
-    if (finalWa && finalWa !== studio.whatsapp) {
+    if ((finalWa && finalWa !== studio.whatsapp) || (finalStudioName && finalStudioName !== studio.studioName)) {
       handleUpdateStudio({
         ...studio,
         whatsapp: finalWa,
+        studioName: finalStudioName,
       });
     }
   };

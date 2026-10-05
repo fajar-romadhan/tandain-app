@@ -1,5 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, ChevronUp, PlusCircle, FolderOpen, Loader2, CheckCircle2, MessageCircle } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronUp,
+  PlusCircle,
+  FolderOpen,
+  Loader2,
+  CheckCircle2,
+  MessageCircle,
+  Camera,
+  Copy,
+  Check,
+  Eye,
+  ShieldCheck,
+} from 'lucide-react';
 import { Modal } from '../Modal';
 import {
   extractDriveFolderId,
@@ -25,6 +38,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
 }) => {
   const [driveUrl, setDriveUrl] = useState('');
   const [clientName, setClientName] = useState('');
+  const [studioName, setStudioName] = useState(studio?.studioName || '');
   const [whatsapp, setWhatsapp] = useState(studio?.whatsapp || '');
   const [quota, setQuota] = useState<number>(50);
   const [sessionDate, setSessionDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -38,13 +52,26 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
   const [detectedInfo, setDetectedInfo] = useState<SmartDriveFolderInfo | null>(null);
   const [selectedSubfolderId, setSelectedSubfolderId] = useState<string>('');
   const [localPhotos, setLocalPhotos] = useState<Photo[]>([]);
+  const [createdProject, setCreatedProject] = useState<Project | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
   const detectTimeoutRef = useRef<any>(null);
 
   useEffect(() => {
     if (studio?.whatsapp && !whatsapp) {
       setWhatsapp(studio.whatsapp);
     }
-  }, [studio?.whatsapp]);
+    if (studio?.studioName && !studioName) {
+      setStudioName(studio.studioName);
+    }
+  }, [studio?.whatsapp, studio?.studioName]);
+
+  // Reset modal state when closed
+  const handleModalClose = () => {
+    setCreatedProject(null);
+    setCopiedLink(false);
+    setErrorMsg('');
+    onClose();
+  };
 
   const triggerDetect = async (url: string, subId?: string) => {
     const fId = extractDriveFolderId(url);
@@ -128,6 +155,10 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
       setErrorMsg('Nama klien tidak boleh kosong.');
       return;
     }
+    if (!studioName.trim()) {
+      setErrorMsg('Nama Studio / Brand Fotografer wajib diisi untuk watermark & identitas.');
+      return;
+    }
     if (!whatsapp.trim()) {
       setErrorMsg('Nomor WhatsApp wajib diisi agar klien bisa mengirim hasil foto ke Anda.');
       return;
@@ -182,7 +213,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
         slug,
         clientName: clientName.trim(),
         studioWhatsapp: finalWa,
-        studioName: studio?.studioName || undefined,
+        studioName: studioName.trim(),
         sessionDate: sessionDate || undefined,
         driveFolderUrl: driveUrl.trim(),
         driveFolderId: folderId,
@@ -200,7 +231,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
       };
 
       onProjectCreated(newProject);
-      onClose();
+      setCreatedProject(newProject);
     } catch (err: any) {
       setErrorMsg('Terjadi kesalahan saat memproses galeri: ' + err.message);
     } finally {
@@ -208,401 +239,609 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
     }
   };
 
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const clientUrl = createdProject ? `${origin}/?p=${createdProject.slug}` : '';
+
+  const handleCopyLink = () => {
+    if (!clientUrl) return;
+    navigator.clipboard.writeText(clientUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const handleOpenPreview = () => {
+    if (!clientUrl) return;
+    window.open(clientUrl, '_blank');
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Buat Project Foto Baru" maxWidth="520px">
-      <form onSubmit={handleCreate}>
-        {/* Drive URL */}
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-            Link Folder Google Drive (JPG)*
-          </label>
-          <div style={{ position: 'relative' }}>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleModalClose}
+      title={createdProject ? 'Project Berhasil Dibuat!' : 'Buat Project Foto Baru'}
+      maxWidth="540px"
+    >
+      {createdProject ? (
+        /* ==========================================================
+           SUCCESS STATE: CLIENT LINK & DIRECT PREVIEW BUTTON
+           ========================================================== */
+        <div style={{ textAlign: 'center', padding: '10px 4px 6px' }}>
+          <div
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              backgroundColor: '#E8F5E9',
+              color: '#2E7D32',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px',
+            }}
+          >
+            <CheckCircle2 size={36} />
+          </div>
+
+          <h3 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '6px' }}>
+            Galeri Siap Dibagikan & Dipilih!
+          </h3>
+          <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+            Project <b>{createdProject.clientName}</b> oleh <b>{createdProject.studioName}</b> ({createdProject.photos.length} foto) telah berhasil disiapkan dengan proteksi anti-download & privasi.
+          </p>
+
+          {/* Client Link Box */}
+          <div
+            style={{
+              padding: '12px 14px',
+              borderRadius: '14px',
+              backgroundColor: 'var(--surface-subtle, #F9F9FB)',
+              border: '1px solid var(--border)',
+              marginBottom: '20px',
+              textAlign: 'left',
+            }}
+          >
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: '6px' }}>
+              Link Khusus Klien (Pilih Foto):
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="text"
+                readOnly
+                value={clientUrl}
+                style={{
+                  flex: 1,
+                  height: '38px',
+                  padding: '0 10px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border)',
+                  backgroundColor: '#FFFFFF',
+                  fontSize: '13px',
+                  color: 'var(--text)',
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="pill-btn pill-btn-secondary"
+                style={{ height: '38px', fontSize: '12.5px', padding: '0 14px', gap: '6px' }}
+              >
+                {copiedLink ? <Check size={14} color="#2E7D32" /> : <Copy size={14} />}
+                {copiedLink ? 'Tersalin!' : 'Salin'}
+              </button>
+            </div>
+          </div>
+
+          {/* Privacy & Protection Reminder */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 14px',
+              borderRadius: '10px',
+              backgroundColor: 'rgba(0, 0, 0, 0.03)',
+              fontSize: '12px',
+              color: 'var(--text-secondary)',
+              marginBottom: '22px',
+              textAlign: 'left',
+            }}
+          >
+            <ShieldCheck size={18} color="#2E7D32" style={{ flexShrink: 0 }} />
+            <span>
+              <b>Privasi Vendor Terlindungi:</b> Unduh langsung dinonaktifkan di sisi klien. {createdProject.hasWatermark ? `Watermark "${createdProject.studioName}" aktif melintang pada preview foto.` : 'Watermark nonaktif.'}
+            </span>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={handleOpenPreview}
+              className="pill-btn pill-btn-primary"
+              style={{
+                width: '100%',
+                height: '48px',
+                fontSize: '15.5px',
+                fontWeight: 700,
+                gap: '8px',
+                backgroundColor: 'var(--accent)',
+              }}
+            >
+              <Eye size={18} /> 👁️ Buka Preview Galeri Klien (Tab Baru)
+            </button>
+
+            <button
+              type="button"
+              onClick={handleModalClose}
+              className="pill-btn pill-btn-secondary"
+              style={{ width: '100%', height: '44px', fontSize: '14px' }}
+            >
+              Selesai & Masuk ke Manajemen Project
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* ==========================================================
+           FORM STATE: CREATE NEW PROJECT
+           ========================================================== */
+        <form onSubmit={handleCreate}>
+          {/* Drive URL */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
+              Link Folder Google Drive (JPG)*
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                required
+                value={driveUrl}
+                onChange={(e) => handleDriveUrlChange(e.target.value)}
+                placeholder="https://drive.google.com/drive/folders/..."
+                style={{
+                  width: '100%',
+                  height: '46px',
+                  padding: '0 80px 0 14px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--bg)',
+                  outline: 'none',
+                  fontSize: '14px',
+                }}
+              />
+              {typeof navigator !== 'undefined' && 'clipboard' in navigator && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const text = await navigator.clipboard.readText();
+                      if (text) {
+                        handleDriveUrlChange(text);
+                      }
+                    } catch {
+                      // Ignore clipboard permission errors
+                    }
+                  }}
+                  className="pill-btn pill-btn-ghost"
+                  style={{
+                    position: 'absolute',
+                    right: '8px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    height: '30px',
+                    fontSize: '11.5px',
+                    padding: '0 10px',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--bg-secondary, #F0F0F2)',
+                  }}
+                >
+                  Tempel
+                </button>
+              )}
+            </div>
+
+            {/* Smart detection indicator */}
+            {isDetecting && (
+              <div
+                style={{
+                  marginTop: '8px',
+                  padding: '8px 12px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '12.5px',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
+                <span>Mendeteksi & membaca foto Google Drive otomatis...</span>
+              </div>
+            )}
+
+            {detectedInfo && !isDetecting && (
+              <div
+                style={{
+                  marginTop: '8px',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  backgroundColor: '#E8F5E9',
+                  border: '1px solid #C8E6C9',
+                  fontSize: '12.5px',
+                  color: '#1B5E20',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <CheckCircle2 size={16} color="#2E7D32" />
+                    {detectedInfo.photos.length} Foto Siap ({detectedInfo.folderTitle || 'Google Drive'})
+                  </span>
+                  {detectedInfo.subfolders.length > 1 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '11.5px', color: '#2E7D32' }}>Subfolder:</span>
+                      <select
+                        value={selectedSubfolderId}
+                        onChange={(e) => {
+                          setSelectedSubfolderId(e.target.value);
+                          triggerDetect(driveUrl, e.target.value);
+                        }}
+                        style={{
+                          padding: '3px 8px',
+                          fontSize: '11.5px',
+                          fontWeight: 600,
+                          borderRadius: '6px',
+                          border: '1px solid #A5D6A7',
+                          backgroundColor: '#FFFFFF',
+                          color: '#1B5E20',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {detectedInfo.subfolders.map((sub) => (
+                          <option key={sub.id} value={sub.id}>
+                            📁 {sub.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+                {detectedInfo.photos.length > 0 && (
+                  <p style={{ margin: '4px 0 0 22px', fontSize: '11px', color: '#388E3C' }}>
+                    File: {detectedInfo.photos.slice(0, 3).map((p) => p.name).join(', ')}
+                    {detectedInfo.photos.length > 3 ? `, +${detectedInfo.photos.length - 3} lainnya` : ''}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '6px' }}>
+              Pastikan akses folder Google Drive disetel ke "Siapa saja yang memiliki link".
+            </p>
+          </div>
+
+          {/* Local Folder Scan Option (Zero Upload, 100% Accurate Filenames) */}
+          <div
+            style={{
+              padding: '12px 14px',
+              borderRadius: '12px',
+              backgroundColor: localPhotos.length > 0 ? '#E8F5E9' : '#F5F5F7',
+              border: localPhotos.length > 0 ? '1px solid #C8E6C9' : '1px solid var(--border-light)',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+            }}
+          >
+            <div style={{ fontSize: '12.5px' }}>
+              {localPhotos.length > 0 ? (
+                <span style={{ color: '#2E7D32', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CheckCircle2 size={16} /> {localPhotos.length} foto lokal terdeteksi
+                </span>
+              ) : (
+                <span style={{ color: 'var(--text-secondary)' }}>
+                  Scan nama file JPG langsung dari folder laptop (opsional)
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleScanLocalFolder}
+              className="pill-btn pill-btn-ghost"
+              style={{ height: '32px', fontSize: '12px', padding: '0 12px', gap: '6px', whiteSpace: 'nowrap' }}
+            >
+              <FolderOpen size={14} /> {localPhotos.length > 0 ? 'Ganti Folder' : 'Pilih Folder'}
+            </button>
+          </div>
+
+          {/* Client Name */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
+              Nama Klien / Acara*
+            </label>
             <input
               type="text"
               required
-              value={driveUrl}
-              onChange={(e) => handleDriveUrlChange(e.target.value)}
-              placeholder="https://drive.google.com/drive/folders/..."
-              style={{
-                width: '100%',
-                height: '46px',
-                padding: '0 80px 0 14px',
-                borderRadius: '12px',
-                border: '1px solid var(--border)',
-                backgroundColor: 'var(--bg)',
-                outline: 'none',
-                fontSize: '14px',
-              }}
-            />
-            {typeof navigator !== 'undefined' && 'clipboard' in navigator && (
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    const text = await navigator.clipboard.readText();
-                    if (text) {
-                      handleDriveUrlChange(text);
-                    }
-                  } catch {
-                    // Ignore clipboard permission errors
-                  }
-                }}
-                className="pill-btn pill-btn-ghost"
-                style={{
-                  position: 'absolute',
-                  right: '8px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  height: '30px',
-                  fontSize: '11.5px',
-                  padding: '0 10px',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--bg-secondary, #F0F0F2)',
-                }}
-              >
-                Tempel
-              </button>
-            )}
-          </div>
-
-          {/* Smart detection indicator */}
-          {isDetecting && (
-            <div
-              style={{
-                marginTop: '8px',
-                padding: '8px 12px',
-                borderRadius: '10px',
-                backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '12.5px',
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
-              <span>Mendeteksi & membaca foto Google Drive otomatis...</span>
-            </div>
-          )}
-
-          {detectedInfo && !isDetecting && (
-            <div
-              style={{
-                marginTop: '8px',
-                padding: '10px 14px',
-                borderRadius: '10px',
-                backgroundColor: '#E8F5E9',
-                border: '1px solid #C8E6C9',
-                fontSize: '12.5px',
-                color: '#1B5E20',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <CheckCircle2 size={16} color="#2E7D32" />
-                  {detectedInfo.photos.length} Foto Siap ({detectedInfo.folderTitle || 'Google Drive'})
-                </span>
-                {detectedInfo.subfolders.length > 1 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '11.5px', color: '#2E7D32' }}>Subfolder:</span>
-                    <select
-                      value={selectedSubfolderId}
-                      onChange={(e) => {
-                        setSelectedSubfolderId(e.target.value);
-                        triggerDetect(driveUrl, e.target.value);
-                      }}
-                      style={{
-                        padding: '3px 8px',
-                        fontSize: '11.5px',
-                        fontWeight: 600,
-                        borderRadius: '6px',
-                        border: '1px solid #A5D6A7',
-                        backgroundColor: '#FFFFFF',
-                        color: '#1B5E20',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {detectedInfo.subfolders.map((sub) => (
-                        <option key={sub.id} value={sub.id}>
-                          📁 {sub.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-              {detectedInfo.photos.length > 0 && (
-                <p style={{ margin: '4px 0 0 22px', fontSize: '11px', color: '#388E3C' }}>
-                  File: {detectedInfo.photos.slice(0, 3).map((p) => p.name).join(', ')}
-                  {detectedInfo.photos.length > 3 ? `, +${detectedInfo.photos.length - 3} lainnya` : ''}
-                </p>
-              )}
-            </div>
-          )}
-
-          <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '6px' }}>
-            Pastikan akses folder Google Drive disetel ke "Siapa saja yang memiliki link".
-          </p>
-        </div>
-
-        {/* Local Folder Scan Option (Zero Upload, 100% Accurate Filenames) */}
-        <div
-          style={{
-            padding: '12px 14px',
-            borderRadius: '12px',
-            backgroundColor: localPhotos.length > 0 ? '#E8F5E9' : '#F5F5F7',
-            border: localPhotos.length > 0 ? '1px solid #C8E6C9' : '1px solid var(--border-light)',
-            marginBottom: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-          }}
-        >
-          <div style={{ fontSize: '12.5px' }}>
-            {localPhotos.length > 0 ? (
-              <span style={{ color: '#2E7D32', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <CheckCircle2 size={16} /> {localPhotos.length} foto lokal terdeteksi
-              </span>
-            ) : (
-              <span style={{ color: 'var(--text-secondary)' }}>
-                Scan nama file JPG langsung dari folder laptop (opsional)
-              </span>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={handleScanLocalFolder}
-            className="pill-btn pill-btn-ghost"
-            style={{ height: '32px', fontSize: '12px', padding: '0 12px', gap: '6px', whiteSpace: 'nowrap' }}
-          >
-            <FolderOpen size={14} /> {localPhotos.length > 0 ? 'Ganti Folder' : 'Pilih Folder'}
-          </button>
-        </div>
-
-        {/* Client Name */}
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-            Nama Klien / Acara*
-          </label>
-          <input
-            type="text"
-            required
-            value={clientName}
-            onChange={(e) => {
-              setClientName(e.target.value);
-              setErrorMsg('');
-            }}
-            placeholder="Misal: Wisuda Rani & Aditya / Wedding Sarah"
-            style={{
-              width: '100%',
-              height: '46px',
-              padding: '0 14px',
-              borderRadius: '12px',
-              border: '1px solid var(--border)',
-              backgroundColor: 'var(--bg)',
-              outline: 'none',
-              fontSize: '14px',
-            }}
-          />
-        </div>
-
-        {/* Photographer WhatsApp for Client Confirmation */}
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-            Nomor WhatsApp Anda / Studio (Tujuan Konfirmasi Klien)*
-          </label>
-          <div style={{ position: 'relative' }}>
-            <div
-              style={{
-                position: 'absolute',
-                left: '14px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#25D366',
-                display: 'flex',
-                alignItems: 'center',
-                pointerEvents: 'none',
-              }}
-            >
-              <MessageCircle size={18} />
-            </div>
-            <input
-              type="tel"
-              required
-              value={whatsapp}
+              value={clientName}
               onChange={(e) => {
-                setWhatsapp(e.target.value);
+                setClientName(e.target.value);
                 setErrorMsg('');
               }}
-              placeholder="Misal: 081234567890 atau 6281234567890"
+              placeholder="Misal: Wisuda Rani & Aditya / Wedding Sarah"
               style={{
                 width: '100%',
-                height: '46px',
-                padding: '0 14px 0 42px',
-                borderRadius: '12px',
-                border: '1px solid var(--border)',
-                backgroundColor: 'var(--bg)',
-                outline: 'none',
-                fontSize: '14px',
-              }}
-            />
-          </div>
-          <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-            Setelah klien selesai memilih foto di link mereka, hasil pilihan akan dikirim langsung ke WhatsApp ini.
-          </p>
-        </div>
-
-        {/* Quota */}
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-            Batas Maksimal Foto yang Boleh Dipilih (Kuota)*
-          </label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <input
-              type="number"
-              min={1}
-              max={1000}
-              required
-              value={quota}
-              onChange={(e) => setQuota(Number(e.target.value))}
-              style={{
-                width: '120px',
                 height: '46px',
                 padding: '0 14px',
                 borderRadius: '12px',
                 border: '1px solid var(--border)',
                 backgroundColor: 'var(--bg)',
                 outline: 'none',
-                fontSize: '16px',
-                fontWeight: 700,
+                fontSize: '14px',
               }}
             />
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Foto</span>
           </div>
-        </div>
 
-        {/* Advanced Accordion */}
-        <div style={{ marginBottom: '24px', borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
-          <button
-            type="button"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer',
-              color: 'var(--text-secondary)',
-              fontSize: '13px',
-              fontWeight: 600,
-            }}
-          >
-            <span>Pengaturan Lanjutan (Tanggal, PIN, Watermark)</span>
-            {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-
-          {showAdvanced && (
-            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Date */}
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
-                  Tanggal Sesi Foto
-                </label>
-                <input
-                  type="date"
-                  value={sessionDate}
-                  onChange={(e) => setSessionDate(e.target.value)}
-                  style={{
-                    height: '40px',
-                    padding: '0 12px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'var(--bg)',
-                    fontSize: '13px',
-                  }}
-                />
+          {/* Photographer / Vendor Studio Name for Watermark & Branding */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
+              Nama Studio / Vendor Fotografer Anda*
+            </label>
+            <div style={{ position: 'relative' }}>
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '14px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  pointerEvents: 'none',
+                }}
+              >
+                <Camera size={18} />
               </div>
+              <input
+                type="text"
+                required
+                value={studioName}
+                onChange={(e) => {
+                  setStudioName(e.target.value);
+                  setErrorMsg('');
+                }}
+                placeholder="Misal: Budi Visual / Reka Art Photography"
+                style={{
+                  width: '100%',
+                  height: '46px',
+                  padding: '0 14px 0 42px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--bg)',
+                  outline: 'none',
+                  fontSize: '14px',
+                }}
+              />
+            </div>
+            <p style={{ fontSize: '11.5px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+              Nama ini akan ditampilkan sebagai identitas vendor dan teks watermark di foto preview klien.
+            </p>
+          </div>
 
-              {/* PIN Toggle */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                <input
-                  type="checkbox"
-                  id="pinToggle"
-                  checked={pinEnabled}
-                  onChange={(e) => setPinEnabled(e.target.checked)}
-                  style={{ width: '18px', height: '18px', marginTop: '2px', cursor: 'pointer' }}
-                />
-                <div style={{ flex: 1 }}>
-                  <label htmlFor="pinToggle" style={{ fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
-                    Kunci Galeri dengan PIN
+          {/* Photographer WhatsApp for Client Confirmation */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
+              Nomor WhatsApp Anda / Studio (Tujuan Konfirmasi Klien)*
+            </label>
+            <div style={{ position: 'relative' }}>
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '14px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#25D366',
+                  display: 'flex',
+                  alignItems: 'center',
+                  pointerEvents: 'none',
+                }}
+              >
+                <MessageCircle size={18} />
+              </div>
+              <input
+                type="tel"
+                required
+                value={whatsapp}
+                onChange={(e) => {
+                  setWhatsapp(e.target.value);
+                  setErrorMsg('');
+                }}
+                placeholder="Misal: 081234567890 atau 6281234567890"
+                style={{
+                  width: '100%',
+                  height: '46px',
+                  padding: '0 14px 0 42px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--bg)',
+                  outline: 'none',
+                  fontSize: '14px',
+                }}
+              />
+            </div>
+            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+              Setelah klien selesai memilih foto di link mereka, hasil pilihan akan dikirim langsung ke WhatsApp ini.
+            </p>
+          </div>
+
+          {/* Quota */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
+              Batas Maksimal Foto yang Boleh Dipilih (Kuota)*
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <input
+                type="number"
+                min={1}
+                max={1000}
+                required
+                value={quota}
+                onChange={(e) => setQuota(Number(e.target.value))}
+                style={{
+                  width: '120px',
+                  height: '46px',
+                  padding: '0 14px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--bg)',
+                  outline: 'none',
+                  fontSize: '16px',
+                  fontWeight: 700,
+                }}
+              />
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Foto</span>
+            </div>
+          </div>
+
+          {/* Advanced Accordion */}
+          <div style={{ marginBottom: '24px', borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                color: 'var(--text-secondary)',
+                fontSize: '13px',
+                fontWeight: 600,
+              }}
+            >
+              <span>Pengaturan Lanjutan (Tanggal, PIN, Watermark)</span>
+              {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+
+            {showAdvanced && (
+              <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* Date */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
+                    Tanggal Sesi Foto
                   </label>
-                  {pinEnabled && (
+                  <input
+                    type="date"
+                    value={sessionDate}
+                    onChange={(e) => setSessionDate(e.target.value)}
+                    style={{
+                      height: '40px',
+                      padding: '0 12px',
+                      borderRadius: '10px',
+                      border: '1px solid var(--border)',
+                      backgroundColor: 'var(--bg)',
+                      fontSize: '13px',
+                    }}
+                  />
+                </div>
+
+                {/* PIN Toggle */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <input
+                    type="checkbox"
+                    id="pinToggle"
+                    checked={pinEnabled}
+                    onChange={(e) => setPinEnabled(e.target.checked)}
+                    style={{ width: '18px', height: '18px', marginTop: '2px', cursor: 'pointer' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <label htmlFor="pinToggle" style={{ fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                      Kunci Galeri dengan PIN
+                    </label>
+                    {pinEnabled && (
+                      <input
+                        type="text"
+                        maxLength={8}
+                        placeholder="Ketik PIN (misal 2026)"
+                        value={pinValue}
+                        onChange={(e) => setPinValue(e.target.value)}
+                        style={{
+                          marginTop: '8px',
+                          width: '180px',
+                          height: '38px',
+                          padding: '0 12px',
+                          borderRadius: '10px',
+                          border: '1px solid var(--border)',
+                          backgroundColor: 'var(--bg)',
+                          fontSize: '14px',
+                          fontWeight: 700,
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Watermark Toggle */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <input
-                      type="text"
-                      maxLength={8}
-                      placeholder="Ketik PIN (misal 2026)"
-                      value={pinValue}
-                      onChange={(e) => setPinValue(e.target.value)}
-                      style={{
-                        marginTop: '8px',
-                        width: '180px',
-                        height: '38px',
-                        padding: '0 12px',
-                        borderRadius: '10px',
-                        border: '1px solid var(--border)',
-                        backgroundColor: 'var(--bg)',
-                        fontSize: '14px',
-                        fontWeight: 700,
-                      }}
+                      type="checkbox"
+                      id="wmToggle"
+                      checked={watermarkEnabled}
+                      onChange={(e) => setWatermarkEnabled(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                     />
+                    <label htmlFor="wmToggle" style={{ fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                      Pasang Watermark Nama Studio di Preview Foto
+                    </label>
+                  </div>
+                  {watermarkEnabled && (
+                    <div
+                      style={{
+                        marginLeft: '28px',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                        fontSize: '12px',
+                        color: 'var(--text-secondary)',
+                        borderLeft: '3px solid var(--accent)',
+                      }}
+                    >
+                      Teks Watermark: <b>{studioName.trim() || '(Isi Nama Studio di atas)'}</b>
+                    </div>
                   )}
                 </div>
               </div>
+            )}
+          </div>
 
-              {/* Watermark Toggle */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input
-                  type="checkbox"
-                  id="wmToggle"
-                  checked={watermarkEnabled}
-                  onChange={(e) => setWatermarkEnabled(e.target.checked)}
-                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                />
-                <label htmlFor="wmToggle" style={{ fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
-                  Pasang Watermark Nama Studio di Preview Foto
-                </label>
-              </div>
-            </div>
+          {errorMsg && (
+            <p style={{ color: 'var(--heart)', fontSize: '13px', fontWeight: 500, marginBottom: '16px' }}>
+              {errorMsg}
+            </p>
           )}
-        </div>
 
-        {errorMsg && (
-          <p style={{ color: 'var(--heart)', fontSize: '13px', fontWeight: 500, marginBottom: '16px' }}>
-            {errorMsg}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="pill-btn pill-btn-primary"
-          style={{ width: '100%', height: '48px', fontSize: '16px', gap: '8px' }}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 size={18} className="animate-spin" /> Memproses Galeri...
-            </>
-          ) : (
-            <>
-              <PlusCircle size={18} /> Buat Project & Dapatkan Link
-            </>
-          )}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="pill-btn pill-btn-primary"
+            style={{ width: '100%', height: '48px', fontSize: '16px', gap: '8px' }}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 size={18} className="animate-spin" /> Memproses Galeri...
+              </>
+            ) : (
+              <>
+                <PlusCircle size={18} /> Buat Project & Dapatkan Link
+              </>
+            )}
+          </button>
+        </form>
+      )}
     </Modal>
   );
 };
+

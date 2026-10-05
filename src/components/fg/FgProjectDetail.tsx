@@ -13,6 +13,7 @@ import {
   Share2,
   Trash2,
   RefreshCw,
+  Eye,
 } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import { FgRawModal } from './FgRawModal';
@@ -102,10 +103,10 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             onClick={() => onOpenClientView(project.slug)}
-            className="pill-btn pill-btn-secondary"
-            style={{ height: '38px', fontSize: '13px' }}
+            className="pill-btn pill-btn-primary"
+            style={{ height: '38px', fontSize: '13px', gap: '6px' }}
           >
-            <ExternalLink size={15} /> Buka Galeri Klien
+            <Eye size={15} /> 👁️ Preview Galeri Klien
           </button>
           <button
             onClick={() => {
@@ -150,8 +151,15 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
             </p>
           </div>
 
-          {/* Quick Copy Link */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Quick Copy Link & Direct Preview Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => onOpenClientView(project.slug)}
+              className="pill-btn pill-btn-secondary"
+              style={{ height: '42px', fontSize: '13.5px', gap: '6px' }}
+            >
+              <Eye size={16} /> 👁️ Preview Klien
+            </button>
             <button
               onClick={handleCopyClientLink}
               className={`pill-btn ${copiedLink ? 'pill-btn-heart' : 'pill-btn-primary'}`}
