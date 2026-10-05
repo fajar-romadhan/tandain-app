@@ -4,7 +4,6 @@ import {
   Copy,
   Check,
   HardDrive,
-  Sliders,
   FileText,
   ExternalLink,
   Unlock,
@@ -18,8 +17,7 @@ import {
 } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import { FgRawModal } from './FgRawModal';
-import { FgLightroomModal } from './FgLightroomModal';
-import { formatAsTxtList, downloadBlobFile } from '../../services/lightroom';
+import { formatAsTxtList, downloadBlobFile } from '../../services/exportList';
 import { downloadPhotoHd } from '../../services/photoDownload';
 import type { Project, StudioProfile } from '../../types';
 
@@ -41,7 +39,6 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
   onDeleteProject,
 }) => {
   const [isRawModalOpen, setIsRawModalOpen] = useState(false);
-  const [isLightroomModalOpen, setIsLightroomModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedNames, setCopiedNames] = useState(false);
   const [copiedWaText, setCopiedWaText] = useState(false);
@@ -265,15 +262,6 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
             <HardDrive size={15} /> Ambil RAW dari Laptop
           </button>
 
-          {/* Salin untuk Lightroom */}
-          <button
-            onClick={() => setIsLightroomModalOpen(true)}
-            className="pill-btn pill-btn-secondary"
-            style={{ height: '40px', fontSize: '13px' }}
-          >
-            <Sliders size={15} /> Salin untuk Lightroom
-          </button>
-
           {/* Salin Nama File */}
           <button
             onClick={handleCopyRawFilenames}
@@ -423,13 +411,6 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
         onClose={() => setIsRawModalOpen(false)}
         selectedFileNames={project.selectedFileNames}
         clientName={project.clientName}
-      />
-
-      {/* Lightroom Filter Modal */}
-      <FgLightroomModal
-        isOpen={isLightroomModalOpen}
-        onClose={() => setIsLightroomModalOpen(false)}
-        selectedFileNames={project.selectedFileNames}
       />
     </div>
   );

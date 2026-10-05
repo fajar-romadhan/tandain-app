@@ -540,7 +540,7 @@ export const FgRawModal: React.FC<FgRawModalProps> = ({
               File <b>RAW_Pilihan_{(clientName || 'Klien').replace(/[^a-zA-Z0-9_-]/g, '_')}</b> sudah tersimpan di folder <b>Downloads</b> kamu.
             </p>
             <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '24px' }}>
-              Kamu bisa langsung buka di Lightroom / Capture One / Folder ✨
+              Kamu bisa langsung buka dan edit di folder master laptopmu ✨
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button

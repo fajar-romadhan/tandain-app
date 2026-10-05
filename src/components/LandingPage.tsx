@@ -6,7 +6,7 @@ import {
   Check,
   PlusCircle,
   HardDrive,
-  Sliders,
+  Download,
   Sparkles,
   MessageSquare,
   ShieldCheck,
@@ -205,7 +205,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 maxWidth: '520px',
               }}
             >
-              Buat galeri dari folder Google Drive, bagikan linknya, dan biarkan klien memilih sendiri di HP. Hasil pilihannya langsung siap diproses — auto-salin file RAW di laptop atau impor ke Lightroom.
+              Buat galeri dari folder Google Drive, bagikan linknya, dan biarkan klien memilih sendiri di HP. Hasil pilihannya langsung siap diproses — auto-salin file RAW di laptop atau unduh foto HD.
             </p>
 
             {/* Actions */}
@@ -1124,7 +1124,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               Workflow kurasi foto yang seharusnya.
             </h2>
             <p style={{ fontSize: '15px', color: 'var(--text-secondary)', marginTop: '12px', lineHeight: 1.6 }}>
-              Dibuat khusus untuk fotografer. Membuat galeri cepat, klien senang memilihnya, dan hasil seleksi langsung siap masuk Lightroom atau folder RAW.
+              Dibuat khusus untuk fotografer. Membuat galeri cepat, klien senang memilihnya, dan hasil seleksi langsung siap masuk folder RAW di laptopmu.
             </p>
           </div>
 
@@ -1157,14 +1157,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </p>
             </div>
 
-            {/* Card 3 */}
+            {/* Card 3: Unduh Foto HD Asli (Google Drive) */}
             <div className="card-ios" style={{ padding: '28px' }}>
               <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(0, 122, 255, 0.08)', display: 'grid', placeItems: 'center', color: '#007AFF', marginBottom: '18px' }}>
-                <Sliders size={22} />
+                <Download size={22} />
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Langsung ke Adobe Lightroom</h3>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Unduh Foto HD Asli</h3>
               <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                Salin format kode filter filename dalam 1 klik, lalu tempel di Library Filter Lightroom Classic untuk menyaring foto pilihan klien secara instan.
+                Klien dan fotografer dapat mengunduh foto pilihan dalam resolusi penuh HD asli Google Drive (2–5 MB per foto) langsung dari HP maupun laptop.
               </p>
             </div>
 

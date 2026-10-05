@@ -763,7 +763,7 @@ export const FgAuthModal: React.FC<FgAuthModalProps> = ({ isOpen, onClose, onSuc
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Laptop size={14} color="var(--primary)" />
-            <span>Semua fitur (Drive Matcher, RAW Copy, Lightroom) terbuka 100%</span>
+            <span>Semua fitur (Drive Matcher, RAW Copy, Unduh HD) terbuka 100%</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Smartphone size={14} color="#34C759" />
