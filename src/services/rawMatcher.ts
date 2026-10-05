@@ -1,9 +1,10 @@
+import JSZip from 'jszip';
 import type { MatchingResult } from '../types';
 
 export const RAW_EXTENSIONS = [
   'cr2', 'cr3', 'crw', 'nef', 'nrw', 'arw', 'srf', 'sr2', 'raf', 'orf',
   'rw2', 'pef', 'dng', 'srw', 'x3f', '3fr', 'fff', 'iiq', 'mos', 'rwl',
-  'erf', 'kdc', 'dcr', 'mrw', 'mef'
+  'erf', 'kdc', 'dcr', 'mrw', 'mef',
 ];
 
 export const isFileSystemAccessSupported = (): boolean => {
@@ -22,143 +23,69 @@ export interface CopyProgress {
   total: number;
   currentFileName: string;
   statusText: string;
+  phase: 'scan' | 'copy' | 'zip' | 'done';
 }
 
-export const matchAndCopyLocalFiles = async (
-  selectedFileNames: string[],
-  targetTypes: 'raw' | 'jpg' | 'both',
-  clientFolderName: string,
-  onProgress?: (progress: CopyProgress) => void
-): Promise<MatchingResult> => {
-  if (!isFileSystemAccessSupported()) {
-    throw new Error('Browser kamu belum mendukung File System Access API. Buka di Google Chrome atau Microsoft Edge di laptop/desktop ya!');
-  }
-
-  // 1. Ask user to pick the folder
-  // @ts-expect-error window.showDirectoryPicker is experimental but standard in modern Chrome/Edge
-  const dirHandle = await window.showDirectoryPicker({
-    mode: 'readwrite',
-    id: 'tandain_photoshoot_folder',
-  });
-
-  onProgress?.({
-    current: 0,
-    total: selectedFileNames.length,
-    currentFileName: '',
-    statusText: 'Sedang membaca file di folder...',
-  });
-
-  // 2. Index all files in the chosen folder (shallow, no subfolder)
-  const filesInDir = new Map<string, FileSystemFileHandle>();
-  let hasSubfolders = false;
-
-  for await (const [name, handle] of (dirHandle as any).entries()) {
-    if (handle.kind === 'file') {
-      filesInDir.set(name.toLowerCase(), handle as FileSystemFileHandle);
-    } else if (handle.kind === 'directory') {
-      hasSubfolders = true;
-    }
-  }
-
-  // 3. Create destination subfolder: TANDAIN_[Client]_[Date]
-  const cleanClient = clientFolderName.replace(/[^a-zA-Z0-9_-]/g, '_');
-  const nowStr = new Date().toISOString().split('T')[0];
-  const destFolderName = `TANDAIN_${cleanClient}_${nowStr}`;
-  const destDirHandle = await (dirHandle as any).getDirectoryHandle(destFolderName, { create: true });
-
-  const matched: string[] = [];
-  const missing: string[] = [];
-  const errors: string[] = [];
-  let copiedCount = 0;
-
-  // 4. For each selected file, find the matching RAW or JPG files
-  const total = selectedFileNames.length;
-
-  for (let i = 0; i < total; i++) {
-    const rawSelected = selectedFileNames[i];
-    const base = getBaseName(rawSelected);
-    const filesToCopy: FileSystemFileHandle[] = [];
-
-    // Find candidate files with matching base name
-    for (const [lowerName, handle] of filesInDir.entries()) {
-      const ext = lowerName.split('.').pop() || '';
-      const candidateBase = getBaseName(lowerName);
-
-      if (candidateBase === base) {
-        const isRaw = RAW_EXTENSIONS.includes(ext);
-        const isJpg = ext === 'jpg' || ext === 'jpeg';
-
-        if (targetTypes === 'raw' && isRaw) {
-          filesToCopy.push(handle);
-        } else if (targetTypes === 'jpg' && isJpg) {
-          filesToCopy.push(handle);
-        } else if (targetTypes === 'both' && (isRaw || isJpg)) {
-          filesToCopy.push(handle);
-        }
-      }
-    }
-
-    if (filesToCopy.length === 0) {
-      missing.push(rawSelected);
-    } else {
-      for (const fileHandle of filesToCopy) {
-        onProgress?.({
-          current: i + 1,
-          total,
-          currentFileName: fileHandle.name,
-          statusText: `Menyalin ${fileHandle.name} (${i + 1}/${total})...`,
-        });
-
-        try {
-          const fileData = await fileHandle.getFile();
-          const newFileHandle = await destDirHandle.getFileHandle(fileHandle.name, { create: true });
-          const writable = await newFileHandle.createWritable();
-          await writable.write(fileData);
-          await writable.close();
-          copiedCount++;
-          matched.push(fileHandle.name);
-        } catch (err: any) {
-          errors.push(`Gagal menyalin ${fileHandle.name}: ${err?.message || err}`);
-        }
-      }
-    }
-  }
-
-  if (matched.length === 0 && hasSubfolders) {
-    errors.push('Fotonya mungkin ada di dalam subfolder kamera (misal 100CANON). Coba pilih langsung subfolder tersebut ya!');
-  }
-
-  onProgress?.({
-    current: total,
-    total,
-    currentFileName: '',
-    statusText: `Selesai! ${copiedCount} file berhasil disalin ke folder ${destFolderName}.`,
-  });
-
-  return {
-    totalTarget: total,
-    matched,
-    missing,
-    copiedCount,
-    errors,
-  };
-};
-
-// ---------------------------------------------------------------------------
-// Safari & Alternative Browser Support (WebKit directory input + Mac Script)
-// ---------------------------------------------------------------------------
-
-export interface SafariMatchedFile {
+// ─────────────────────────────────────────────────────────────────────────────
+// MATCHED FILE (shared between Chrome & Safari paths)
+// ─────────────────────────────────────────────────────────────────────────────
+export interface MatchedFile {
   file: File;
   name: string;
   size: number;
   extension: string;
-  relativePath: string;
 }
+
+export interface ScanResult {
+  matched: MatchedFile[];
+  missing: string[];
+  totalBytes: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHROME / EDGE: File System Access API
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const scanFolderChrome = async (
+  selectedFileNames: string[],
+  targetTypes: 'raw' | 'jpg' | 'both',
+  onProgress?: (p: CopyProgress) => void,
+): Promise<ScanResult> => {
+  if (!isFileSystemAccessSupported()) {
+    throw new Error('Browser belum mendukung. Buka di Google Chrome atau Microsoft Edge di laptop ya!');
+  }
+
+  // @ts-expect-error showDirectoryPicker is available in Chrome/Edge
+  const dirHandle = await window.showDirectoryPicker({ mode: 'read', id: 'tandain_raw_scan' });
+
+  onProgress?.({ current: 0, total: selectedFileNames.length, currentFileName: '', statusText: 'Membaca file di folder...', phase: 'scan' });
+
+  // Index all files recursively (depth 2: folder + 1 level camera subfolder like 100CANON)
+  const fileIndex = new Map<string, File>();
+
+  async function indexDir(handle: FileSystemDirectoryHandle, depth: number) {
+    for await (const [, entry] of (handle as any).entries()) {
+      if (entry.kind === 'file') {
+        const f: File = await entry.getFile();
+        fileIndex.set(f.name.toLowerCase(), f);
+      } else if (entry.kind === 'directory' && depth < 2) {
+        await indexDir(entry, depth + 1);
+      }
+    }
+  }
+
+  await indexDir(dirHandle, 0);
+
+  return matchFilesFromIndex(fileIndex, selectedFileNames, targetTypes, onProgress);
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SAFARI / FIREFOX: <input webkitdirectory>
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface SafariMatchingResult {
   totalTarget: number;
-  matched: SafariMatchedFile[];
+  matched: MatchedFile[];
   matchedNames: string[];
   missing: string[];
   totalBytes: number;
@@ -167,146 +94,150 @@ export interface SafariMatchingResult {
 export const matchLocalFilesFromList = (
   fileList: FileList | File[],
   selectedFileNames: string[],
-  targetTypes: 'raw' | 'jpg' | 'both'
+  targetTypes: 'raw' | 'jpg' | 'both',
 ): SafariMatchingResult => {
-  const filesArray = Array.from(fileList);
-  const matched: SafariMatchedFile[] = [];
-  const missing: string[] = [];
-  const matchedNames: string[] = [];
-  let totalBytes = 0;
-
-  for (const rawSelected of selectedFileNames) {
-    const base = getBaseName(rawSelected);
-    const candidateFiles: File[] = [];
-
-    for (const f of filesArray) {
-      const ext = (f.name.split('.').pop() || '').toLowerCase();
-      const candidateBase = getBaseName(f.name);
-
-      if (candidateBase === base) {
-        const isRaw = RAW_EXTENSIONS.includes(ext);
-        const isJpg = ext === 'jpg' || ext === 'jpeg';
-
-        if (targetTypes === 'raw' && isRaw) {
-          candidateFiles.push(f);
-        } else if (targetTypes === 'jpg' && isJpg) {
-          candidateFiles.push(f);
-        } else if (targetTypes === 'both' && (isRaw || isJpg)) {
-          candidateFiles.push(f);
-        }
-      }
-    }
-
-    if (candidateFiles.length === 0) {
-      missing.push(rawSelected);
-    } else {
-      for (const cf of candidateFiles) {
-        matched.push({
-          file: cf,
-          name: cf.name,
-          size: cf.size,
-          extension: (cf.name.split('.').pop() || '').toLowerCase(),
-          relativePath: cf.webkitRelativePath || cf.name,
-        });
-        matchedNames.push(cf.name);
-        totalBytes += cf.size;
-      }
-    }
+  const fileIndex = new Map<string, File>();
+  for (const f of Array.from(fileList)) {
+    fileIndex.set(f.name.toLowerCase(), f);
   }
 
+  const result = matchFilesFromIndex(fileIndex, selectedFileNames, targetTypes);
   return {
     totalTarget: selectedFileNames.length,
-    matched,
-    matchedNames,
-    missing,
-    totalBytes,
+    matched: result.matched,
+    matchedNames: result.matched.map((m) => m.name),
+    missing: result.missing,
+    totalBytes: result.totalBytes,
   };
 };
 
-/**
- * Generates an executable macOS .command bash script.
- * Double clicking this file in Finder automatically creates the target folder
- * and copies the matched RAW files using native macOS cp in 0.5 seconds!
- */
-export const generateMacCopyScript = (
-  fileNames: string[],
-  clientName: string
-): string => {
+// ─────────────────────────────────────────────────────────────────────────────
+// SHARED CORE MATCHER
+// ─────────────────────────────────────────────────────────────────────────────
+
+function matchFilesFromIndex(
+  fileIndex: Map<string, File>,
+  selectedFileNames: string[],
+  targetTypes: 'raw' | 'jpg' | 'both',
+  onProgress?: (p: CopyProgress) => void,
+): ScanResult {
+  const matched: MatchedFile[] = [];
+  const missing: string[] = [];
+  let totalBytes = 0;
+
+  const total = selectedFileNames.length;
+
+  for (let i = 0; i < total; i++) {
+    const sel = selectedFileNames[i];
+    const base = getBaseName(sel);
+    const found: MatchedFile[] = [];
+
+    for (const [lowerName, file] of fileIndex.entries()) {
+      const ext = (lowerName.split('.').pop() || '').toLowerCase();
+      const candidateBase = getBaseName(lowerName);
+      if (candidateBase !== base) continue;
+
+      const isRaw = RAW_EXTENSIONS.includes(ext);
+      const isJpg = ext === 'jpg' || ext === 'jpeg';
+
+      if (
+        (targetTypes === 'raw' && isRaw) ||
+        (targetTypes === 'jpg' && isJpg) ||
+        (targetTypes === 'both' && (isRaw || isJpg))
+      ) {
+        found.push({ file, name: file.name, size: file.size, extension: ext });
+        totalBytes += file.size;
+      }
+    }
+
+    if (found.length === 0) {
+      missing.push(sel);
+    } else {
+      matched.push(...found);
+      onProgress?.({ current: i + 1, total, currentFileName: found[0].name, statusText: `Mencocokkan ${i + 1}/${total}...`, phase: 'scan' });
+    }
+  }
+
+  return { matched, missing, totalBytes };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOWNLOAD AS ZIP (the main zero-IT action)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const downloadMatchedAsZip = async (
+  matched: MatchedFile[],
+  clientName: string,
+  onProgress?: (p: CopyProgress) => void,
+): Promise<void> => {
+  const zip = new JSZip();
+  const total = matched.length;
+
+  for (let i = 0; i < total; i++) {
+    const item = matched[i];
+    onProgress?.({ current: i + 1, total, currentFileName: item.name, statusText: `Menyiapkan file ${i + 1}/${total}...`, phase: 'zip' });
+    const arrayBuf = await item.file.arrayBuffer();
+    zip.file(item.name, arrayBuf);
+  }
+
+  onProgress?.({ current: total, total, currentFileName: '', statusText: 'Membuat file ZIP...', phase: 'zip' });
+
+  const content = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
   const cleanClient = (clientName || 'Klien').replace(/[^a-zA-Z0-9_-]/g, '_');
   const nowStr = new Date().toISOString().split('T')[0];
-  const destDir = `TANDAIN_${cleanClient}_RAW_${nowStr}`;
+  const filename = `RAW_Pilihan_${cleanClient}_${nowStr}.zip`;
 
-  // Generate find commands that search both current dir and camera subfolders (e.g. 100CANON)
-  const copyLines = fileNames
-    .map((name) => {
-      const base = getBaseName(name);
-      return `find . -maxdepth 3 -type f -iname "${base}.*" -exec cp -v {} "$DEST_DIR/" \\; 2>/dev/null || true`;
-    })
-    .join('\n');
-
-  return `#!/bin/bash
-# ========================================================
-# TANDAIN — Script Otomatis Salin RAW (macOS Safari Helper)
-# Klien: ${clientName}
-# Tanggal: ${nowStr}
-# ========================================================
-
-cd "$(dirname "$0")" || exit 1
-DEST_DIR="${destDir}"
-mkdir -p "$DEST_DIR"
-
-echo "=================================================="
-echo "  🚀 TANDAIN: Menyalin File RAW Pilihan Klien"
-echo "  Klien: ${clientName}"
-echo "  Target Folder: $DEST_DIR"
-echo "=================================================="
-
-${copyLines}
-
-echo ""
-echo "=================================================="
-echo "  ✅ SELESAI! Seluruh file pilihan telah disalin."
-echo "  Lokasi: $(pwd)/$DEST_DIR"
-echo "=================================================="
-`;
-};
-
-/**
- * Generates a 1-line command ready to paste into macOS Terminal
- */
-export const generateTerminalCopyCommand = (
-  fileNames: string[],
-  clientName: string
-): string => {
-  const cleanClient = (clientName || 'Klien').replace(/[^a-zA-Z0-9_-]/g, '_');
-  const nowStr = new Date().toISOString().split('T')[0];
-  const destDir = `TANDAIN_${cleanClient}_RAW_${nowStr}`;
-
-  const patterns = fileNames.map((name) => `"${getBaseName(name)}.*"`).join(' ');
-
-  return `mkdir -p "${destDir}" && for f in ${patterns}; do find . -maxdepth 3 -type f -iname "$f" -exec cp {} "${destDir}/" \\; ; done && echo "✅ Selesai salin RAW ke ${destDir}"`;
-};
-
-export const downloadTextFile = (content: string, filename: string): void => {
-  const blob = new Blob([content], { type: 'application/x-sh;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(content);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+  onProgress?.({ current: total, total, currentFileName: filename, statusText: `✅ ZIP berhasil didownload!`, phase: 'done' });
 };
 
-export const downloadSingleFile = (file: File): void => {
-  const url = URL.createObjectURL(file);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = file.name;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
-};
+// ─────────────────────────────────────────────────────────────────────────────
+// Legacy Chrome copy-to-disk (kept for backward compat; not shown in new UI)
+// ─────────────────────────────────────────────────────────────────────────────
 
+export const matchAndCopyLocalFiles = async (
+  selectedFileNames: string[],
+  targetTypes: 'raw' | 'jpg' | 'both',
+  clientFolderName: string,
+  onProgress?: (progress: CopyProgress) => void,
+): Promise<MatchingResult> => {
+  const scan = await scanFolderChrome(selectedFileNames, targetTypes, onProgress);
+
+  if (scan.matched.length === 0) {
+    return { totalTarget: selectedFileNames.length, matched: [], missing: scan.missing, copiedCount: 0, errors: [] };
+  }
+
+  // @ts-expect-error showDirectoryPicker available in Chrome/Edge
+  const destRootHandle = await window.showDirectoryPicker({ mode: 'readwrite', id: 'tandain_dest_folder' });
+  const cleanClient = clientFolderName.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const nowStr = new Date().toISOString().split('T')[0];
+  const destFolderName = `TANDAIN_${cleanClient}_${nowStr}`;
+  const destDirHandle = await (destRootHandle as any).getDirectoryHandle(destFolderName, { create: true });
+
+  const errors: string[] = [];
+  let copiedCount = 0;
+
+  for (let i = 0; i < scan.matched.length; i++) {
+    const item = scan.matched[i];
+    onProgress?.({ current: i + 1, total: scan.matched.length, currentFileName: item.name, statusText: `Menyalin ${item.name}...`, phase: 'copy' });
+    try {
+      const newHandle = await destDirHandle.getFileHandle(item.name, { create: true });
+      const writable = await newHandle.createWritable();
+      await writable.write(await item.file.arrayBuffer());
+      await writable.close();
+      copiedCount++;
+    } catch (err: any) {
+      errors.push(`Gagal: ${item.name} — ${err?.message || err}`);
+    }
+  }
+
+  return { totalTarget: selectedFileNames.length, matched: scan.matched.map((m) => m.name), missing: scan.missing, copiedCount, errors };
+};
