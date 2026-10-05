@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Heart, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Photo } from '../../types';
 
@@ -28,9 +28,12 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
   );
   const [history, setHistory] = useState<{ index: number; wasSelectedBefore: boolean }[]>([]);
   const [dragOffset, setDragOffset] = useState<number>(0);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [startX, setStartX] = useState<number>(0);
+  const isDraggingRef = useRef<boolean>(false);
+  const startXRef = useRef<number>(0);
+  const startYRef = useRef<number>(0);
+  const dragOffsetRef = useRef<number>(0);
   const cardRef = useRef<HTMLDivElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
   // Sync initialIndex when changed
   useEffect(() => {
@@ -52,51 +55,59 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
   const currentPhoto = photos[currentIndex];
   const isSelected = currentPhoto ? selectedFileNames.includes(currentPhoto.name) : false;
 
-  const handleAction = (choose: boolean) => {
-    if (!currentPhoto) return;
-    setHistory((prev) => [...prev, { index: currentIndex, wasSelectedBefore: isSelected }]);
+  const handleAction = useCallback((choose: boolean) => {
+    const photo = photos[currentIndex];
+    if (!photo) return;
+    const photoSelected = selectedFileNames.includes(photo.name);
+    setHistory((prev) => [...prev, { index: currentIndex, wasSelectedBefore: photoSelected }]);
 
-    if (choose && !isSelected) {
+    if (choose && !photoSelected) {
       if (selectedFileNames.length < quota) {
-        onToggleSelect(currentPhoto.name);
+        onToggleSelect(photo.name);
       }
-    } else if (!choose && isSelected) {
-      onToggleSelect(currentPhoto.name);
+    } else if (!choose && photoSelected) {
+      onToggleSelect(photo.name);
     }
 
-    if (currentIndex < photos.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
-    }
+    setCurrentIndex((prev) => {
+      if (prev < photos.length - 1) return prev + 1;
+      return prev;
+    });
     setDragOffset(0);
-  };
+    dragOffsetRef.current = 0;
+  }, [currentIndex, photos, selectedFileNames, quota, onToggleSelect]);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
       setDragOffset(0);
+      dragOffsetRef.current = 0;
     }
-  };
+  }, [currentIndex]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (currentIndex < photos.length - 1) {
       setCurrentIndex((prev) => prev + 1);
       setDragOffset(0);
+      dragOffsetRef.current = 0;
     }
-  };
+  }, [currentIndex, photos.length]);
 
-  const handleUndo = () => {
-    if (history.length === 0) return;
-    const last = history[history.length - 1];
-    setHistory((prev) => prev.slice(0, -1));
-    setCurrentIndex(last.index);
-
-    const prevPhoto = photos[last.index];
-    const currentlySelected = selectedFileNames.includes(prevPhoto.name);
-    if (currentlySelected !== last.wasSelectedBefore) {
-      onToggleSelect(prevPhoto.name);
-    }
-    setDragOffset(0);
-  };
+  const handleUndo = useCallback(() => {
+    setHistory((prev) => {
+      if (prev.length === 0) return prev;
+      const last = prev[prev.length - 1];
+      setCurrentIndex(last.index);
+      const prevPhoto = photos[last.index];
+      const currentlySelected = selectedFileNames.includes(prevPhoto.name);
+      if (currentlySelected !== last.wasSelectedBefore) {
+        onToggleSelect(prevPhoto.name);
+      }
+      setDragOffset(0);
+      dragOffsetRef.current = 0;
+      return prev.slice(0, -1);
+    });
+  }, [photos, selectedFileNames, onToggleSelect]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -108,32 +119,61 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, isSelected, selectedFileNames.length, quota, history]);
+  }, [handleAction, handleUndo, onClose]);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setIsDragging(true);
-    setStartX(e.touches[0].clientX);
-  };
+  // Native touch event listeners (passive: false) so we can preventDefault and block page scroll
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    const diff = e.touches[0].clientX - startX;
-    setDragOffset(diff);
-  };
+    const onTouchStart = (e: TouchEvent) => {
+      isDraggingRef.current = true;
+      startXRef.current = e.touches[0].clientX;
+      startYRef.current = e.touches[0].clientY;
+      dragOffsetRef.current = 0;
+    };
 
-  const handleTouchEnd = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    if (dragOffset > 75) {
-      handleAction(true); // Swipe right = choose
-    } else if (dragOffset < -75) {
-      handleAction(false); // Swipe left = skip
-    }
-    setDragOffset(0);
-  };
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isDraggingRef.current) return;
+      const diffX = e.touches[0].clientX - startXRef.current;
+      const diffY = e.touches[0].clientY - startYRef.current;
+      // Only hijack horizontal swipes; allow vertical scroll
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        e.preventDefault();
+        dragOffsetRef.current = diffX;
+        setDragOffset(diffX);
+      }
+    };
+
+    const onTouchEnd = () => {
+      if (!isDraggingRef.current) return;
+      isDraggingRef.current = false;
+      const offset = dragOffsetRef.current;
+      if (offset > 50) {
+        handleAction(true); // Swipe right = choose
+      } else if (offset < -50) {
+        handleAction(false); // Swipe left = skip
+      }
+      setDragOffset(0);
+      dragOffsetRef.current = 0;
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    el.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [handleAction]);
 
   return (
     <div
+      ref={rootRef}
       style={{
         position: 'fixed',
         inset: 0,
@@ -143,6 +183,7 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
         flexDirection: 'column',
         userSelect: 'none',
         overflow: 'hidden',
+        touchAction: 'pan-y', // allow vertical pan, horizontal handled by JS
       }}
     >
       {/* Top Header */}
@@ -215,9 +256,6 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
           position: 'relative',
           padding: '8px 16px',
         }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         {/* Navigation Arrows for Tablet / Desktop */}
         {currentIndex > 0 && (
@@ -290,7 +328,7 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
               backgroundColor: '#121214',
               boxShadow: '0 16px 40px rgba(0, 0, 0, 0.18)',
               transform: `translateX(${dragOffset}px) rotate(${dragOffset * 0.05}deg)`,
-              transition: isDragging ? 'none' : 'transform 0.25s ease',
+              transition: isDraggingRef.current ? 'none' : 'transform 0.25s ease',
             }}
           >
             <img
