@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Heart, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Heart, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, Download, Loader2 } from 'lucide-react';
 import type { Photo } from '../../types';
+import { downloadPhotoHd } from '../../services/photoDownload';
 
 interface ClientSwipeModeProps {
   photos: Photo[];
@@ -33,6 +34,24 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [exitDirection, setExitDirection] = useState<'right' | 'left' | null>(null);
   const [quotaToast, setQuotaToast] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadToast, setDownloadToast] = useState<string | null>(null);
+
+  const handleDownload = async (photo: Photo) => {
+    if (!photo || downloadingId) return;
+    setDownloadingId(photo.id);
+    setDownloadToast(`Mengunduh ${photo.name} HD...`);
+    try {
+      await downloadPhotoHd(photo);
+      setDownloadToast(`✓ Berhasil mengunduh ${photo.name} (HD)!`);
+      setTimeout(() => setDownloadToast(null), 3000);
+    } catch (_e) {
+      setDownloadToast(`Membuka unduhan ${photo.name}...`);
+      setTimeout(() => setDownloadToast(null), 2500);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const isDraggingRef = useRef<boolean>(false);
   const startXRef = useRef<number>(0);
@@ -321,6 +340,38 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
         </div>
       )}
 
+      {/* Download Toast Notification */}
+      {downloadToast && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '75px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 100,
+            backgroundColor: 'rgba(20, 20, 24, 0.95)',
+            color: '#FFFFFF',
+            padding: '10px 18px',
+            borderRadius: '9999px',
+            fontSize: '13px',
+            fontWeight: 600,
+            border: '1px solid rgba(255, 255, 255, 0.25)',
+            boxShadow: '0 8px 28px rgba(0, 0, 0, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            maxWidth: '90%',
+            textAlign: 'center',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            animation: 'fadeIn 0.2s ease',
+          }}
+        >
+          <Download size={16} />
+          <span>{downloadToast}</span>
+        </div>
+      )}
+
       {/* Guidance micro-text */}
       <p
         style={{
@@ -535,25 +586,69 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
               </div>
             )}
 
-            {/* Gradient Overlay for Photo Details */}
+            {/* Gradient Overlay for Photo Details & Direct Download Button */}
             <div
               style={{
                 position: 'absolute',
                 bottom: 0,
                 left: 0,
                 right: 0,
-                padding: '24px 20px',
-                background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
+                padding: '24px 18px 16px',
+                background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.4) 65%, transparent 100%)',
                 color: '#FFFFFF',
-                pointerEvents: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                zIndex: 4,
               }}
             >
-              <p style={{ fontSize: '16px', fontWeight: 700, textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>
-                {currentPhoto.name}
-              </p>
-              <p style={{ fontSize: '12px', opacity: 0.85, marginTop: '2px' }}>
-                {isSelected ? '❤️ Sudah masuk daftar pilihanmu' : 'Geser kanan ❤️ untuk memilih'}
-              </p>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <p style={{ fontSize: '16px', fontWeight: 700, textShadow: '0 1px 4px rgba(0,0,0,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {currentPhoto.name}
+                </p>
+                <p style={{ fontSize: '12px', opacity: 0.85, marginTop: '2px' }}>
+                  {isSelected ? '❤️ Sudah masuk daftar pilihanmu' : 'Geser kanan ❤️ untuk memilih'}
+                </p>
+              </div>
+
+              {/* Direct Card Download HD Button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownload(currentPhoto);
+                }}
+                disabled={downloadingId === currentPhoto.id}
+                style={{
+                  flexShrink: 0,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 13px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(255, 255, 255, 0.35)',
+                  color: '#FFFFFF',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  cursor: downloadingId === currentPhoto.id ? 'wait' : 'pointer',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                  transition: 'all 0.18s ease',
+                  pointerEvents: 'auto',
+                }}
+                title="Unduh foto resolusi HD asli dari Google Drive"
+                aria-label={`Unduh ${currentPhoto.name} HD`}
+              >
+                {downloadingId === currentPhoto.id ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Download size={14} />
+                )}
+                <span>{downloadingId === currentPhoto.id ? 'Mengunduh...' : 'Unduh HD'}</span>
+              </button>
             </div>
 
             {/* Bumble-Style Swipe Right Stamp (PILIH ❤️) */}
@@ -725,6 +820,35 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
           title="Batal aksi sebelumnya"
         >
           <RotateCcw size={19} />
+        </button>
+
+        {/* Download HD Button (Ergonomic Thumb Access) */}
+        <button
+          onClick={() => currentPhoto && handleDownload(currentPhoto)}
+          disabled={!currentPhoto || downloadingId === currentPhoto.id}
+          style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255, 255, 255, 0.12)',
+            border: '1px solid rgba(255, 255, 255, 0.25)',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#FFFFFF',
+            cursor: !currentPhoto ? 'not-allowed' : 'pointer',
+            opacity: !currentPhoto ? 0.4 : 1,
+            transition: 'transform 0.15s ease, background-color 0.15s ease',
+          }}
+          aria-label="Unduh foto resolusi HD asli"
+          title="Unduh Foto HD Asli (Google Drive)"
+        >
+          {downloadingId === currentPhoto?.id ? (
+            <Loader2 size={20} className="animate-spin" />
+          ) : (
+            <Download size={20} />
+          )}
         </button>
 
         {/* Heart / Choose (Right) Button */}

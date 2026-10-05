@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { X, ChevronLeft, ChevronRight, Heart, ZoomIn, ZoomOut, Download, Loader2 } from 'lucide-react';
 import type { Photo } from '../../types';
+import { downloadPhotoHd } from '../../services/photoDownload';
 
 interface ClientLightboxProps {
   photos: Photo[];
@@ -56,21 +57,9 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
     if (!currentPhoto || isDownloading) return;
     setIsDownloading(true);
     try {
-      const response = await fetch(currentPhoto.url);
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      const fileName = currentPhoto.name.toLowerCase().endsWith('.jpg') || currentPhoto.name.toLowerCase().endsWith('.jpeg')
-        ? currentPhoto.name
-        : `${currentPhoto.name}.jpg`;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-    } catch {
-      window.open(currentPhoto.url, '_blank');
+      await downloadPhotoHd(currentPhoto);
+    } catch (_err) {
+      // Handled in downloadPhotoHd fallback
     } finally {
       setIsDownloading(false);
     }
@@ -193,15 +182,15 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
               fontSize: '13px',
               fontWeight: 600,
               backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
               cursor: isDownloading ? 'wait' : 'pointer',
-              transition: 'background 0.2s ease',
+              transition: 'all 0.2s ease',
             }}
-            title="Download foto JPEG ini"
-            aria-label="Unduh foto"
+            title="Unduh foto resolusi HD asli (Google Drive)"
+            aria-label="Unduh foto resolusi HD asli"
           >
             {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-            <span>Unduh JPG</span>
+            <span>{isDownloading ? 'Mengunduh...' : 'Unduh Foto HD'}</span>
           </button>
 
           <button
@@ -294,7 +283,7 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
                   marginTop: '4px',
                 }}
               >
-                HAK CIPTA DILINDUNGI • BUKAN UNTUK DIUNDUH
+                HAK CIPTA DILINDUNGI • PREVIEW ONLY
               </span>
             </div>
           </div>

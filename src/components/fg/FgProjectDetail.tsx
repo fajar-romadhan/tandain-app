@@ -14,11 +14,13 @@ import {
   Eye,
   ShieldCheck,
   MessageCircle,
+  Download,
 } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import { FgRawModal } from './FgRawModal';
 import { FgLightroomModal } from './FgLightroomModal';
 import { formatAsTxtList, downloadBlobFile } from '../../services/lightroom';
+import { downloadPhotoHd } from '../../services/photoDownload';
 import type { Project, StudioProfile } from '../../types';
 
 interface FgProjectDetailProps {
@@ -379,13 +381,35 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
                     marginBottom: '8px',
                   }}
                 />
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                  <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }} title={photo.name}>
                     {photo.name}
                   </p>
-                  <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
-                    #{i + 1}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      onClick={() => downloadPhotoHd(photo)}
+                      style={{
+                        width: '26px',
+                        height: '26px',
+                        borderRadius: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--text-secondary)',
+                        backgroundColor: 'var(--border-light)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      title="Unduh foto resolusi HD asli (Google Drive)"
+                    >
+                      <Download size={13} />
+                    </button>
+                    <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
+                      #{i + 1}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}

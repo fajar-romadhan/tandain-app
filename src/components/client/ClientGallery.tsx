@@ -8,6 +8,8 @@ import {
   ArrowRight,
   ShieldAlert,
   ShieldCheck,
+  Download,
+  Loader2,
 } from 'lucide-react';
 import { ClientLightbox } from './ClientLightbox';
 import { ClientSwipeMode } from './ClientSwipeMode';
@@ -16,6 +18,7 @@ import { ClientPinModal } from './ClientPinModal';
 import { StatusBadge } from '../StatusBadge';
 import type { Project, StudioProfile, Photo } from '../../types';
 import { getDeviceId } from '../../services/storage';
+import { downloadPhotoHd } from '../../services/photoDownload';
 
 interface ClientGalleryProps {
   project: Project;
@@ -45,9 +48,27 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
   const [swipeInitialIndex, setSwipeInitialIndex] = useState<number>(0);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [burstPhotoId, setBurstPhotoId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadToast, setDownloadToast] = useState<string | null>(null);
   const deviceId = getDeviceId();
   const isCurrentDeviceSelector = !project.activeSelectorDeviceId || project.activeSelectorDeviceId === deviceId;
   const activeStudioName = project.studioName || studio.studioName || 'Studio Fotografi';
+
+  const handleDownloadPhoto = async (photo: Photo) => {
+    if (!photo || downloadingId) return;
+    setDownloadingId(photo.id);
+    setDownloadToast(`Mengunduh ${photo.name} HD...`);
+    try {
+      await downloadPhotoHd(photo);
+      setDownloadToast(`✓ Berhasil mengunduh ${photo.name} (HD)!`);
+      setTimeout(() => setDownloadToast(null), 3000);
+    } catch (_e) {
+      setDownloadToast(`Membuka unduhan ${photo.name}...`);
+      setTimeout(() => setDownloadToast(null), 2500);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   // Dynamic document title for client
   useEffect(() => {
@@ -462,6 +483,70 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
                         </div>
                       )}
 
+                      {/* Filename Badge Top-Left */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '10px',
+                          left: '10px',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          backgroundColor: 'rgba(0, 0, 0, 0.55)',
+                          backdropFilter: 'blur(8px)',
+                          WebkitBackdropFilter: 'blur(8px)',
+                          color: '#FFFFFF',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          letterSpacing: '0.3px',
+                          maxWidth: 'calc(100% - 20px)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          pointerEvents: 'none',
+                          zIndex: 4,
+                        }}
+                      >
+                        {photo.name}
+                      </div>
+
+                      {/* Download HD Button Bottom-Left */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadPhoto(photo);
+                        }}
+                        disabled={downloadingId === photo.id}
+                        style={{
+                          position: 'absolute',
+                          bottom: '10px',
+                          left: '10px',
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '50%',
+                          backgroundColor: 'rgba(0, 0, 0, 0.52)',
+                          border: '1px solid rgba(255, 255, 255, 0.35)',
+                          color: '#FFFFFF',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 4px 14px rgba(0, 0, 0, 0.3)',
+                          backdropFilter: 'blur(10px)',
+                          WebkitBackdropFilter: 'blur(10px)',
+                          cursor: downloadingId === photo.id ? 'wait' : 'pointer',
+                          zIndex: 4,
+                          transition: 'all 0.18s ease',
+                        }}
+                        aria-label={`Unduh ${photo.name} resolusi HD`}
+                        title="Unduh foto resolusi HD asli (Google Drive)"
+                      >
+                        {downloadingId === photo.id ? (
+                          <Loader2 size={18} className="animate-spin" />
+                        ) : (
+                          <Download size={18} />
+                        )}
+                      </button>
+
                       {/* Corner Heart Button (Touch target 44x44px for instant like without opening swipe) */}
                       <button
                         type="button"
@@ -664,6 +749,39 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
         onRemovePhoto={(fn) => handleTogglePhoto(fn)}
         onSubmitFinal={onSubmitFinal}
       />
+
+      {/* Floating Download HD Toast Notification */}
+      {downloadToast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 'calc(84px + env(safe-area-inset-bottom))',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9999,
+            backgroundColor: 'rgba(20, 20, 24, 0.95)',
+            color: '#FFFFFF',
+            padding: '10px 18px',
+            borderRadius: '9999px',
+            fontSize: '13px',
+            fontWeight: 600,
+            boxShadow: '0 8px 28px rgba(0, 0, 0, 0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            border: '1px solid rgba(255, 255, 255, 0.25)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            animation: 'fadeIn 0.2s ease',
+            pointerEvents: 'none',
+            maxWidth: '90%',
+            textAlign: 'center',
+          }}
+        >
+          <Download size={16} />
+          <span>{downloadToast}</span>
+        </div>
+      )}
     </div>
   );
 };
