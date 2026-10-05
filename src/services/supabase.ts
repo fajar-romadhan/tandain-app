@@ -373,7 +373,171 @@ export const signInWithGoogle = async (): Promise<void> => {
   if (error) throw error;
 };
 
+const WEB_USER_STORAGE_KEY = 'tandain_web_user_v1';
+
+export const getLocalWebUser = (): AuthUser | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(WEB_USER_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as AuthUser) : null;
+  } catch {
+    return null;
+  }
+};
+
+export const setLocalWebUser = (user: AuthUser | null): void => {
+  if (typeof window === 'undefined') return;
+  if (user) {
+    localStorage.setItem(WEB_USER_STORAGE_KEY, JSON.stringify(user));
+  } else {
+    localStorage.removeItem(WEB_USER_STORAGE_KEY);
+  }
+};
+
+/**
+ * Jalur Masuk 1: Masuk dengan Email & Password Studio
+ */
+export const signInWithEmail = async (email: string, pass: string): Promise<AuthUser> => {
+  const client = getSupabaseClient();
+  const cleanEmail = email.trim().toLowerCase();
+
+  if (!client) {
+    const local = getLocalWebUser();
+    if (local && local.email?.toLowerCase() === cleanEmail) {
+      return local;
+    }
+    throw new Error('Koneksi ke server belum tersedia. Coba beberapa saat lagi.');
+  }
+
+  const { data, error } = await client.auth.signInWithPassword({
+    email: cleanEmail,
+    password: pass,
+  });
+
+  if (error) {
+    if (error.message.includes('Invalid login credentials')) {
+      throw new Error('Email atau password salah. Silakan periksa kembali.');
+    }
+    if (error.message.includes('Email not confirmed')) {
+      throw new Error('Email belum dikonfirmasi. Periksa inbox atau spam email Anda untuk verifikasi.');
+    }
+    throw new Error(error.message);
+  }
+
+  if (!data.user) {
+    throw new Error('Gagal masuk ke akun studio.');
+  }
+
+  const user: AuthUser = {
+    id: data.user.id,
+    email: data.user.email,
+    name: data.user.user_metadata?.studio_name || data.user.user_metadata?.full_name || data.user.email?.split('@')[0],
+    avatarUrl: data.user.user_metadata?.avatar_url,
+  };
+
+  setLocalWebUser(user);
+  return user;
+};
+
+/**
+ * Jalur Masuk 1: Daftar Akun Studio Baru di Web Tandain
+ */
+export const signUpWithEmail = async (
+  email: string,
+  pass: string,
+  studioName: string,
+  whatsapp?: string
+): Promise<{ user: AuthUser; requiresEmailConfirmation: boolean }> => {
+  const client = getSupabaseClient();
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanStudio = studioName.trim();
+
+  if (!client) {
+    throw new Error('Koneksi ke database belum tersedia. Coba beberapa saat lagi.');
+  }
+
+  const { data, error } = await client.auth.signUp({
+    email: cleanEmail,
+    password: pass,
+    options: {
+      data: {
+        studio_name: cleanStudio,
+        full_name: cleanStudio,
+        whatsapp: whatsapp ? whatsapp.trim() : '',
+      },
+    },
+  });
+
+  if (error) {
+    if (error.message.includes('User already registered')) {
+      throw new Error('Email ini sudah terdaftar. Silakan pilih tab "Masuk Akun".');
+    }
+    if (error.message.includes('Password should be at least')) {
+      throw new Error('Password minimal harus 6 karakter.');
+    }
+    throw new Error(error.message);
+  }
+
+  // Jika Supabase langsung membuat session (tanpa perlu konfirmasi email)
+  if (data.session && data.user) {
+    const user: AuthUser = {
+      id: data.user.id,
+      email: data.user.email,
+      name: cleanStudio || data.user.email?.split('@')[0],
+    };
+    setLocalWebUser(user);
+
+    if (cleanStudio || whatsapp) {
+      saveStudioProfileToCloud(data.user.id, {
+        studioName: cleanStudio,
+        whatsapp: whatsapp ? whatsapp.trim() : '',
+        accentColor: '#1D1D1F',
+        waTemplate: '',
+      }).catch(console.warn);
+    }
+
+    return { user, requiresEmailConfirmation: false };
+  }
+
+  // Jika user terbuat di Supabase namun menunggu email konfirmasi
+  const user: AuthUser = {
+    id: data.user?.id || 'studio_' + Math.random().toString(36).substring(2, 9),
+    email: cleanEmail,
+    name: cleanStudio,
+  };
+
+  return {
+    user,
+    requiresEmailConfirmation: true,
+  };
+};
+
+/**
+ * Jalur Masuk Cepat: Aktifkan sesi studio langsung tanpa hambatan
+ */
+export const startDirectStudioSession = (studioName: string, email: string, whatsapp?: string): AuthUser => {
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanStudio = studioName.trim();
+  const user: AuthUser = {
+    id: 'studio_' + btoa(cleanEmail).replace(/[^a-zA-Z0-9]/g, '').slice(0, 16),
+    email: cleanEmail,
+    name: cleanStudio,
+  };
+  setLocalWebUser(user);
+
+  // Cache initial studio profile
+  saveStudioProfileToCloud(user.id, {
+    studioName: cleanStudio,
+    whatsapp: whatsapp ? whatsapp.trim() : '',
+    accentColor: '#1D1D1F',
+    waTemplate: '',
+  }).catch(console.warn);
+
+  return user;
+};
+
 export const signOutUser = async (): Promise<void> => {
+  setLocalWebUser(null);
   const client = getSupabaseClient();
   if (client) {
     await client.auth.signOut();
@@ -381,26 +545,31 @@ export const signOutUser = async (): Promise<void> => {
 };
 
 /**
- * Subscribe to auth state. Fires immediately with the current session (INITIAL_SESSION),
- * so the first callback also tells us auth is "ready".
+ * Subscribe to auth state.
+ * Supports both Google OAuth sessions and direct Web Studio sessions.
  */
 export const subscribeAuthChanges = (callback: (user: AuthUser | null) => void): (() => void) => {
   const client = getSupabaseClient();
+  const initialLocal = getLocalWebUser();
+
   if (!client) {
-    callback(null);
+    callback(initialLocal);
     return () => {};
   }
 
   const { data } = client.auth.onAuthStateChange((_event, session) => {
     if (session?.user) {
-      callback({
+      const u: AuthUser = {
         id: session.user.id,
         email: session.user.email,
-        name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
+        name: session.user.user_metadata?.studio_name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
         avatarUrl: session.user.user_metadata?.avatar_url,
-      });
+      };
+      setLocalWebUser(u);
+      callback(u);
     } else {
-      callback(null);
+      const currentLocal = getLocalWebUser();
+      callback(currentLocal);
     }
   });
 

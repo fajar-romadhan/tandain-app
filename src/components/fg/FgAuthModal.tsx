@@ -1,140 +1,509 @@
 import React, { useState } from 'react';
 import { Modal } from '../Modal';
-import { isGoogleProviderEnabled, signInWithGoogle } from '../../services/supabase';
-import { ShieldCheck, Laptop, Smartphone, AlertCircle } from 'lucide-react';
+import {
+  isGoogleProviderEnabled,
+  signInWithGoogle,
+  signInWithEmail,
+  signUpWithEmail,
+  startDirectStudioSession,
+} from '../../services/supabase';
+import type { AuthUser } from '../../types';
+import {
+  Camera,
+  Mail,
+  Lock,
+  MessageCircle,
+  ShieldCheck,
+  Laptop,
+  Smartphone,
+  AlertCircle,
+  Loader2,
+  CheckCircle2,
+  ArrowRight,
+  UserCheck,
+} from 'lucide-react';
 
 interface FgAuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: (user: AuthUser) => void;
 }
 
 /**
- * Single login path for photographers: Google account.
- * Every Google account = one studio with its own projects, so vendors never get mixed up.
+ * 2 Jalur Masuk ke Tandain:
+ * Jalur 1: Daftar / Masuk Mandiri via Form Web (Email & Password Studio)
+ * Jalur 2: 1-Klik Masuk via Akun Google OAuth
+ *
+ * Keduanya memberikan akses 100% penuh ke seluruh fitur Tandain.
  */
-export const FgAuthModal: React.FC<FgAuthModalProps> = ({ isOpen, onClose }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+export const FgAuthModal: React.FC<FgAuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
 
-  const handleGoogleLogin = async () => {
+  // Form states
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [studioName, setStudioName] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+
+  // Status & loading states
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [confirmationNotice, setConfirmationNotice] = useState<{
+    show: boolean;
+    email: string;
+    studioName: string;
+    tempUser: AuthUser | null;
+  } | null>(null);
+
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setStudioName('');
+    setWhatsapp('');
+    setErrorMsg('');
+    setConfirmationNotice(null);
+  };
+
+  const handleModalClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  // Jalur 1: Submit Form Web (Login / Register)
+  const handleSubmitWebAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setConfirmationNotice(null);
+
+    if (!email.trim() || !password.trim()) {
+      setErrorMsg('Mohon isi email dan password.');
+      return;
+    }
+
+    if (activeTab === 'register' && !studioName.trim()) {
+      setErrorMsg('Mohon isi nama studio / vendor fotografer Anda.');
+      return;
+    }
+
     setIsLoading(true);
+
+    try {
+      if (activeTab === 'login') {
+        // Masuk Akun Web
+        const user = await signInWithEmail(email, password);
+        setIsLoading(false);
+        if (onSuccess) onSuccess(user);
+        handleModalClose();
+      } else {
+        // Daftar Studio Baru di Web
+        const result = await signUpWithEmail(email, password, studioName, whatsapp);
+        setIsLoading(false);
+
+        if (!result.requiresEmailConfirmation && result.user) {
+          // Berhasil langsung aktif tanpa tunggu konfirmasi email
+          if (onSuccess) onSuccess(result.user);
+          handleModalClose();
+        } else {
+          // Supabase mengirimkan email konfirmasi
+          setConfirmationNotice({
+            show: true,
+            email: email.trim(),
+            studioName: studioName.trim(),
+            tempUser: result.user,
+          });
+        }
+      }
+    } catch (err: any) {
+      setIsLoading(false);
+      setErrorMsg(err?.message || 'Gagal memproses permintaan. Periksa koneksi internet Anda.');
+    }
+  };
+
+  // Masuk Langsung jika konfirmasi email tertunda (Biar FG tidak terhambat)
+  const handleDirectStudioEntry = () => {
+    if (!confirmationNotice) return;
+    const directUser = startDirectStudioSession(
+      confirmationNotice.studioName,
+      confirmationNotice.email,
+      whatsapp
+    );
+    if (onSuccess) onSuccess(directUser);
+    handleModalClose();
+  };
+
+  // Jalur 2: Masuk Cepat dengan Akun Google
+  const handleGoogleLogin = async () => {
+    setIsGoogleLoading(true);
     setErrorMsg('');
     try {
-      // Pre-check so the user never lands on Supabase's raw JSON error page
       const enabled = await isGoogleProviderEnabled();
       if (!enabled) {
-        setErrorMsg('Google OAuth belum diaktifkan di Supabase. Aktifkan di Supabase Dashboard → Authentication → Providers → Google (masukkan Google Client ID & Secret).');
-        setIsLoading(false);
+        setErrorMsg(
+          'Google OAuth belum diaktifkan di Supabase. Anda dapat langsung mendaftar lewat Jalur 1 (Form Web di atas) tanpa hambatan.'
+        );
+        setIsGoogleLoading(false);
         return;
       }
-      await signInWithGoogle(); // browser redirects to Google
+      await signInWithGoogle();
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Gagal terhubung ke Google. Coba lagi.');
-      setIsLoading(false);
+      setIsGoogleLoading(false);
+      setErrorMsg(err?.message || 'Gagal terhubung ke Google. Coba lagi atau gunakan formulir web.');
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Masuk ke Tandain" maxWidth="440px">
-      <div style={{ padding: '4px 0 12px', textAlign: 'center' }}>
-        <div style={{ fontSize: '40px', marginBottom: '8px' }}>📸</div>
-        <h3 style={{ fontSize: '19px', fontWeight: 700, color: 'var(--text)', marginBottom: '6px' }}>
-          Masuk sebagai Fotografer
-        </h3>
-        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
-          Satu akun Google = satu studio. Semua galeri klien kamu tersimpan aman dan terpisah dari vendor lain.
+    <Modal
+      isOpen={isOpen}
+      onClose={handleModalClose}
+      title="Akses Dashboard Fotografer"
+      maxWidth="460px"
+    >
+      <div style={{ padding: '4px 0 10px' }}>
+        {/* Subtitle / 2 Jalur Header */}
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '16px' }}>
+          Tersedia <b>2 jalur masuk</b> untuk menggunakan seluruh fitur Tandain. Pilih jalur yang paling nyaman untuk studio Anda:
         </p>
 
+        {/* ==========================================================
+            JALUR 1: AKUN WEB TANDAIN (DAFTAR & MASUK LANGSUNG)
+            ========================================================== */}
         <div
           style={{
-            textAlign: 'left',
-            backgroundColor: '#F5F5F7',
-            padding: '14px',
-            borderRadius: '12px',
-            marginBottom: '20px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '9px',
-            fontSize: '12.5px',
-            color: 'var(--text)',
+            borderRadius: '16px',
+            border: '1px solid var(--border)',
+            backgroundColor: '#FFFFFF',
+            padding: '16px',
+            marginBottom: '18px',
+            boxShadow: 'var(--shadow-sm)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ShieldCheck size={15} color="#007AFF" />
-            <span>Data studio kamu hanya bisa diakses akun kamu sendiri</span>
+          {/* Segmented Tab: Masuk vs Daftar Baru */}
+          <div
+            style={{
+              display: 'flex',
+              backgroundColor: 'var(--bg)',
+              padding: '3px',
+              borderRadius: '9999px',
+              border: '1px solid var(--border)',
+              marginBottom: '16px',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('login');
+                setErrorMsg('');
+                setConfirmationNotice(null);
+              }}
+              style={{
+                flex: 1,
+                height: '38px',
+                borderRadius: '9999px',
+                fontSize: '13.5px',
+                fontWeight: activeTab === 'login' ? 700 : 500,
+                backgroundColor: activeTab === 'login' ? 'var(--surface)' : 'transparent',
+                color: activeTab === 'login' ? 'var(--text)' : 'var(--text-secondary)',
+                boxShadow: activeTab === 'login' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.18s ease',
+              }}
+            >
+              Masuk Akun
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('register');
+                setErrorMsg('');
+                setConfirmationNotice(null);
+              }}
+              style={{
+                flex: 1,
+                height: '38px',
+                borderRadius: '9999px',
+                fontSize: '13.5px',
+                fontWeight: activeTab === 'register' ? 700 : 500,
+                backgroundColor: activeTab === 'register' ? 'var(--surface)' : 'transparent',
+                color: activeTab === 'register' ? 'var(--text)' : 'var(--text-secondary)',
+                boxShadow: activeTab === 'register' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.18s ease',
+              }}
+            >
+              Daftar Studio Baru ✨
+            </button>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Laptop size={15} color="var(--primary)" />
-            <span>Buka dashboard dari laptop atau HP mana pun, datanya sama</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Smartphone size={15} color="#34C759" />
-            <span>Klien tetap memilih foto tanpa perlu login</span>
-          </div>
+
+          {/* Banner Notifikasi Konfirmasi Email jika diperlukan */}
+          {confirmationNotice?.show ? (
+            <div
+              style={{
+                padding: '14px',
+                borderRadius: '12px',
+                backgroundColor: '#E8F5E9',
+                border: '1px solid #C8E6C9',
+                marginBottom: '12px',
+                textAlign: 'left',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', color: '#2E7D32' }}>
+                <CheckCircle2 size={18} />
+                <span style={{ fontWeight: 700, fontSize: '14px' }}>Akun Studio Berhasil Dibuat!</span>
+              </div>
+              <p style={{ fontSize: '12.5px', color: '#1B5E20', lineHeight: 1.5, marginBottom: '12px' }}>
+                Tautan konfirmasi telah dikirim ke <b>{confirmationNotice.email}</b>. Anda juga bisa langsung masuk sekarang untuk mulai menggunakan seluruh fitur:
+              </p>
+              <button
+                type="button"
+                onClick={handleDirectStudioEntry}
+                className="pill-btn pill-btn-primary"
+                style={{ width: '100%', height: '42px', fontSize: '13.5px', gap: '6px', backgroundColor: '#2E7D32' }}
+              >
+                <UserCheck size={16} /> Buka Dashboard Studio Sekarang <ArrowRight size={14} />
+              </button>
+            </div>
+          ) : (
+            /* Form Input Jalur Web */
+            <form onSubmit={handleSubmitWebAuth}>
+              {/* Field Khusus Pendaftaran: Nama Studio */}
+              {activeTab === 'register' && (
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, marginBottom: '5px' }}>
+                    Nama Studio / Vendor Fotografer*
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <Camera
+                      size={17}
+                      style={{
+                        position: 'absolute',
+                        left: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        color: 'var(--text-tertiary)',
+                        pointerEvents: 'none',
+                      }}
+                    />
+                    <input
+                      type="text"
+                      required
+                      value={studioName}
+                      onChange={(e) => setStudioName(e.target.value)}
+                      placeholder="Misal: Arka Visual / Lens Story"
+                      style={{
+                        width: '100%',
+                        height: '44px',
+                        padding: '0 12px 0 38px',
+                        borderRadius: '10px',
+                        border: '1px solid var(--border)',
+                        backgroundColor: 'var(--bg)',
+                        outline: 'none',
+                        fontSize: '16px',
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Field Khusus Pendaftaran: WhatsApp Studio */}
+              {activeTab === 'register' && (
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, marginBottom: '5px' }}>
+                    Nomor WhatsApp Studio (Untuk Notifikasi Pilihan Klien)
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <MessageCircle
+                      size={17}
+                      style={{
+                        position: 'absolute',
+                        left: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        color: '#25D366',
+                        pointerEvents: 'none',
+                      }}
+                    />
+                    <input
+                      type="tel"
+                      value={whatsapp}
+                      onChange={(e) => setWhatsapp(e.target.value)}
+                      placeholder="Misal: 081234567890"
+                      style={{
+                        width: '100%',
+                        height: '44px',
+                        padding: '0 12px 0 38px',
+                        borderRadius: '10px',
+                        border: '1px solid var(--border)',
+                        backgroundColor: 'var(--bg)',
+                        outline: 'none',
+                        fontSize: '16px',
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Email */}
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, marginBottom: '5px' }}>
+                  Email Studio*
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Mail
+                    size={17}
+                    style={{
+                      position: 'absolute',
+                      left: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-tertiary)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="nama@studiokamu.com"
+                    style={{
+                      width: '100%',
+                      height: '44px',
+                      padding: '0 12px 0 38px',
+                      borderRadius: '10px',
+                      border: '1px solid var(--border)',
+                      backgroundColor: 'var(--bg)',
+                      outline: 'none',
+                      fontSize: '16px',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, marginBottom: '5px' }}>
+                  Password (minimal 6 karakter)*
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Lock
+                    size={17}
+                    style={{
+                      position: 'absolute',
+                      left: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-tertiary)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    style={{
+                      width: '100%',
+                      height: '44px',
+                      padding: '0 12px 0 38px',
+                      borderRadius: '10px',
+                      border: '1px solid var(--border)',
+                      backgroundColor: 'var(--bg)',
+                      outline: 'none',
+                      fontSize: '16px',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Tombol Submit Form Web */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="pill-btn pill-btn-primary"
+                style={{ width: '100%', height: '46px', fontSize: '15px', fontWeight: 700, gap: '8px' }}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" /> Memproses...
+                  </>
+                ) : activeTab === 'login' ? (
+                  'Masuk ke Dashboard Studio'
+                ) : (
+                  'Daftar Akun Studio & Mulai 🚀'
+                )}
+              </button>
+            </form>
+          )}
         </div>
 
+        {/* Error Message */}
         {errorMsg && (
           <div
             role="alert"
             style={{
-              padding: '12px 14px',
-              borderRadius: '12px',
-              backgroundColor: '#FFF4E5',
-              border: '1px solid #FFE0B2',
-              color: '#B25E00',
+              padding: '10px 14px',
+              borderRadius: '10px',
+              backgroundColor: '#FFF0F3',
+              border: '1px solid #FFD1DC',
+              color: 'var(--heart)',
               fontSize: '12.5px',
               marginBottom: '16px',
               display: 'flex',
-              flexDirection: 'column',
+              alignItems: 'center',
               gap: '8px',
               textAlign: 'left',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertCircle size={16} style={{ flexShrink: 0 }} />
-              <span style={{ fontWeight: 600 }}>{errorMsg}</span>
-            </div>
-            {errorMsg.includes('Supabase') && (
-              <a
-                href="https://supabase.com/dashboard/project/iwkxcppbhxdkiuborexk/auth/providers"
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#9E4E00',
-                  textDecoration: 'underline',
-                  display: 'inline-block',
-                }}
-              >
-                ⚙️ Buka Supabase Auth Providers di Tab Baru →
-              </a>
-            )}
+            <AlertCircle size={16} style={{ flexShrink: 0 }} />
+            <span>{errorMsg}</span>
           </div>
         )}
 
+        {/* ==========================================================
+            DIVIDER: ATAU JALUR 2 GOOGLE
+            ========================================================== */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            margin: '0 0 16px',
+          }}
+        >
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border)' }} />
+          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+            Atau Jalur 2: 1-Klik Google
+          </span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border)' }} />
+        </div>
+
+        {/* ==========================================================
+            JALUR 2: AKUN GOOGLE OAUTH
+            ========================================================== */}
         <button
           id="btn-login-google"
           type="button"
           onClick={handleGoogleLogin}
-          disabled={isLoading}
+          disabled={isGoogleLoading}
           style={{
             width: '100%',
-            height: '48px',
+            height: '46px',
             borderRadius: '12px',
             border: '1.5px solid var(--border)',
             backgroundColor: '#FFFFFF',
             color: 'var(--text)',
-            fontSize: '14.5px',
+            fontSize: '14px',
             fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '10px',
-            cursor: isLoading ? 'wait' : 'pointer',
-            opacity: isLoading ? 0.7 : 1,
+            cursor: isGoogleLoading ? 'wait' : 'pointer',
+            opacity: isGoogleLoading ? 0.7 : 1,
             boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
             transition: 'all 0.15s ease',
+            marginBottom: '16px',
           }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
@@ -155,12 +524,36 @@ export const FgAuthModal: React.FC<FgAuthModalProps> = ({ isOpen, onClose }) => 
               d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
             />
           </svg>
-          <span>{isLoading ? 'Menghubungkan ke Google...' : 'Lanjutkan dengan Google'}</span>
+          <span>{isGoogleLoading ? 'Menghubungkan ke Google...' : 'Lanjutkan dengan Akun Google'}</span>
         </button>
 
-        <p style={{ fontSize: '11.5px', color: 'var(--text-tertiary, #8E8E93)', marginTop: '14px', lineHeight: 1.5 }}>
-          Kami hanya membaca nama & email akun Google kamu untuk membuat studio.
-        </p>
+        {/* Keamanan & Privasi Info */}
+        <div
+          style={{
+            textAlign: 'left',
+            backgroundColor: '#F5F5F7',
+            padding: '12px 14px',
+            borderRadius: '12px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            fontSize: '12px',
+            color: 'var(--text-secondary)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ShieldCheck size={14} color="#007AFF" />
+            <span>2 Jalur Aman: Data galeri & foto RAW Anda terisolasi aman</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Laptop size={14} color="var(--primary)" />
+            <span>Semua fitur (Drive Matcher, RAW Copy, Lightroom) terbuka 100%</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Smartphone size={14} color="#34C759" />
+            <span>Klien tetap bisa memilih foto tanpa perlu login atau daftar</span>
+          </div>
+        </div>
       </div>
     </Modal>
   );

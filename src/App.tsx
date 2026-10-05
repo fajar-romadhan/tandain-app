@@ -448,6 +448,17 @@ export function App() {
           setIsAuthModalOpen(false);
           sessionStorage.removeItem(POST_LOGIN_KEY);
         }}
+        onSuccess={(loggedUser) => {
+          setUser(loggedUser);
+          setIsAuthModalOpen(false);
+          const pending = sessionStorage.getItem(POST_LOGIN_KEY) as PostLoginAction | null;
+          sessionStorage.removeItem(POST_LOGIN_KEY);
+          setDashboardTab('projects');
+          setCurrentView('dashboard');
+          if (pending === 'create') {
+            setIsCreateModalOpen(true);
+          }
+        }}
       />
 
       {syncError && (
