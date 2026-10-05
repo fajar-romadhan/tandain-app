@@ -29,11 +29,56 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
 }) => {
   const currentPhoto = photos[currentIndex];
   const isSelected = selectedFileNames.includes(currentPhoto.name);
-  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomScale, setZoomScale] = useState<number>(1);
+  const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [showHeartBurst, setShowHeartBurst] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const lastTapRef = useRef<number>(0);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const isPinchingRef = useRef<boolean>(false);
+  const pinchStartDistRef = useRef<number>(0);
+  const pinchStartScaleRef = useRef<number>(1);
+  const isPanningRef = useRef<boolean>(false);
+  const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const currentPanRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  const handleZoomIn = () => {
+    setZoomScale((prev) => Math.min(4, Number((prev + 0.5).toFixed(1))));
+  };
+
+  const handleZoomOut = () => {
+    setZoomScale((prev) => {
+      const next = Math.max(1, Number((prev - 0.5).toFixed(1)));
+      if (next <= 1.05) {
+        setPanOffset({ x: 0, y: 0 });
+        currentPanRef.current = { x: 0, y: 0 };
+        return 1;
+      }
+      return next;
+    });
+  };
+
+  const handleResetZoom = () => {
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
+    currentPanRef.current = { x: 0, y: 0 };
+  };
+
+  const handleToggleZoom = () => {
+    if (zoomScale > 1.05) {
+      handleResetZoom();
+    } else {
+      setZoomScale(2);
+    }
+  };
+
+  // Reset zoom on photo navigation
+  useEffect(() => {
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
+    currentPanRef.current = { x: 0, y: 0 };
+  }, [currentIndex]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -48,6 +93,15 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
       if (e.key === ' ' || e.key.toLowerCase() === 'l') {
         e.preventDefault();
         triggerToggle();
+      }
+      if (e.key === '+' || e.key === '=') {
+        handleZoomIn();
+      }
+      if (e.key === '-' || e.key === '_') {
+        handleZoomOut();
+      }
+      if (e.key === '0') {
+        handleResetZoom();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -84,28 +138,101 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
     const now = Date.now();
     const diff = now - lastTapRef.current;
     if (diff < 300 && diff > 0) {
-      triggerToggle();
+      handleToggleZoom();
     }
     lastTapRef.current = now;
   };
 
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    if (zoomScale > 1.05) {
+      isPanningRef.current = true;
+      panStartRef.current = {
+        x: e.clientX - currentPanRef.current.x,
+        y: e.clientY - currentPanRef.current.y,
+      };
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {}
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isPanningRef.current && zoomScale > 1.05) {
+      const maxPanX = (zoomScale - 1) * 260;
+      const maxPanY = (zoomScale - 1) * 320;
+      const nextX = Math.max(-maxPanX, Math.min(maxPanX, e.clientX - panStartRef.current.x));
+      const nextY = Math.max(-maxPanY, Math.min(maxPanY, e.clientY - panStartRef.current.y));
+      currentPanRef.current = { x: nextX, y: nextY };
+      setPanOffset({ x: nextX, y: nextY });
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isPanningRef.current) {
+      isPanningRef.current = false;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+  };
+
+  // Pinch-to-zoom touch detection on HP
   const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    if (e.touches.length === 2) {
+      isPinchingRef.current = true;
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      pinchStartDistRef.current = dist;
+      pinchStartScaleRef.current = zoomScale;
+    } else if (e.touches.length === 1 && zoomScale <= 1.05) {
+      const touch = e.touches[0];
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (isPinchingRef.current && e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      if (pinchStartDistRef.current > 0) {
+        const factor = dist / pinchStartDistRef.current;
+        const newScale = Math.min(4, Math.max(1, pinchStartScaleRef.current * factor));
+        setZoomScale(Number(newScale.toFixed(2)));
+        if (newScale <= 1.05) {
+          setPanOffset({ x: 0, y: 0 });
+          currentPanRef.current = { x: 0, y: 0 };
+        }
+      }
+    }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStartRef.current) return;
-    const touch = e.changedTouches[0];
-    const diffX = touch.clientX - touchStartRef.current.x;
-    const diffY = touch.clientY - touchStartRef.current.y;
+    if (e.touches.length < 2) {
+      isPinchingRef.current = false;
+      if (zoomScale < 1.05) {
+        setZoomScale(1);
+        setPanOffset({ x: 0, y: 0 });
+        currentPanRef.current = { x: 0, y: 0 };
+      }
+    }
 
-    // Horizontal swipe threshold
-    if (Math.abs(diffX) > 48 && Math.abs(diffX) > Math.abs(diffY)) {
-      if (diffX > 0 && currentIndex > 0) {
-        onNavigate(currentIndex - 1);
-      } else if (diffX < 0 && currentIndex < photos.length - 1) {
-        onNavigate(currentIndex + 1);
+    if (zoomScale <= 1.05 && touchStartRef.current) {
+      const touch = e.changedTouches[0];
+      const diffX = touch.clientX - touchStartRef.current.x;
+      const diffY = touch.clientY - touchStartRef.current.y;
+
+      // Horizontal swipe threshold
+      if (Math.abs(diffX) > 48 && Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX > 0 && currentIndex > 0) {
+          onNavigate(currentIndex - 1);
+        } else if (diffX < 0 && currentIndex < photos.length - 1) {
+          onNavigate(currentIndex + 1);
+        }
       }
     }
     touchStartRef.current = null;
@@ -124,6 +251,7 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
         animation: 'fadeIn 0.2s ease-out',
       }}
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       {/* Top Header Bar */}
@@ -194,53 +322,123 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
             <span>{isDownloading ? 'Mengunduh...' : 'Unduh Foto HD'}</span>
           </button>
 
-          <button
-            onClick={() => setIsZoomed(!isZoomed)}
+          {/* Glass Zoom Control Bar */}
+          <div
             style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              color: '#FFFFFF',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              gap: '2px',
+              padding: '2px 4px',
+              borderRadius: '9999px',
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
               backdropFilter: 'blur(10px)',
-              border: 'none',
-              cursor: 'pointer',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
             }}
-            aria-label="Zoom"
           >
-            {isZoomed ? <ZoomOut size={18} /> : <ZoomIn size={18} />}
-          </button>
+            <button
+              onClick={handleZoomOut}
+              disabled={zoomScale <= 1}
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                border: 'none',
+                backgroundColor: 'transparent',
+                color: zoomScale <= 1 ? 'rgba(255, 255, 255, 0.35)' : '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: zoomScale <= 1 ? 'default' : 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              title="Perkecil Zoom (-)"
+              aria-label="Perkecil Zoom"
+            >
+              <ZoomOut size={16} />
+            </button>
+
+            <button
+              onClick={handleToggleZoom}
+              style={{
+                padding: '2px 8px',
+                borderRadius: '9999px',
+                border: 'none',
+                backgroundColor: zoomScale > 1 ? 'rgba(0, 122, 255, 0.5)' : 'rgba(255, 255, 255, 0.12)',
+                color: zoomScale > 1 ? '#64D2FF' : 'rgba(255, 255, 255, 0.9)',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                minWidth: '42px',
+                textAlign: 'center',
+                transition: 'all 0.15s ease',
+              }}
+              title={zoomScale > 1 ? 'Reset zoom ke 100%' : 'Perbesar 2x'}
+            >
+              {Math.round(zoomScale * 100)}%
+            </button>
+
+            <button
+              onClick={handleZoomIn}
+              disabled={zoomScale >= 4}
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                border: 'none',
+                backgroundColor: 'transparent',
+                color: zoomScale >= 4 ? 'rgba(255, 255, 255, 0.35)' : '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: zoomScale >= 4 ? 'default' : 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              title="Perbesar Zoom (+)"
+              aria-label="Perbesar Zoom"
+            >
+              <ZoomIn size={16} />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Main Image Container */}
       <div
         className="no-save-preview"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onClick={handleDoubleTap}
         style={{
           flex: 1,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           position: 'relative',
-          overflow: isZoomed ? 'auto' : 'hidden',
-          padding: isZoomed ? '0' : '8px',
+          overflow: 'hidden',
+          padding: '8px',
+          cursor: zoomScale > 1.05 ? (isPanningRef.current ? 'grabbing' : 'grab') : 'default',
+          touchAction: 'none',
         }}
-        onClick={handleDoubleTap}
       >
         <img
           src={currentPhoto.url}
           alt={currentPhoto.name}
           style={{
-            maxWidth: isZoomed ? 'none' : '100%',
-            maxHeight: isZoomed ? 'none' : 'calc(100vh - 170px)',
-            width: isZoomed ? '180%' : 'auto',
+            maxWidth: '100%',
+            maxHeight: 'calc(100vh - 170px)',
             objectFit: 'contain',
-            borderRadius: isZoomed ? '0' : '12px',
-            transition: 'transform 0.2s ease, width 0.2s ease',
-            cursor: isZoomed ? 'zoom-out' : 'pointer',
+            borderRadius: '12px',
+            transform: `scale(${zoomScale}) translate3d(${panOffset.x / zoomScale}px, ${panOffset.y / zoomScale}px, 0)`,
+            transition:
+              isPinchingRef.current || isPanningRef.current
+                ? 'none'
+                : 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+            willChange: 'transform',
+            userSelect: 'none',
+            pointerEvents: 'none',
           }}
           draggable={false}
         />

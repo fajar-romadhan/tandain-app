@@ -1,5 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Heart, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, Download, Loader2 } from 'lucide-react';
+import {
+  X,
+  Heart,
+  RotateCcw,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  AlertCircle,
+  Download,
+  Loader2,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react';
 import type { Photo } from '../../types';
 import { downloadPhotoHd } from '../../services/photoDownload';
 import { PhotoWatermark } from '../common/PhotoWatermark';
@@ -37,6 +50,54 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
   const [quotaToast, setQuotaToast] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadToast, setDownloadToast] = useState<string | null>(null);
+
+  // Zoom & Pan State (Supports buttons, double-tap, and touch pinch gestures)
+  const [zoomScale, setZoomScale] = useState<number>(1);
+  const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const isPinchingRef = useRef<boolean>(false);
+  const pinchStartDistRef = useRef<number>(0);
+  const pinchStartScaleRef = useRef<number>(1);
+  const isPanningRef = useRef<boolean>(false);
+  const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const currentPanRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const lastTapTimeRef = useRef<number>(0);
+
+  const handleZoomIn = () => {
+    setZoomScale((prev) => Math.min(3.5, Number((prev + 0.5).toFixed(1))));
+  };
+
+  const handleZoomOut = () => {
+    setZoomScale((prev) => {
+      const next = Math.max(1, Number((prev - 0.5).toFixed(1)));
+      if (next <= 1.05) {
+        setPanOffset({ x: 0, y: 0 });
+        currentPanRef.current = { x: 0, y: 0 };
+        return 1;
+      }
+      return next;
+    });
+  };
+
+  const handleResetZoom = () => {
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
+    currentPanRef.current = { x: 0, y: 0 };
+  };
+
+  const handleToggleZoom = () => {
+    if (zoomScale > 1.05) {
+      handleResetZoom();
+    } else {
+      setZoomScale(2);
+    }
+  };
+
+  // Reset zoom on photo navigation
+  useEffect(() => {
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
+    currentPanRef.current = { x: 0, y: 0 };
+  }, [currentIndex]);
 
   const handleDownload = async (photo: Photo) => {
     if (!photo || downloadingId) return;
@@ -109,10 +170,13 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
       // Record history for Undo
       setHistory((prev) => [...prev, { index: currentIndex, wasSelectedBefore: photoSelected }]);
 
-      // Trigger Bumble-style fly-out exit animation
+      // Trigger smooth physics-based fly-out exit animation
       setExitDirection(choose ? 'right' : 'left');
       setDragOffset(0);
       dragOffsetRef.current = 0;
+      setZoomScale(1);
+      setPanOffset({ x: 0, y: 0 });
+      currentPanRef.current = { x: 0, y: 0 };
 
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         try {
@@ -123,7 +187,7 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
       setTimeout(() => {
         setCurrentIndex((prev) => prev + 1);
         setExitDirection(null);
-      }, 250);
+      }, 280);
     },
     [currentIndex, exitDirection, photos, selectedFileNames, quota, onToggleSelect]
   );
@@ -168,13 +232,26 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
   }, [quotaToast]);
 
   // ---------------------------------------------------------------------------
-  // Pointer Event Handlers (Rock-solid for touch, mouse, and trackpad gestures)
+  // Pointer & Touch Handlers (Multi-Touch Pinch-to-Zoom on Mobile + Pan on Drag)
   // ---------------------------------------------------------------------------
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (exitDirection || !currentPhoto) return;
-    // Only respond to primary button (left mouse or primary touch)
     if (e.button !== 0) return;
 
+    if (zoomScale > 1.05) {
+      // Zoomed mode -> pan image
+      isPanningRef.current = true;
+      panStartRef.current = {
+        x: e.clientX - currentPanRef.current.x,
+        y: e.clientY - currentPanRef.current.y,
+      };
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {}
+      return;
+    }
+
+    // Normal mode -> card swipe
     isPointerDownRef.current = true;
     isDraggingRef.current = true;
     setIsDragging(true);
@@ -189,6 +266,16 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isPanningRef.current && zoomScale > 1.05) {
+      const maxPanX = (zoomScale - 1) * 200;
+      const maxPanY = (zoomScale - 1) * 240;
+      const nextX = Math.max(-maxPanX, Math.min(maxPanX, e.clientX - panStartRef.current.x));
+      const nextY = Math.max(-maxPanY, Math.min(maxPanY, e.clientY - panStartRef.current.y));
+      currentPanRef.current = { x: nextX, y: nextY };
+      setPanOffset({ x: nextX, y: nextY });
+      return;
+    }
+
     if (!isDraggingRef.current) return;
 
     const diffX = e.clientX - startXRef.current;
@@ -208,6 +295,14 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
   };
 
   const handlePointerEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isPanningRef.current) {
+      isPanningRef.current = false;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+      return;
+    }
+
     if (!isDraggingRef.current) return;
     isDraggingRef.current = false;
     isPointerDownRef.current = false;
@@ -228,6 +323,54 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
       // Bounce back to center
       setDragOffset(0);
       dragOffsetRef.current = 0;
+    }
+  };
+
+  // Touch Handlers for Pinch-to-Zoom Gesture (Multi-Touch on Mobile HP)
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2) {
+      isPinchingRef.current = true;
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      pinchStartDistRef.current = dist;
+      pinchStartScaleRef.current = zoomScale;
+    } else if (e.touches.length === 1) {
+      const now = Date.now();
+      if (now - lastTapTimeRef.current < 280) {
+        handleToggleZoom();
+      }
+      lastTapTimeRef.current = now;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (isPinchingRef.current && e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      if (pinchStartDistRef.current > 0) {
+        const factor = dist / pinchStartDistRef.current;
+        const newScale = Math.min(3.5, Math.max(1, pinchStartScaleRef.current * factor));
+        setZoomScale(Number(newScale.toFixed(2)));
+        if (newScale <= 1.05) {
+          setPanOffset({ x: 0, y: 0 });
+          currentPanRef.current = { x: 0, y: 0 };
+        }
+      }
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length < 2) {
+      isPinchingRef.current = false;
+      if (zoomScale < 1.05) {
+        setZoomScale(1);
+        setPanOffset({ x: 0, y: 0 });
+        currentPanRef.current = { x: 0, y: 0 };
+      }
     }
   };
 
@@ -469,11 +612,15 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
               boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
               zIndex: 1,
               willChange: 'transform, opacity',
-              transform: `translate3d(0, ${10 - Math.min(10, Math.abs(dragOffset) / 35)}px, 0) scale(${
-                0.94 + Math.min(0.06, Math.abs(dragOffset) / 600)
-              })`,
-              opacity: 0.75 + Math.min(0.25, Math.abs(dragOffset) / 250),
-              transition: isDragging ? 'none' : 'transform 0.24s ease, opacity 0.24s ease',
+              transform: exitDirection
+                ? 'translate3d(0, 0, 0) scale(1)'
+                : `translate3d(0, ${10 - Math.min(10, Math.abs(dragOffset) / 35)}px, 0) scale(${
+                    0.94 + Math.min(0.06, Math.abs(dragOffset) / 600)
+                  })`,
+              opacity: exitDirection ? 1 : 0.75 + Math.min(0.25, Math.abs(dragOffset) / 250),
+              transition: isDragging
+                ? 'none'
+                : 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease',
               pointerEvents: 'none',
             }}
           >
@@ -499,6 +646,10 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerEnd}
             onPointerCancel={handlePointerEnd}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onDoubleClick={handleToggleZoom}
             className="card-ios"
             style={{
               width: '100%',
@@ -512,34 +663,184 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
               boxShadow: '0 18px 45px rgba(0, 0, 0, 0.45)',
               zIndex: 2,
               touchAction: 'none',
-              cursor: isDragging ? 'grabbing' : 'grab',
+              cursor:
+                zoomScale > 1.05
+                  ? isPanningRef.current
+                    ? 'grabbing'
+                    : 'grab'
+                  : isDragging
+                  ? 'grabbing'
+                  : 'grab',
               willChange: 'transform, opacity',
               transform:
                 exitDirection === 'right'
-                  ? 'translate3d(120vw, 20px, 0) rotate(24deg)'
+                  ? 'translate3d(min(580px, 110vw), 30px, 0) rotate(16deg)'
                   : exitDirection === 'left'
-                  ? 'translate3d(-120vw, 20px, 0) rotate(-24deg)'
+                  ? 'translate3d(max(-580px, -110vw), 30px, 0) rotate(-16deg)'
                   : `translate3d(${dragOffset}px, ${Math.abs(dragOffset) * 0.08}px, 0) rotate(${dragOffset * 0.045}deg)`,
               opacity: exitDirection ? 0 : 1,
               transition: isDragging
                 ? 'none'
                 : exitDirection
-                ? 'transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease-out'
+                ? 'transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.22s ease-out'
                 : 'transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.25)',
             }}
           >
-            <img
-              src={currentPhoto.url || currentPhoto.thumbnailUrl}
-              alt={currentPhoto.name}
+            {/* Floating Glass Zoom Controls */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '16px',
+                left: '16px',
+                zIndex: 25,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                padding: '3px 6px',
+                borderRadius: '9999px',
+                backgroundColor: 'rgba(0, 0, 0, 0.72)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255, 255, 255, 0.22)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.45)',
+                userSelect: 'none',
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleZoomOut();
+                }}
+                disabled={zoomScale <= 1}
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  color: zoomScale <= 1 ? 'rgba(255, 255, 255, 0.35)' : '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: zoomScale <= 1 ? 'default' : 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                title="Perkecil Zoom (-)"
+                aria-label="Perkecil Zoom"
+              >
+                <ZoomOut size={15} />
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleZoom();
+                }}
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: '9999px',
+                  border: 'none',
+                  backgroundColor: zoomScale > 1 ? 'rgba(0, 122, 255, 0.45)' : 'rgba(255, 255, 255, 0.14)',
+                  color: zoomScale > 1 ? '#64D2FF' : 'rgba(255, 255, 255, 0.9)',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  minWidth: '42px',
+                  textAlign: 'center',
+                  transition: 'all 0.15s ease',
+                }}
+                title={zoomScale > 1 ? 'Klik untuk reset zoom (100%)' : 'Perbesar 2x'}
+              >
+                {Math.round(zoomScale * 100)}%
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleZoomIn();
+                }}
+                disabled={zoomScale >= 3.5}
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  color: zoomScale >= 3.5 ? 'rgba(255, 255, 255, 0.35)' : '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: zoomScale >= 3.5 ? 'default' : 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                title="Perbesar Zoom (+)"
+                aria-label="Perbesar Zoom"
+              >
+                <ZoomIn size={15} />
+              </button>
+            </div>
+
+            {/* Micro-hint when zoomed */}
+            {zoomScale > 1.05 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '56px',
+                  left: '16px',
+                  zIndex: 25,
+                  padding: '4px 10px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.72)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  color: '#64D2FF',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  border: '1px solid rgba(100, 210, 255, 0.3)',
+                  pointerEvents: 'none',
+                  animation: 'fadeIn 0.2s ease',
+                }}
+              >
+                🔍 Geser foto untuk memeriksa detail • Ketuk 2x untuk reset
+              </div>
+            )}
+
+            {/* Inner Photo Container with Zoom & Pan Transform */}
+            <div
               style={{
                 width: '100%',
                 height: '100%',
-                objectFit: 'contain',
-                display: 'block',
-                pointerEvents: 'none',
+                overflow: 'hidden',
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
-              draggable={false}
-            />
+            >
+              <img
+                src={currentPhoto.url || currentPhoto.thumbnailUrl}
+                alt={currentPhoto.name}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  display: 'block',
+                  transform: `scale(${zoomScale}) translate3d(${panOffset.x / zoomScale}px, ${panOffset.y / zoomScale}px, 0)`,
+                  transition:
+                    isPinchingRef.current || isPanningRef.current
+                      ? 'none'
+                      : 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+                  willChange: 'transform',
+                  userSelect: 'none',
+                  pointerEvents: 'none',
+                }}
+                draggable={false}
+              />
+            </div>
 
             {/* Pro Photographer Watermark (Top-Center, Clean & Minimalist) */}
             {hasWatermark && (
