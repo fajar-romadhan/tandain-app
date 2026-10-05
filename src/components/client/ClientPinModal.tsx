@@ -120,7 +120,7 @@ export const ClientPinModal: React.FC<ClientPinModalProps> = ({ project, studio,
 
         <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-light)' }}>
           <a
-            href={`https://wa.me/${studio.whatsapp}?text=${encodeURIComponent(`Halo ${studio.studioName}, saya client ${project.clientName}. Mau tanya PIN untuk buka galeri Tandain ya.`)}`}
+            href={`https://wa.me/${(project.studioWhatsapp || studio.whatsapp || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Halo ${project.studioName || studio.studioName}, saya client ${project.clientName}. Mau tanya PIN untuk buka galeri Tandain ya.`)}`}
             target="_blank"
             rel="noopener noreferrer"
             style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}

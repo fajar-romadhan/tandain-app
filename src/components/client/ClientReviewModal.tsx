@@ -42,8 +42,11 @@ export const ClientReviewModal: React.FC<ClientReviewModalProps> = ({
     } catch {}
   };
 
+  const targetWhatsapp = (project.studioWhatsapp || studio.whatsapp || '').replace(/[^0-9]/g, '');
+  const targetStudioName = project.studioName || studio.studioName || 'Fotografer';
+
   const generateWaMessage = () => {
-    const defaultMsg = `Halo ${studio.studioName}! Saya ${project.clientName} sudah selesai memilih ${selectedFileNames.length} foto di Tandain.
+    const defaultMsg = `Halo ${targetStudioName}! Saya ${project.clientName} sudah selesai memilih ${selectedFileNames.length} foto di Tandain.
 
 Berikut daftar foto yang saya pilih:
 ${selectedFileNames.map((f, i) => `${i + 1}. ${f}`).join('\n')}
@@ -208,7 +211,7 @@ Mohon segera diproses ya kak. Terima kasih! ✨`;
           </p>
 
           <a
-            href={`https://wa.me/${studio.whatsapp}?text=${generateWaMessage()}`}
+            href={`https://wa.me/${targetWhatsapp}?text=${generateWaMessage()}`}
             target="_blank"
             rel="noopener noreferrer"
             className="pill-btn"

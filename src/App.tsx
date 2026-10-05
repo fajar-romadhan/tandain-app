@@ -224,18 +224,26 @@ export function App() {
 
   const handleCreateProject = (newProject: Project) => {
     if (!ownerId) return;
+    const finalWa = newProject.studioWhatsapp || studio.whatsapp;
     const stamped: Project = {
       ...newProject,
       ownerId,
-      studioName: studio.studioName,
-      studioWhatsapp: studio.whatsapp,
-      waTemplate: studio.waTemplate,
+      studioName: newProject.studioName || studio.studioName,
+      studioWhatsapp: finalWa,
+      waTemplate: newProject.waTemplate || studio.waTemplate,
     };
     commitProjects([stamped, ...projects]);
     setActiveProjectId(stamped.id);
     setCurrentView('project_detail');
     setIsCreateModalOpen(false);
     saveProjectToCloud(stamped, ownerId).then((ok) => reportSync(ok, 'menyimpan galeri'));
+
+    if (finalWa && finalWa !== studio.whatsapp) {
+      handleUpdateStudio({
+        ...studio,
+        whatsapp: finalWa,
+      });
+    }
   };
 
   const handleUpdateProject = (updated: Project) => {

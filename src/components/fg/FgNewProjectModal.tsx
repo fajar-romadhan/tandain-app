@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { ChevronDown, ChevronUp, PlusCircle, FolderOpen, Loader2, CheckCircle2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ChevronDown, ChevronUp, PlusCircle, FolderOpen, Loader2, CheckCircle2, MessageCircle } from 'lucide-react';
 import { Modal } from '../Modal';
 import {
   extractDriveFolderId,
@@ -21,10 +21,11 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
   isOpen,
   onClose,
   onProjectCreated,
-  studio: _studio,
+  studio,
 }) => {
   const [driveUrl, setDriveUrl] = useState('');
   const [clientName, setClientName] = useState('');
+  const [whatsapp, setWhatsapp] = useState(studio?.whatsapp || '');
   const [quota, setQuota] = useState<number>(50);
   const [sessionDate, setSessionDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -38,6 +39,12 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
   const [selectedSubfolderId, setSelectedSubfolderId] = useState<string>('');
   const [localPhotos, setLocalPhotos] = useState<Photo[]>([]);
   const detectTimeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (studio?.whatsapp && !whatsapp) {
+      setWhatsapp(studio.whatsapp);
+    }
+  }, [studio?.whatsapp]);
 
   const triggerDetect = async (url: string, subId?: string) => {
     const fId = extractDriveFolderId(url);
@@ -115,6 +122,24 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
       setErrorMsg('Nama klien tidak boleh kosong.');
       return;
     }
+    if (!whatsapp.trim()) {
+      setErrorMsg('Nomor WhatsApp wajib diisi agar klien bisa mengirim hasil foto ke Anda.');
+      return;
+    }
+
+    const cleanedWa = whatsapp.replace(/[^0-9]/g, '');
+    let finalWa = cleanedWa;
+    if (finalWa.startsWith('0')) {
+      finalWa = '62' + finalWa.slice(1);
+    } else if (finalWa.startsWith('8')) {
+      finalWa = '62' + finalWa;
+    }
+
+    if (finalWa.length < 9) {
+      setErrorMsg('Nomor WhatsApp belum valid. Masukkan nomor yang benar (misal: 081234567890).');
+      return;
+    }
+
     if (quota <= 0) {
       setErrorMsg('Kuota foto minimal 1.');
       return;
@@ -150,6 +175,8 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
         id: 'proj_' + Date.now(),
         slug,
         clientName: clientName.trim(),
+        studioWhatsapp: finalWa,
+        studioName: studio?.studioName || undefined,
         sessionDate: sessionDate || undefined,
         driveFolderUrl: driveUrl.trim(),
         driveFolderId: folderId,
@@ -347,6 +374,52 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
               fontSize: '14px',
             }}
           />
+        </div>
+
+        {/* Photographer WhatsApp for Client Confirmation */}
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
+            Nomor WhatsApp Anda / Studio (Tujuan Konfirmasi Klien)*
+          </label>
+          <div style={{ position: 'relative' }}>
+            <div
+              style={{
+                position: 'absolute',
+                left: '14px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#25D366',
+                display: 'flex',
+                alignItems: 'center',
+                pointerEvents: 'none',
+              }}
+            >
+              <MessageCircle size={18} />
+            </div>
+            <input
+              type="tel"
+              required
+              value={whatsapp}
+              onChange={(e) => {
+                setWhatsapp(e.target.value);
+                setErrorMsg('');
+              }}
+              placeholder="Misal: 081234567890 atau 6281234567890"
+              style={{
+                width: '100%',
+                height: '46px',
+                padding: '0 14px 0 42px',
+                borderRadius: '12px',
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--bg)',
+                outline: 'none',
+                fontSize: '14px',
+              }}
+            />
+          </div>
+          <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+            Setelah klien selesai memilih foto di link mereka, hasil pilihan akan dikirim langsung ke WhatsApp ini.
+          </p>
         </div>
 
         {/* Quota */}
