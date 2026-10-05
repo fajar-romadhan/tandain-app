@@ -7,16 +7,17 @@ import {
   AlertCircle,
   FileArchive,
   HardDrive,
+  Info,
 } from 'lucide-react';
 import { Modal } from '../Modal';
 import {
   isFileSystemAccessSupported,
-  scanFolderChrome,
-  matchLocalFilesFromList,
   downloadMatchedAsZip,
+  matchLocalFilesFromList,
   type CopyProgress,
   type MatchedFile,
 } from '../../services/rawMatcher';
+import { RAW_EXTENSIONS } from '../../services/rawMatcher';
 
 interface FgRawModalProps {
   isOpen: boolean;
@@ -27,13 +28,77 @@ interface FgRawModalProps {
 
 type Step = 'idle' | 'scanning' | 'scanned' | 'zipping' | 'done' | 'error';
 
+// ─── Deep recursive Chrome scan (up to 5 subfolder levels) ───────────────────
+async function scanFolderRawDeep(
+  selectedFileNames: string[],
+  onProgress?: (p: CopyProgress) => void,
+): Promise<{ matched: MatchedFile[]; missing: string[]; totalBytes: number }> {
+  // @ts-expect-error showDirectoryPicker is available in Chrome/Edge
+  const dirHandle = await window.showDirectoryPicker({ mode: 'read', id: 'tandain_raw_scan' });
+
+  onProgress?.({ current: 0, total: selectedFileNames.length, currentFileName: '', statusText: 'Membaca isi folder...', phase: 'scan' });
+
+  // Build a flat index of ALL files recursively (up to 5 subfolder levels deep)
+  const fileIndex = new Map<string, File>();
+
+  async function indexDir(handle: FileSystemDirectoryHandle, depth: number) {
+    for await (const [, entry] of (handle as any).entries()) {
+      if (entry.kind === 'file') {
+        const f: File = await entry.getFile();
+        fileIndex.set(f.name.toLowerCase(), f);
+      } else if (entry.kind === 'directory' && depth < 5) {
+        await indexDir(entry, depth + 1);
+      }
+    }
+  }
+  await indexDir(dirHandle, 0);
+
+  onProgress?.({ current: 0, total: selectedFileNames.length, currentFileName: '', statusText: `Ditemukan ${fileIndex.size} file. Mencocokkan pilihan klien...`, phase: 'scan' });
+
+  // Match: for each JPG name the client chose, find the RAW file with the same base name
+  const matched: MatchedFile[] = [];
+  const missing: string[] = [];
+  let totalBytes = 0;
+  const total = selectedFileNames.length;
+
+  for (let i = 0; i < total; i++) {
+    const sel = selectedFileNames[i];
+    const base = sel.includes('.') ? sel.substring(0, sel.lastIndexOf('.')).toLowerCase() : sel.toLowerCase();
+
+    let found: MatchedFile | null = null;
+
+    for (const [lowerName, file] of fileIndex.entries()) {
+      const ext = (lowerName.split('.').pop() || '').toLowerCase();
+      const candidateBase = lowerName.includes('.')
+        ? lowerName.substring(0, lowerName.lastIndexOf('.'))
+        : lowerName;
+
+      if (candidateBase !== base) continue;
+
+      if (RAW_EXTENSIONS.includes(ext)) {
+        found = { file, name: file.name, size: file.size, extension: ext };
+        totalBytes += file.size;
+        break; // Take the first RAW match per base name
+      }
+    }
+
+    if (found) {
+      matched.push(found);
+      onProgress?.({ current: i + 1, total, currentFileName: found.name, statusText: `Mencocokkan... ${i + 1}/${total}`, phase: 'scan' });
+    } else {
+      missing.push(sel);
+    }
+  }
+
+  return { matched, missing, totalBytes };
+}
+
 export const FgRawModal: React.FC<FgRawModalProps> = ({
   isOpen,
   onClose,
   selectedFileNames,
   clientName,
 }) => {
-  const [targetType, setTargetType] = useState<'raw' | 'jpg' | 'both'>('raw');
   const [step, setStep] = useState<Step>('idle');
   const [progress, setProgress] = useState<CopyProgress | null>(null);
   const [matched, setMatched] = useState<MatchedFile[]>([]);
@@ -58,7 +123,7 @@ export const FgRawModal: React.FC<FgRawModalProps> = ({
     setStep('scanning');
     setErrorMsg(null);
     try {
-      const res = await scanFolderChrome(selectedFileNames, targetType, setProgress);
+      const res = await scanFolderRawDeep(selectedFileNames, setProgress);
       setMatched(res.matched);
       setMissing(res.missing);
       setTotalBytes(res.totalBytes);
@@ -73,14 +138,15 @@ export const FgRawModal: React.FC<FgRawModalProps> = ({
     }
   };
 
-  // ─── SAFARI (webkitdirectory) ──────────────────────────────────────────────
+  // ─── SAFARI / macOS Finder ─────────────────────────────────────────────────
   const handleSafariFolderSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     setStep('scanning');
     setErrorMsg(null);
     try {
-      const res = matchLocalFilesFromList(files, selectedFileNames, targetType);
+      // Only match RAW files (ignore JPG even if uploaded together)
+      const res = matchLocalFilesFromList(files, selectedFileNames, 'raw');
       setMatched(res.matched);
       setMissing(res.missing);
       setTotalBytes(res.totalBytes);
@@ -109,141 +175,99 @@ export const FgRawModal: React.FC<FgRawModalProps> = ({
     return (b / 1024 / 1024).toFixed(0) + ' MB';
   };
 
+  const progressPct = progress && progress.total > 0
+    ? Math.round((progress.current / progress.total) * 100)
+    : 0;
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Ambil File RAW Pilihan Klien" maxWidth="520px">
+    <Modal isOpen={isOpen} onClose={onClose} title="📥 Download File RAW Pilihan Klien" maxWidth="520px">
       <div>
-        {/* ─── KETERANGAN SIMPEL ─────────────────────────────────────────────── */}
-        <div
-          style={{
-            backgroundColor: '#F0F7FF',
-            border: '1px solid #BFDBFE',
-            borderRadius: '14px',
-            padding: '14px 16px',
-            marginBottom: '20px',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '12px',
-          }}
-        >
-          <HardDrive size={22} color="#2563EB" style={{ flexShrink: 0, marginTop: '2px' }} />
-          <div>
-            <p style={{ fontSize: '13.5px', fontWeight: 700, color: '#1E3A8A', marginBottom: '4px' }}>
-              Cara kerja: 3 langkah mudah
-            </p>
-            <ol style={{ margin: 0, paddingLeft: '16px', fontSize: '13px', color: '#374151', lineHeight: 1.7 }}>
-              <li>Klik tombol <b>Pilih Folder</b> → arahkan ke folder foto di laptop/harddisk/SD card</li>
-              <li>Web otomatis mencocokkan <b>{selectedFileNames.length} foto</b> pilihan klien</li>
-              <li>Klik <b>Download ZIP</b> → 1 file ZIP langsung turun ke komputer kamu 🎉</li>
-            </ol>
-          </div>
-        </div>
 
-        {/* ─── FORMAT FILE TARGET ─────────────────────────────────────────────── */}
-        {(step === 'idle' || step === 'error') && (
-          <div style={{ marginBottom: '18px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
-              📂 Saya ingin download format:
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-              {(['raw', 'jpg', 'both'] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTargetType(t)}
-                  style={{
-                    height: '40px',
-                    borderRadius: '10px',
-                    fontSize: '12.5px',
-                    fontWeight: 700,
-                    border: targetType === t ? '2px solid #2563EB' : '1.5px solid var(--border)',
-                    backgroundColor: targetType === t ? '#EFF6FF' : 'var(--surface)',
-                    color: targetType === t ? '#2563EB' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  {t === 'raw' ? '📷 RAW Saja' : t === 'jpg' ? '🖼️ JPG Saja' : '📦 RAW + JPG'}
-                </button>
-              ))}
-            </div>
-            <p style={{ fontSize: '11.5px', color: 'var(--text-tertiary)', marginTop: '6px' }}>
-              {targetType === 'raw'
-                ? 'File .CR3 .ARW .NEF .DNG .RAF dll — untuk diedit di Lightroom/Capture One'
-                : targetType === 'jpg'
-                ? 'File .JPG/.JPEG — ukuran lebih kecil, cocok untuk cetak langsung'
-                : 'Download file RAW + JPG sekaligus dalam 1 file ZIP'}
-            </p>
-          </div>
-        )}
-
-        {/* ─── STEP: IDLE — TOMBOL PILIH FOLDER ─────────────────────────────── */}
+        {/* ─── STEP: IDLE ──────────────────────────────────────────────────── */}
         {step === 'idle' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {/* Chrome/Edge */}
-            {supported && (
-              <button
-                type="button"
-                onClick={handleScanChrome}
-                style={{
-                  width: '100%',
-                  height: '56px',
-                  borderRadius: '14px',
-                  backgroundColor: '#2563EB',
-                  color: '#FFFFFF',
-                  fontSize: '15px',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px',
-                  boxShadow: '0 4px 18px rgba(37, 99, 235, 0.3)',
-                  cursor: 'pointer',
-                  transition: 'all 0.18s ease',
-                }}
-              >
-                <FolderOpen size={22} /> Pilih Folder Foto di Laptop
-              </button>
-            )}
+          <div>
+            {/* How it works card */}
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #EFF6FF 0%, #F0F9FF 100%)',
+                border: '1.5px solid #BFDBFE',
+                borderRadius: '16px',
+                padding: '16px 18px',
+                marginBottom: '20px',
+              }}
+            >
+              <p style={{ fontSize: '13px', fontWeight: 800, color: '#1D4ED8', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Info size={15} /> Cara kerja — hanya 2 langkah:
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {[
+                  { num: '1', text: <>Klik <b>"Pilih Folder RAW"</b> → arahkan ke folder RAW kamu di laptop / harddisk / SD card</> },
+                  { num: '2', text: <>Web otomatis mencocokkan <b>{selectedFileNames.length} file pilihan klien</b> → muncul tombol <b>Download ZIP</b> 🎉</> },
+                ].map(({ num, text }) => (
+                  <div key={num} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <div style={{
+                      width: '24px', height: '24px', borderRadius: '50%',
+                      backgroundColor: '#2563EB', color: '#FFFFFF',
+                      fontSize: '12px', fontWeight: 800,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0, marginTop: '1px',
+                    }}>{num}</div>
+                    <p style={{ fontSize: '13px', color: '#374151', lineHeight: 1.6, margin: 0 }}>{text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-            {/* Safari / Firefox */}
-            {!supported && (
-              <>
-                <input
-                  ref={safariInputRef}
-                  type="file"
-                  // @ts-expect-error webkitdirectory is standard in Safari/WebKit
-                  webkitdirectory=""
-                  directory=""
-                  multiple
-                  style={{ display: 'none' }}
-                  onChange={handleSafariFolderSelect}
-                />
+            {/* Tips for FG */}
+            <div style={{
+              backgroundColor: '#FFFBEB',
+              border: '1px solid #FDE68A',
+              borderRadius: '12px',
+              padding: '11px 14px',
+              marginBottom: '20px',
+              fontSize: '12.5px',
+              color: '#78350F',
+              lineHeight: 1.6,
+            }}>
+              💡 <b>Tips FG:</b> Kalau kamu punya 2 folder terpisah (folder JPG + folder RAW), pilih folder <b>RAW</b>-nya aja. Web akan otomatis mencari nama file yang cocok dengan pilihan klien.
+            </div>
+
+            {/* Scan security note */}
+            <p style={{ fontSize: '11.5px', color: 'var(--text-tertiary)', textAlign: 'center', marginBottom: '14px' }}>
+              🔒 File kamu <b>tidak dikirim ke server</b> — semua diproses 100% di browser lokal
+            </p>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+
+              {/* Chrome/Edge primary button */}
+              {supported && (
                 <button
                   type="button"
-                  onClick={() => safariInputRef.current?.click()}
+                  onClick={handleScanChrome}
                   style={{
                     width: '100%',
-                    height: '56px',
-                    borderRadius: '14px',
-                    backgroundColor: '#2563EB',
+                    height: '58px',
+                    borderRadius: '16px',
+                    background: 'linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)',
                     color: '#FFFFFF',
-                    fontSize: '15px',
-                    fontWeight: 700,
+                    fontSize: '16px',
+                    fontWeight: 800,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '10px',
-                    boxShadow: '0 4px 18px rgba(37, 99, 235, 0.3)',
+                    boxShadow: '0 6px 20px rgba(37, 99, 235, 0.35)',
+                    border: 'none',
                     cursor: 'pointer',
+                    letterSpacing: '0.2px',
                   }}
                 >
-                  <FolderOpen size={22} /> Pilih Folder Foto di Laptop
+                  <FolderOpen size={22} /> Pilih Folder RAW
                 </button>
-              </>
-            )}
+              )}
 
-            {/* Safari juga bisa di Chrome (sebagai fallback) */}
-            {supported && (
+              {/* Safari / webkitdirectory fallback (always visible as secondary) */}
               <>
                 <input
                   ref={safariInputRef}
@@ -260,86 +284,146 @@ export const FgRawModal: React.FC<FgRawModalProps> = ({
                   onClick={() => safariInputRef.current?.click()}
                   style={{
                     width: '100%',
-                    height: '40px',
-                    borderRadius: '10px',
-                    backgroundColor: 'var(--surface)',
-                    color: 'var(--text-secondary)',
-                    fontSize: '12.5px',
-                    fontWeight: 600,
+                    height: supported ? '44px' : '58px',
+                    borderRadius: '14px',
+                    backgroundColor: supported ? 'var(--surface)' : 'linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)',
+                    border: `1.5px solid ${supported ? 'var(--border)' : 'transparent'}`,
+                    color: supported ? 'var(--text-secondary)' : '#FFFFFF',
+                    fontSize: supported ? '13px' : '16px',
+                    fontWeight: 700,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    border: '1px solid var(--border)',
                     cursor: 'pointer',
                   }}
                 >
-                  <FolderOpen size={16} /> Atau pilih folder via dialog file biasa (Safari / Firefox)
+                  <HardDrive size={supported ? 15 : 22} />
+                  {supported
+                    ? 'Alternatif: pilih folder via dialog biasa (Safari / macOS)'
+                    : 'Pilih Folder RAW'}
                 </button>
               </>
-            )}
+            </div>
 
-            <p style={{ fontSize: '11.5px', color: 'var(--text-tertiary)', textAlign: 'center' }}>
-              🔒 File kamu <b>tidak dikirim ke server</b> — semua proses terjadi 100% di browser sendiri
-            </p>
+            <button
+              onClick={onClose}
+              className="pill-btn pill-btn-ghost"
+              style={{ width: '100%', height: '40px', marginTop: '12px', fontSize: '13px' }}
+            >
+              Tutup
+            </button>
           </div>
         )}
 
         {/* ─── STEP: SCANNING ────────────────────────────────────────────────── */}
         {step === 'scanning' && (
-          <div style={{ textAlign: 'center', padding: '28px 20px' }}>
-            <Loader2 size={40} color="#2563EB" className="animate-spin" style={{ margin: '0 auto 14px' }} />
-            <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text)', marginBottom: '4px' }}>
-              {progress?.statusText || 'Sedang membaca folder kamu...'}
+          <div style={{ textAlign: 'center', padding: '32px 20px' }}>
+            <div style={{
+              width: '64px', height: '64px', borderRadius: '50%',
+              backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', margin: '0 auto 16px',
+            }}>
+              <Loader2 size={36} color="#2563EB" className="animate-spin" />
+            </div>
+            <p style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text)', marginBottom: '6px' }}>
+              {progress?.statusText || 'Membaca folder kamu...'}
             </p>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-              Mohon tunggu, web sedang mencocokkan file RAW pilihan klien
+              Mencocokkan {selectedFileNames.length} nama file pilihan klien
             </p>
+            {progress && progress.total > 0 && (
+              <div style={{ marginTop: '18px' }}>
+                <div style={{ width: '100%', height: '6px', borderRadius: '9999px', backgroundColor: 'var(--border)', overflow: 'hidden' }}>
+                  <div style={{
+                    width: `${progressPct}%`, height: '100%',
+                    backgroundColor: '#2563EB', borderRadius: '9999px',
+                    transition: 'width 0.2s ease',
+                  }} />
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '6px' }}>
+                  {progress.current} / {progress.total} file diproses
+                </p>
+              </div>
+            )}
           </div>
         )}
 
-        {/* ─── STEP: SCANNED — HASIL + TOMBOL DOWNLOAD ZIP ──────────────────── */}
+        {/* ─── STEP: SCANNED ─────────────────────────────────────────────────── */}
         {step === 'scanned' && (
           <div>
-            {/* Result card */}
-            <div
-              style={{
-                backgroundColor: matched.length > 0 ? '#F0FDF4' : '#FFFBEB',
-                border: `1.5px solid ${matched.length > 0 ? '#86EFAC' : '#FCD34D'}`,
-                borderRadius: '16px',
-                padding: '18px 20px',
-                marginBottom: '18px',
-              }}
-            >
+            {/* Result summary */}
+            <div style={{
+              backgroundColor: matched.length > 0 ? '#F0FDF4' : '#FFFBEB',
+              border: `2px solid ${matched.length > 0 ? '#86EFAC' : '#FCD34D'}`,
+              borderRadius: '16px',
+              padding: '20px',
+              marginBottom: '20px',
+            }}>
               {matched.length > 0 ? (
                 <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                    <CheckCircle2 size={24} color="#16A34A" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                    <CheckCircle2 size={28} color="#16A34A" />
                     <div>
-                      <p style={{ fontSize: '16px', fontWeight: 800, color: '#15803D' }}>
-                        {matched.length} file siap didownload!
+                      <p style={{ fontSize: '17px', fontWeight: 900, color: '#15803D' }}>
+                        {matched.length} file RAW siap didownload!
                       </p>
-                      <p style={{ fontSize: '12.5px', color: '#4B5563' }}>
+                      <p style={{ fontSize: '13px', color: '#4B5563', marginTop: '2px' }}>
                         Total ukuran: <b>{formatBytes(totalBytes)}</b>
                       </p>
                     </div>
                   </div>
+
+                  {/* File list preview (first 5) */}
+                  <div style={{
+                    backgroundColor: 'rgba(255,255,255,0.7)',
+                    borderRadius: '10px',
+                    padding: '10px 12px',
+                    maxHeight: '120px',
+                    overflowY: 'auto',
+                  }}>
+                    {matched.slice(0, 8).map((m) => (
+                      <p key={m.name} style={{ fontSize: '12px', color: '#374151', lineHeight: 1.7 }}>
+                        📷 {m.name} <span style={{ color: '#6B7280' }}>({(m.size / 1024 / 1024).toFixed(1)} MB)</span>
+                      </p>
+                    ))}
+                    {matched.length > 8 && (
+                      <p style={{ fontSize: '12px', color: '#2563EB', fontWeight: 700 }}>
+                        +{matched.length - 8} file lainnya...
+                      </p>
+                    )}
+                  </div>
+
                   {missing.length > 0 && (
-                    <p style={{ fontSize: '12px', color: '#B45309', backgroundColor: '#FFFBEB', padding: '8px 12px', borderRadius: '8px', marginTop: '8px' }}>
-                      ⚠️ {missing.length} foto tidak ditemukan di folder ini:{' '}
-                      {missing.slice(0, 3).join(', ')}{missing.length > 3 ? ` +${missing.length - 3} lainnya` : ''}
-                    </p>
+                    <div style={{
+                      backgroundColor: '#FFFBEB',
+                      border: '1px solid #FDE68A',
+                      borderRadius: '10px',
+                      padding: '10px 12px',
+                      marginTop: '10px',
+                    }}>
+                      <p style={{ fontSize: '12px', color: '#92400E', fontWeight: 700, marginBottom: '4px' }}>
+                        ⚠️ {missing.length} foto tidak ditemukan di folder ini:
+                      </p>
+                      <p style={{ fontSize: '11.5px', color: '#78350F' }}>
+                        {missing.slice(0, 4).join(', ')}{missing.length > 4 ? ` ...+${missing.length - 4} lainnya` : ''}
+                      </p>
+                      <p style={{ fontSize: '11px', color: '#B45309', marginTop: '4px' }}>
+                        Kemungkinan ada di subfolder lain. Coba pilih folder induk yang lebih luas.
+                      </p>
+                    </div>
                   )}
                 </>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                  <AlertCircle size={22} color="#D97706" />
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <AlertCircle size={24} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
                   <div>
-                    <p style={{ fontSize: '14.5px', fontWeight: 700, color: '#92400E', marginBottom: '4px' }}>
-                      File tidak ditemukan di folder ini
+                    <p style={{ fontSize: '15px', fontWeight: 800, color: '#92400E', marginBottom: '6px' }}>
+                      File RAW tidak ditemukan di folder ini
                     </p>
-                    <p style={{ fontSize: '12.5px', color: '#6B7280', lineHeight: 1.5 }}>
-                      Kemungkinan foto ada di subfolder kamera (misal <b>100CANON</b>, <b>DCIM</b>). Coba pilih folder tersebut langsung.
+                    <p style={{ fontSize: '13px', color: '#6B7280', lineHeight: 1.6 }}>
+                      Pastikan kamu memilih folder yang berisi file <b>.CR3 / .CR2 / .ARW / .NEF / .DNG / .RAF</b> dll, bukan folder JPG.<br />
+                      Kalau foto ada di subfolder kamera (<b>100CANON</b>, <b>DCIM</b>), coba pilih folder induknya.
                     </p>
                   </div>
                 </div>
@@ -354,22 +438,22 @@ export const FgRawModal: React.FC<FgRawModalProps> = ({
                   onClick={handleDownloadZip}
                   style={{
                     width: '100%',
-                    height: '58px',
-                    borderRadius: '14px',
-                    backgroundColor: '#16A34A',
+                    height: '60px',
+                    borderRadius: '16px',
+                    background: 'linear-gradient(135deg, #15803D 0%, #16A34A 100%)',
                     color: '#FFFFFF',
-                    fontSize: '16px',
-                    fontWeight: 800,
+                    fontSize: '17px',
+                    fontWeight: 900,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '12px',
-                    boxShadow: '0 4px 20px rgba(22, 163, 74, 0.35)',
+                    boxShadow: '0 6px 20px rgba(22, 163, 74, 0.40)',
+                    border: 'none',
                     cursor: 'pointer',
-                    transition: 'all 0.18s ease',
                   }}
                 >
-                  <FileArchive size={24} /> Download {matched.length} File sebagai ZIP
+                  <FileArchive size={26} /> Download {matched.length} File RAW (ZIP)
                 </button>
               )}
               <button
@@ -377,17 +461,17 @@ export const FgRawModal: React.FC<FgRawModalProps> = ({
                 onClick={resetState}
                 style={{
                   width: '100%',
-                  height: '42px',
-                  borderRadius: '10px',
+                  height: '44px',
+                  borderRadius: '12px',
                   backgroundColor: 'var(--surface)',
                   color: 'var(--text-secondary)',
-                  fontSize: '13px',
+                  fontSize: '13.5px',
                   fontWeight: 600,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  border: '1px solid var(--border)',
+                  border: '1.5px solid var(--border)',
                   cursor: 'pointer',
                 }}
               >
@@ -399,121 +483,115 @@ export const FgRawModal: React.FC<FgRawModalProps> = ({
 
         {/* ─── STEP: ZIPPING ─────────────────────────────────────────────────── */}
         {step === 'zipping' && (
-          <div>
-            <div style={{ textAlign: 'center', padding: '12px 20px 20px' }}>
-              <div
-                style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
-                  backgroundColor: '#EFF6FF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 14px',
-                }}
-              >
-                <Loader2 size={32} color="#2563EB" className="animate-spin" />
-              </div>
-              <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text)', marginBottom: '6px' }}>
-                Sedang membuat file ZIP...
-              </p>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '18px' }}>
-                {progress?.statusText || 'Mohon tunggu, jangan tutup jendela ini'}
-              </p>
+          <div style={{ textAlign: 'center', padding: '24px 20px' }}>
+            <div style={{
+              width: '64px', height: '64px', borderRadius: '50%',
+              backgroundColor: '#F0FDF4', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', margin: '0 auto 16px',
+            }}>
+              <Loader2 size={36} color="#16A34A" className="animate-spin" />
             </div>
+            <p style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text)', marginBottom: '6px' }}>
+              Membuat file ZIP...
+            </p>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+              {progress?.statusText || 'Jangan tutup jendela ini ya!'}
+            </p>
             {progress && progress.total > 0 && (
-              <div>
+              <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>Progres</span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#2563EB' }}>
-                    {progress.current}/{progress.total}
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Progres</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#16A34A' }}>
+                    {progressPct}%
                   </span>
                 </div>
-                <div style={{ width: '100%', height: '8px', borderRadius: '9999px', backgroundColor: 'var(--border)', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      width: `${(progress.current / progress.total) * 100}%`,
-                      height: '100%',
-                      backgroundColor: '#2563EB',
-                      borderRadius: '9999px',
-                      transition: 'width 0.2s ease',
-                    }}
-                  />
+                <div style={{ width: '100%', height: '10px', borderRadius: '9999px', backgroundColor: 'var(--border)', overflow: 'hidden' }}>
+                  <div style={{
+                    width: `${progressPct}%`, height: '100%',
+                    background: 'linear-gradient(90deg, #16A34A, #22C55E)',
+                    borderRadius: '9999px',
+                    transition: 'width 0.3s ease',
+                  }} />
                 </div>
-              </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '8px' }}>
+                  {progress.current} / {progress.total} file dikemas
+                </p>
+              </>
             )}
           </div>
         )}
 
         {/* ─── STEP: DONE ────────────────────────────────────────────────────── */}
         {step === 'done' && (
-          <div style={{ textAlign: 'center', padding: '24px 20px' }}>
-            <div
-              style={{
-                width: '72px',
-                height: '72px',
-                borderRadius: '50%',
-                backgroundColor: '#DCFCE7',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px',
-              }}
-            >
-              <Download size={36} color="#16A34A" />
+          <div style={{ textAlign: 'center', padding: '28px 20px' }}>
+            <div style={{
+              width: '80px', height: '80px', borderRadius: '50%',
+              background: 'linear-gradient(135deg, #DCFCE7, #BBF7D0)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 18px',
+              boxShadow: '0 8px 24px rgba(22, 163, 74, 0.25)',
+            }}>
+              <Download size={40} color="#16A34A" />
             </div>
-            <p style={{ fontSize: '18px', fontWeight: 800, color: '#15803D', marginBottom: '6px' }}>
+            <p style={{ fontSize: '20px', fontWeight: 900, color: '#15803D', marginBottom: '8px' }}>
               ZIP berhasil didownload! 🎉
             </p>
-            <p style={{ fontSize: '13.5px', color: '#4B5563', marginBottom: '24px', lineHeight: 1.5 }}>
-              File <b>RAW_Pilihan_{(clientName || 'Klien').replace(/[^a-zA-Z0-9_-]/g, '_')}</b> sudah tersimpan di folder Download kamu.
+            <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '8px', lineHeight: 1.6 }}>
+              File <b>RAW_Pilihan_{(clientName || 'Klien').replace(/[^a-zA-Z0-9_-]/g, '_')}</b> sudah tersimpan di folder <b>Downloads</b> kamu.
             </p>
-            <button
-              type="button"
-              onClick={resetState}
-              className="pill-btn pill-btn-secondary"
-              style={{ width: '100%', height: '44px' }}
-            >
-              Proses Klien Lain
-            </button>
+            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '24px' }}>
+              Kamu bisa langsung buka di Lightroom / Capture One / Folder ✨
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={resetState}
+                className="pill-btn pill-btn-secondary"
+                style={{ width: '100%', height: '46px', fontSize: '14px' }}
+              >
+                Proses Klien Lain
+              </button>
+              <button
+                onClick={onClose}
+                className="pill-btn pill-btn-ghost"
+                style={{ width: '100%', height: '40px', fontSize: '13px' }}
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         )}
 
         {/* ─── STEP: ERROR ───────────────────────────────────────────────────── */}
         {step === 'error' && errorMsg && (
           <div style={{ marginBottom: '16px' }}>
-            <div
-              style={{
-                padding: '14px 16px',
-                borderRadius: '12px',
-                backgroundColor: '#FFF0F0',
-                border: '1px solid #FECACA',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '10px',
-                marginBottom: '14px',
-              }}
-            >
-              <AlertCircle size={20} color="#DC2626" style={{ flexShrink: 0 }} />
-              <p style={{ fontSize: '13px', color: '#991B1B', lineHeight: 1.5 }}>{errorMsg}</p>
+            <div style={{
+              padding: '16px 18px',
+              borderRadius: '14px',
+              backgroundColor: '#FFF0F0',
+              border: '1.5px solid #FECACA',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '12px',
+              marginBottom: '16px',
+            }}>
+              <AlertCircle size={22} color="#DC2626" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <p style={{ fontSize: '14px', fontWeight: 700, color: '#991B1B', marginBottom: '4px' }}>
+                  Terjadi Kesalahan
+                </p>
+                <p style={{ fontSize: '13px', color: '#991B1B', lineHeight: 1.5 }}>{errorMsg}</p>
+              </div>
             </div>
             <button
               type="button"
               onClick={resetState}
               style={{
-                width: '100%',
-                height: '44px',
-                borderRadius: '10px',
-                backgroundColor: '#2563EB',
-                color: '#FFFFFF',
-                fontSize: '14px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                cursor: 'pointer',
+                width: '100%', height: '48px', borderRadius: '12px',
+                backgroundColor: '#2563EB', color: '#FFFFFF',
+                fontSize: '14px', fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: '8px', border: 'none', cursor: 'pointer',
               }}
             >
               <FolderOpen size={18} /> Coba Lagi
@@ -521,16 +599,6 @@ export const FgRawModal: React.FC<FgRawModalProps> = ({
           </div>
         )}
 
-        {/* Footer close */}
-        {(step === 'idle' || step === 'error') && (
-          <button
-            onClick={onClose}
-            className="pill-btn pill-btn-ghost"
-            style={{ width: '100%', height: '40px', marginTop: '8px', fontSize: '13px' }}
-          >
-            Tutup
-          </button>
-        )}
       </div>
     </Modal>
   );
