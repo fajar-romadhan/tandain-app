@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Copy,
@@ -12,6 +12,7 @@ import {
   Trash2,
   Eye,
   ShieldCheck,
+  ShieldAlert,
   MessageCircle,
   Download,
 } from 'lucide-react';
@@ -19,6 +20,7 @@ import { StatusBadge } from '../StatusBadge';
 import { FgRawModal } from './FgRawModal';
 import { formatAsTxtList, downloadBlobFile } from '../../services/exportList';
 import { downloadPhotoHd } from '../../services/photoDownload';
+import { fetchProjectFromCloud } from '../../services/supabase';
 import type { Project, StudioProfile } from '../../types';
 
 interface FgProjectDetailProps {
@@ -42,6 +44,57 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedNames, setCopiedNames] = useState(false);
   const [copiedWaText, setCopiedWaText] = useState(false);
+  const [watermarkAnimating, setWatermarkAnimating] = useState(false);
+  const [actionToast, setActionToast] = useState<string | null>(null);
+
+  const showActionToast = (msg: string) => {
+    setActionToast(msg);
+    setTimeout(() => {
+      setActionToast((current) => (current === msg ? null : current));
+    }, 2800);
+  };
+
+  // Cross-device active polling heartbeat (real-time detection when client submits from smartphone)
+  useEffect(() => {
+    let isCancelled = false;
+    const checkLiveUpdates = async () => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+      try {
+        const remote = await fetchProjectFromCloud(project.slug);
+        if (isCancelled || !remote) return;
+        const statusChanged = remote.status !== project.status;
+        const lockChanged = remote.locked !== project.locked;
+        const watermarkChanged = remote.hasWatermark !== project.hasWatermark;
+        const selectionChanged =
+          remote.selectedFileNames.length !== project.selectedFileNames.length ||
+          remote.selectedFileNames.some((name, idx) => name !== project.selectedFileNames[idx]);
+
+        if (statusChanged || lockChanged || watermarkChanged || selectionChanged) {
+          onUpdateProject({
+            ...project,
+            status: remote.status,
+            locked: remote.locked,
+            hasWatermark: remote.hasWatermark,
+            selectedFileNames: remote.selectedFileNames,
+            submissionHistory: remote.submissionHistory || project.submissionHistory,
+            revisionRound: remote.revisionRound || project.revisionRound,
+          });
+
+          if (statusChanged && remote.status === 'udah_kirim') {
+            showActionToast('🎉 Klien baru saja mengirimkan pilihan foto!');
+          }
+        }
+      } catch {
+        // ignore network error
+      }
+    };
+
+    const interval = setInterval(checkLiveUpdates, 3200);
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
+  }, [project, onUpdateProject]);
 
   const selectedPhotos = project.photos.filter((p) => project.selectedFileNames.includes(p.name));
 
@@ -84,6 +137,7 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
       revisionRound: !nextLocked ? project.revisionRound + 1 : project.revisionRound,
     };
     onUpdateProject(updated);
+    showActionToast(nextLocked ? '🔒 Galeri dikunci (pilihan tersimpan)' : '🔓 Galeri dibuka kembali (mode revisi)');
   };
 
   const handleToggleWatermark = () => {
@@ -92,7 +146,10 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
       ...project,
       hasWatermark: nextWm,
     };
+    setWatermarkAnimating(true);
+    setTimeout(() => setWatermarkAnimating(false), 450);
     onUpdateProject(updated);
+    showActionToast(nextWm ? '🛡️ Watermark diaktifkan di galeri klien' : '🛡️ Watermark dinonaktifkan (foto bersih)');
   };
 
   const daysLeft = Math.max(
@@ -165,24 +222,36 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
               <button
                 type="button"
                 onClick={handleToggleWatermark}
+                className={watermarkAnimating ? 'animate-watermark-flip' : ''}
                 style={{
-                  fontSize: '11.5px',
+                  fontSize: '12px',
                   fontWeight: 600,
-                  padding: '4px 10px',
-                  borderRadius: '8px',
+                  padding: '4px 12px',
+                  borderRadius: '9999px',
                   cursor: 'pointer',
-                  backgroundColor: project.hasWatermark ? '#EBF5FF' : 'var(--border-light)',
-                  color: project.hasWatermark ? '#007AFF' : 'var(--text-secondary)',
-                  border: project.hasWatermark ? '1px solid rgba(0, 122, 255, 0.2)' : '1px solid rgba(0, 0, 0, 0.05)',
+                  backgroundColor: project.hasWatermark ? 'rgba(0, 122, 255, 0.1)' : 'rgba(142, 142, 147, 0.1)',
+                  color: project.hasWatermark ? '#007AFF' : '#636366',
+                  border: project.hasWatermark ? '1px solid rgba(0, 122, 255, 0.3)' : '1px solid rgba(142, 142, 147, 0.22)',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '4px',
-                  transition: 'all 0.18s ease',
+                  gap: '6px',
+                  boxShadow: project.hasWatermark ? '0 1px 4px rgba(0, 122, 255, 0.12)' : 'none',
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                 }}
-                title="Bebas ubah watermark: klik untuk nyalakan/matikan"
+                title="Bebas ubah watermark: klik untuk nyalakan/matikan di galeri klien secara realtime"
               >
-                <ShieldCheck size={13} />
-                {project.hasWatermark ? 'Watermark: ON' : 'Watermark: OFF'}
+                {project.hasWatermark ? (
+                  <>
+                    <ShieldCheck size={13} style={{ color: '#007AFF' }} />
+                    <span>Watermark: ON</span>
+                    <span className="status-dot-pulse" style={{ backgroundColor: '#007AFF' }} />
+                  </>
+                ) : (
+                  <>
+                    <ShieldAlert size={13} style={{ color: '#8E8E93' }} />
+                    <span>Watermark: OFF</span>
+                  </>
+                )}
               </button>
               {daysLeft <= 5 && (
                 <span style={{ fontSize: '12px', color: '#B25E00', fontWeight: 600 }}>
@@ -288,8 +357,18 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
           {/* Unlock / Lock Toggle */}
           <button
             onClick={handleToggleLock}
-            className="pill-btn pill-btn-ghost"
-            style={{ height: '40px', fontSize: '13px' }}
+            className={`pill-btn ${project.locked ? '' : 'pill-btn-ghost'}`}
+            style={{
+              height: '40px',
+              fontSize: '13px',
+              gap: '6px',
+              backgroundColor: project.locked ? 'rgba(255, 149, 0, 0.12)' : undefined,
+              borderColor: project.locked ? 'rgba(255, 149, 0, 0.35)' : undefined,
+              color: project.locked ? '#D97706' : undefined,
+              fontWeight: project.locked ? 700 : 500,
+              boxShadow: project.locked ? '0 2px 8px rgba(255, 149, 0, 0.12)' : undefined,
+            }}
+            title={project.locked ? 'Klik untuk membuka kunci galeri agar klien dapat memilih atau merevisi kembali foto' : 'Kunci pilihan foto'}
           >
             {project.locked ? <Unlock size={15} /> : <Lock size={15} />}
             {project.locked ? 'Buka Kunci (Beri Revisi)' : 'Kunci Pilihan'}
@@ -298,16 +377,15 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
           {/* Watermark Toggle */}
           <button
             onClick={handleToggleWatermark}
-            className="pill-btn pill-btn-ghost"
+            className={`pill-btn ${project.hasWatermark ? 'btn-blue' : 'pill-btn-ghost'} ${watermarkAnimating ? 'animate-watermark-flip' : ''}`}
             style={{
               height: '40px',
               fontSize: '13px',
               gap: '6px',
-              color: project.hasWatermark ? '#007AFF' : 'var(--text-secondary)',
             }}
-            title="Klik untuk menyalakan atau mematikan watermark pada preview foto klien"
+            title="Klik untuk menyalakan atau mematikan watermark pada preview foto klien secara realtime"
           >
-            <ShieldCheck size={15} />
+            {project.hasWatermark ? <ShieldCheck size={15} /> : <ShieldAlert size={15} />}
             {project.hasWatermark ? 'Watermark: Aktif' : 'Watermark: Nonaktif'}
           </button>
         </div>
@@ -412,6 +490,32 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
         selectedFileNames={project.selectedFileNames}
         clientName={project.clientName}
       />
+
+      {/* Real-time Toast Feedback */}
+      {actionToast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 'calc(24px + env(safe-area-inset-bottom))',
+            right: '20px',
+            zIndex: 9999,
+            backgroundColor: '#1D1D1F',
+            color: '#FFFFFF',
+            padding: '12px 18px',
+            borderRadius: '14px',
+            boxShadow: '0 12px 30px rgba(0, 0, 0, 0.28)',
+            fontSize: '13px',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            border: '1px solid rgba(255, 255, 255, 0.14)',
+            animation: 'fadeIn 0.2s ease-out',
+          }}
+        >
+          <span>{actionToast}</span>
+        </div>
+      )}
     </div>
   );
 };

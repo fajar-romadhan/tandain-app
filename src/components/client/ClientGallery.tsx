@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Heart,
   Search,
@@ -77,6 +77,34 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
       document.title = 'Silahkan Tandain yaa! 📸✨';
     };
   }, [project.clientName]);
+
+  // Real-time lock & watermark toast notification for client
+  const prevLockedRef = useRef(project.locked);
+  const prevWmRef = useRef(project.hasWatermark);
+
+  useEffect(() => {
+    if (prevLockedRef.current !== project.locked) {
+      if (!project.locked) {
+        setDownloadToast('🎉 Fotografer membuka kunci galeri! Kamu bisa mengubah foto pilihan.');
+      } else {
+        setDownloadToast('🔒 Galeri telah dikunci oleh fotografer.');
+      }
+      setTimeout(() => setDownloadToast(null), 3800);
+      prevLockedRef.current = project.locked;
+    }
+  }, [project.locked]);
+
+  useEffect(() => {
+    if (prevWmRef.current !== project.hasWatermark) {
+      setDownloadToast(
+        project.hasWatermark
+          ? '🛡️ Watermark foto diperbarui (Aktif)'
+          : '🛡️ Watermark dinonaktifkan oleh fotografer (Foto Bersih)'
+      );
+      setTimeout(() => setDownloadToast(null), 3200);
+      prevWmRef.current = project.hasWatermark;
+    }
+  }, [project.hasWatermark]);
 
   // Filtered photos
   const displayedPhotos = useMemo(() => {

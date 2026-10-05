@@ -15,6 +15,8 @@ import {
   studioFromProject,
   clearLegacyStorage,
   findLocalProjectBySlug,
+  subscribeRealtime,
+  broadcastEvent,
 } from './services/storage';
 import {
   subscribeAuthChanges,
@@ -148,6 +150,58 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ownerId]);
 
+  // 2b. Cross-tab real-time event bus (instant sync for multiple tabs on this device)
+  useEffect(() => {
+    return subscribeRealtime((event) => {
+      if (event.type === 'PROJECT_UPDATED') {
+        const updated = event.project;
+        setProjects((prev) => upsertInList(prev, updated));
+        setClientProject((prev) => {
+          if (prev && (prev.id === updated.id || prev.slug === updated.slug)) {
+            return {
+              ...updated,
+              photos: updated.photos && updated.photos.length > 0 ? updated.photos : prev.photos,
+            };
+          }
+          return prev;
+        });
+      } else if (event.type === 'PROJECT_LOCKED_CHANGE') {
+        setProjects((prev) =>
+          prev.map((p) =>
+            p.id === event.projectId
+              ? { ...p, locked: event.locked, status: event.locked ? 'udah_kirim' : 'lagi_milih' }
+              : p
+          )
+        );
+        setClientProject((prev) =>
+          prev && prev.id === event.projectId
+            ? { ...prev, locked: event.locked, status: event.locked ? 'udah_kirim' : 'lagi_milih' }
+            : prev
+        );
+      } else if (event.type === 'PROJECT_WATERMARK_CHANGE') {
+        setProjects((prev) =>
+          prev.map((p) => (p.id === event.projectId ? { ...p, hasWatermark: event.hasWatermark } : p))
+        );
+        setClientProject((prev) =>
+          prev && prev.id === event.projectId ? { ...prev, hasWatermark: event.hasWatermark } : prev
+        );
+      } else if (event.type === 'PROJECT_SUBMITTED') {
+        setProjects((prev) =>
+          prev.map((p) =>
+            p.id === event.projectId
+              ? { ...p, status: 'udah_kirim', locked: true, selectedFileNames: event.selectedFileNames }
+              : p
+          )
+        );
+        setClientProject((prev) =>
+          prev && prev.id === event.projectId
+            ? { ...prev, status: 'udah_kirim', locked: true, selectedFileNames: event.selectedFileNames }
+            : prev
+        );
+      }
+    });
+  }, []);
+
   // 3. Post-login routing (?view=fg after Google redirect, or a pending action)
   useEffect(() => {
     if (!authReady) return;
@@ -228,6 +282,43 @@ export function App() {
     });
   }, [clientProjectSlug]);
 
+  // 6b. Active polling fallback for client gallery (ensures 100% real-time cross-device updates)
+  useEffect(() => {
+    if (!clientProjectSlug) return;
+    let isCancelled = false;
+    const poll = async () => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+      try {
+        const remote = await fetchProjectFromCloud(clientProjectSlug);
+        if (isCancelled || !remote) return;
+        setClientProject((prev) => {
+          if (!prev) return remote;
+          if (
+            prev.locked !== remote.locked ||
+            prev.hasWatermark !== remote.hasWatermark ||
+            prev.status !== remote.status ||
+            prev.quota !== remote.quota ||
+            prev.revisionRound !== remote.revisionRound
+          ) {
+            return {
+              ...remote,
+              photos: remote.photos && remote.photos.length > 0 ? remote.photos : prev.photos,
+            };
+          }
+          return prev;
+        });
+      } catch {
+        // ignore
+      }
+    };
+
+    const interval = setInterval(poll, 3200);
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
+  }, [clientProjectSlug]);
+
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
@@ -291,6 +382,8 @@ export function App() {
   const handleUpdateProject = (updated: Project) => {
     if (!ownerId) return;
     commitProjects(upsertInList(projects, updated));
+    // Broadcast immediately so client tab receives it in 0ms!
+    broadcastEvent({ type: 'PROJECT_UPDATED', project: updated });
     // preservePhotos=true: never overwrite the photos column on metadata updates
     // (lock/unlock, watermark toggle, quota change, etc.) to prevent photos from
     // being wiped when the local cache doesn't hold the full photo array.
@@ -361,6 +454,8 @@ export function App() {
 
   const applyClientUpdate = (updated: Project) => {
     setClientProject(updated);
+    // Broadcast immediately so FG tab receives client selections in 0ms!
+    broadcastEvent({ type: 'PROJECT_UPDATED', project: updated });
     // If the owner is previewing their own gallery, reflect it in the dashboard too
     if (ownerId && updated.ownerId === ownerId) commitProjects(upsertInList(projects, updated));
     clientUpdateProjectInCloud(updated).then((ok) => reportSync(ok, 'menyimpan pilihan'));

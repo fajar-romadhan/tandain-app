@@ -13,9 +13,11 @@ const channel = typeof window !== 'undefined' && 'BroadcastChannel' in window
   : null;
 
 export type RealtimeEvent =
+  | { type: 'PROJECT_UPDATED'; project: Project }
   | { type: 'SELECTION_CHANGE'; projectId: string; selectedFileNames: string[]; deviceId: string }
   | { type: 'PROJECT_SUBMITTED'; projectId: string; selectedFileNames: string[] }
   | { type: 'PROJECT_LOCKED_CHANGE'; projectId: string; locked: boolean }
+  | { type: 'PROJECT_WATERMARK_CHANGE'; projectId: string; hasWatermark: boolean }
   | { type: 'QUOTA_CHANGE'; projectId: string; quota: number }
   | { type: 'SELECTOR_TAKEOVER'; projectId: string; newDeviceId: string }
   | { type: 'PROJECT_EXPIRES_CHANGE'; projectId: string; expiresAt: string };
@@ -29,6 +31,22 @@ if (channel) {
   };
 }
 
+// Storage event listener fallback (works across separate windows/tabs even without BroadcastChannel)
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'tandain_realtime_ping' && e.newValue) {
+      try {
+        const parsed = JSON.parse(e.newValue);
+        if (parsed?.event) {
+          listeners.forEach((fn) => fn(parsed.event));
+        }
+      } catch {
+        // ignore JSON parse error
+      }
+    }
+  });
+}
+
 export const subscribeRealtime = (fn: EventListener) => {
   listeners.add(fn);
   return () => {
@@ -37,8 +55,28 @@ export const subscribeRealtime = (fn: EventListener) => {
 };
 
 export const broadcastEvent = (event: RealtimeEvent) => {
-  listeners.forEach((fn) => fn(event));
-  channel?.postMessage(event);
+  listeners.forEach((fn) => {
+    try {
+      fn(event);
+    } catch (err) {
+      console.error('Realtime listener error:', err);
+    }
+  });
+
+  try {
+    channel?.postMessage(event);
+  } catch (err) {
+    console.warn('BroadcastChannel postMessage failed:', err);
+  }
+
+  try {
+    localStorage.setItem(
+      'tandain_realtime_ping',
+      JSON.stringify({ event, t: Date.now() })
+    );
+  } catch {
+    // ignore localStorage error
+  }
 };
 
 export const getDeviceId = (): string => {
