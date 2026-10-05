@@ -11,6 +11,94 @@ export interface DriveScrapeResult {
   }>;
 }
 
+/**
+ * Scrapes Google Drive embeddedfolderview (#grid).
+ * This endpoint delivers the COMPLETE list of all photos (hundreds/thousands of photos)
+ * unlike the regular folder web app which artificially caps initial SSR at 50 items.
+ */
+async function scrapeEmbeddedView(folderId: string): Promise<{
+  folderTitle: string;
+  subfolders: Array<{ id: string; name: string }>;
+  photos: Array<{
+    id: string;
+    name: string;
+    url: string;
+    thumbnailUrl: string;
+    aspectRatio: number;
+  }>;
+} | null> {
+  try {
+    const url = `https://drive.google.com/embeddedfolderview?id=${folderId}#grid`;
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+      },
+    });
+
+    if (!res.ok) return null;
+    const html = await res.text();
+
+    const titleMatch = html.match(/<title>(.*?)<\/title>/);
+    const folderTitle = titleMatch ? titleMatch[1].replace(' - Google Drive', '').trim() : '';
+
+    const entryRegex = /id="entry-([a-zA-Z0-9_-]+)"([\s\S]*?)<div class="flip-entry-title">([^<]+)<\/div>/g;
+    const subfolders: Array<{ id: string; name: string }> = [];
+    const photos: Array<{
+      id: string;
+      name: string;
+      url: string;
+      thumbnailUrl: string;
+      aspectRatio: number;
+    }> = [];
+    let match;
+
+    while ((match = entryRegex.exec(html)) !== null) {
+      const id = match[1];
+      const block = match[2];
+      const name = match[3].trim();
+
+      const isFolder =
+        block.includes('drive/folders/') ||
+        block.includes('drive-sprite-folder') ||
+        block.includes('aria-label="Folder"');
+      const isImage =
+        /\.(jpg|jpeg|png|webp|heic)$/i.test(name) || block.includes('image/');
+
+      if (isFolder && !isImage) {
+        subfolders.push({ id, name });
+      } else if (isImage) {
+        photos.push({
+          id,
+          name,
+          url: `https://lh3.googleusercontent.com/d/${id}=w1200`,
+          thumbnailUrl: `https://lh3.googleusercontent.com/d/${id}=w400`,
+          aspectRatio: 1.5,
+        });
+      }
+    }
+
+    if (subfolders.length === 0 && photos.length === 0) {
+      return null;
+    }
+
+    // Sort photos naturally by filename (e.g. JII_0341, JII_0342... JII_0987)
+    photos.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+    );
+
+    return { folderTitle, subfolders, photos };
+  } catch (err) {
+    console.warn('Scrape embedded view error, falling back:', err);
+    return null;
+  }
+}
+
+/**
+ * Main scraper: uses embeddedfolderview for full photo sets,
+ * falling back to window['_DRIVE_ivd'] if needed.
+ */
 export async function scrapeFolder(folderId: string): Promise<{
   folderTitle: string;
   subfolders: Array<{ id: string; name: string }>;
@@ -22,6 +110,13 @@ export async function scrapeFolder(folderId: string): Promise<{
     aspectRatio: number;
   }>;
 }> {
+  // 1. Try embeddedfolderview to extract ALL photos (bypasses 50-photo limit)
+  const embedded = await scrapeEmbeddedView(folderId);
+  if (embedded && (embedded.photos.length > 0 || embedded.subfolders.length > 0)) {
+    return embedded;
+  }
+
+  // 2. Fallback to regular web UI parser
   const url = `https://drive.google.com/drive/folders/${folderId}`;
   const res = await fetch(url, {
     headers: {
@@ -94,6 +189,10 @@ export async function scrapeFolder(folderId: string): Promise<{
       });
     }
   }
+
+  photos.sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+  );
 
   return { folderTitle, subfolders, photos };
 }
