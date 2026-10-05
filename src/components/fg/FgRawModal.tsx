@@ -237,6 +237,40 @@ export const FgRawModal: React.FC<FgRawModalProps> = ({
               🔒 File kamu <b>tidak dikirim ke server</b> — semua diproses 100% di browser lokal
             </p>
 
+            {/* Notice for Safari / unsupported File System Access API */}
+            {!supported && (
+              <div
+                style={{
+                  backgroundColor: '#FEF3C7',
+                  border: '1.5px solid #FCD34D',
+                  borderRadius: '14px',
+                  padding: '14px 16px',
+                  marginBottom: '16px',
+                  fontSize: '12.5px',
+                  lineHeight: 1.55,
+                  color: '#78350F',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontWeight: 800, color: '#B45309', marginBottom: '6px' }}>
+                  <AlertCircle size={16} /> Info Kompatibilitas Safari (Apple WebKit)
+                </div>
+                <p style={{ margin: '0 0 8px 0', fontSize: '12px' }}>
+                  Apple Safari memiliki kebijakan privasi yang membatasi akses baca folder lokal otomatis (<i>File System Access API</i>).
+                </p>
+                <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.75)', borderRadius: '10px', padding: '10px 12px', fontSize: '12px' }}>
+                  <p style={{ fontWeight: 800, margin: '0 0 5px 0', color: '#92400E' }}>💡 Rekomendasi Alur Fotografer di Mac:</p>
+                  <ul style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    <li>
+                      <b>Google Chrome / Microsoft Edge di Mac (Paling Cepat):</b> Buka dashboard Tandain via Chrome/Edge untuk auto-match 1-klik tanpa kendala memori.
+                    </li>
+                    <li>
+                      <b>Salin Nama File / Export TXT:</b> Di dashboard, klik <b>"Salin Nama File"</b> atau <b>"Export TXT"</b>, lalu paste ke filter pencarian <b>Finder Mac (Cmd + F)</b> atau <b>Lightroom</b>.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
@@ -267,7 +301,7 @@ export const FgRawModal: React.FC<FgRawModalProps> = ({
                 </button>
               )}
 
-              {/* Safari / webkitdirectory fallback (always visible as secondary) */}
+              {/* Safari / webkitdirectory fallback */}
               <>
                 <input
                   ref={safariInputRef}
@@ -284,25 +318,32 @@ export const FgRawModal: React.FC<FgRawModalProps> = ({
                   onClick={() => safariInputRef.current?.click()}
                   style={{
                     width: '100%',
-                    height: supported ? '44px' : '58px',
+                    height: supported ? '44px' : '56px',
                     borderRadius: '14px',
-                    backgroundColor: supported ? 'var(--surface)' : 'linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)',
-                    border: `1.5px solid ${supported ? 'var(--border)' : 'transparent'}`,
+                    background: supported ? 'var(--surface)' : 'linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)',
+                    backgroundColor: supported ? 'var(--surface)' : '#1D4ED8',
+                    border: supported ? '1.5px solid var(--border)' : 'none',
                     color: supported ? 'var(--text-secondary)' : '#FFFFFF',
-                    fontSize: supported ? '13px' : '16px',
+                    fontSize: supported ? '13px' : '15px',
                     fontWeight: 700,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
                     cursor: 'pointer',
+                    boxShadow: supported ? 'none' : '0 4px 16px rgba(37, 99, 235, 0.28)',
                   }}
                 >
-                  <HardDrive size={supported ? 15 : 22} />
+                  <HardDrive size={supported ? 15 : 20} />
                   {supported
                     ? 'Alternatif: pilih folder via dialog biasa (Safari / macOS)'
-                    : 'Pilih Folder RAW'}
+                    : 'Coba Pilih Folder RAW via Safari'}
                 </button>
+                {!supported && (
+                  <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', textAlign: 'center', margin: '4px 0 0 0' }}>
+                    *Pada Safari macOS, pastikan menyetujui izin baca folder saat diminta sistem Finder.
+                  </p>
+                )}
               </>
             </div>
 
