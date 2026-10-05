@@ -1,20 +1,18 @@
 import React, { useState } from 'react';
 import {
   Heart,
-  ArrowRight,
   Laptop,
-  Check,
   PlusCircle,
   HardDrive,
   Download,
-  Sparkles,
-  MessageSquare,
   ShieldCheck,
   Zap,
   Eye,
   X,
   ChevronLeft,
   ChevronRight,
+  Smartphone,
+  CheckCircle2,
 } from 'lucide-react';
 import { SAMPLE_GRADUATION_PHOTOS, SAMPLE_WEDDING_PHOTOS } from '../services/sampleData';
 import { downloadPhotoHd } from '../services/photoDownload';
@@ -51,7 +49,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     ...SAMPLE_WEDDING_PHOTOS.map((p, idx) => ({
       ...p,
       category: 'prewedding' as const,
-      vendor: 'Tandain Gallery',
+      vendor: 'Tandain Studio',
       label: `Prewedding Story #${String(idx + 1).padStart(2, '0')}`,
     })),
     ...SAMPLE_GRADUATION_PHOTOS.map((p, idx) => ({
@@ -86,242 +84,341 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)' }}>
-      {/* Top Navbar */}
+    <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', color: '#1D1D1F' }}>
+      
+      {/* ─── APPLE-GRADE TOP NAVIGATION ───────────────────────────────────── */}
       <header
         className="safe-top"
         style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.85)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          borderBottom: '1px solid var(--border-light)',
-          padding: '16px 24px',
+          backgroundColor: 'rgba(255, 255, 255, 0.82)',
+          backdropFilter: 'saturate(180%) blur(20px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
           position: 'sticky',
           top: 0,
           zIndex: 100,
+          transition: 'background-color 0.3s ease',
         }}
       >
         <div
           style={{
-            maxWidth: '1160px',
+            maxWidth: '1120px',
             margin: '0 auto',
+            padding: '14px 20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '24px' }}>📸</span>
-            <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.4px' }}>
+          {/* Brand Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+            <span style={{ fontSize: '22px' }}>📸</span>
+            <span
+              style={{
+                fontSize: '19px',
+                fontWeight: 800,
+                color: '#1D1D1F',
+                letterSpacing: '-0.5px',
+              }}
+            >
               Tandain
+            </span>
+            <span
+              style={{
+                fontSize: '10.5px',
+                fontWeight: 700,
+                color: '#0071E3',
+                backgroundColor: 'rgba(0, 113, 227, 0.08)',
+                padding: '2px 8px',
+                borderRadius: '9999px',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+              }}
+            >
+              Pro
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {user ? (
-              <button
-                onClick={onOpenDashboard}
-                className="pill-btn pill-btn-ghost"
-                style={{ height: '38px', fontSize: '13.5px', fontWeight: 600, gap: '6px' }}
-              >
-                <Laptop size={16} /> {user.name || 'Dashboard'}
-              </button>
-            ) : (
-              <button
-                onClick={onOpenDashboard}
-                className="pill-btn pill-btn-ghost"
-                style={{ height: '38px', fontSize: '13.5px', fontWeight: 600, gap: '6px' }}
-              >
-                <Laptop size={16} /> Dashboard Fotografer
-              </button>
-            )}
+          {/* Nav Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={onOpenDashboard}
+              className="pill-btn pill-btn-ghost"
+              style={{
+                height: '36px',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: '#1D1D1F',
+                gap: '6px',
+                borderRadius: '9999px',
+              }}
+            >
+              <Laptop size={15} />
+              {user ? (user.name || 'Dashboard') : 'Dashboard Fotografer'}
+            </button>
 
             <button
               onClick={onCreateGallery}
-              className="pill-btn pill-btn-primary"
-              style={{ height: '38px', fontSize: '13.5px', fontWeight: 600, padding: '0 18px', gap: '6px' }}
+              className="pill-btn"
+              style={{
+                height: '36px',
+                fontSize: '13px',
+                fontWeight: 600,
+                padding: '0 16px',
+                gap: '6px',
+                borderRadius: '9999px',
+                backgroundColor: '#0071E3',
+                color: '#FFFFFF',
+                boxShadow: '0 2px 8px rgba(0, 113, 227, 0.28)',
+              }}
             >
-              <PlusCircle size={15} /> Buat Galeri Seleksi
+              <PlusCircle size={15} />
+              Buat Galeri
             </button>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* ─── HERO SECTION (APPLE MINIMALIST & IMPACTFUL) ───────────────────── */}
       <section
         style={{
-          maxWidth: '1160px',
-          margin: '0 auto',
-          padding: '56px 20px 48px',
+          position: 'relative',
+          padding: '72px 20px 64px',
+          textAlign: 'center',
+          overflow: 'hidden',
+          backgroundColor: '#FFFFFF',
         }}
       >
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-            gap: '48px',
-            alignItems: 'center',
-          }}
-        >
-          {/* Left Column: Copy & Actions */}
-          <div>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '6px 14px',
-                borderRadius: '9999px',
-                backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                border: '1px solid rgba(0, 0, 0, 0.07)',
-                color: 'var(--text)',
-                fontSize: '12px',
-                fontWeight: 700,
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                marginBottom: '20px',
-              }}
-            >
-              <span style={{ display: 'inline-block', width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#34C759' }} />
-              <span>Untuk Fotografer</span>
-            </div>
-
-            <h1
-              style={{
-                fontSize: 'clamp(34px, 4.8vw, 54px)',
-                fontWeight: 800,
-                color: 'var(--text)',
-                lineHeight: 1.12,
-                letterSpacing: '-1px',
-                marginBottom: '20px',
-              }}
-            >
-              Seleksi foto klien, <span style={{ color: 'var(--heart)' }}>rapi tanpa ribet.</span>
-            </h1>
-
-            <p
-              style={{
-                fontSize: 'clamp(15px, 2vw, 17px)',
-                color: 'var(--text-secondary)',
-                lineHeight: 1.65,
-                marginBottom: '32px',
-                maxWidth: '520px',
-              }}
-            >
-              Buat galeri dari folder Google Drive, bagikan linknya, dan biarkan klien memilih sendiri di HP. Hasil pilihannya langsung siap diproses — auto-salin file RAW di laptop atau unduh foto HD.
-            </p>
-
-            {/* Actions */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                flexWrap: 'wrap',
-                marginBottom: '28px',
-              }}
-            >
-              <button
-                onClick={onCreateGallery}
-                className="pill-btn pill-btn-primary"
-                style={{
-                  height: '50px',
-                  padding: '0 26px',
-                  fontSize: '15px',
-                  fontWeight: 700,
-                  gap: '8px',
-                }}
-              >
-                <PlusCircle size={18} /> Buat Galeri Baru
-              </button>
-
-              <button
-                onClick={onOpenDashboard}
-                className="pill-btn pill-btn-secondary"
-                style={{
-                  height: '50px',
-                  padding: '0 22px',
-                  fontSize: '15px',
-                  fontWeight: 600,
-                }}
-              >
-                <Laptop size={18} /> Buka Dashboard
-              </button>
-            </div>
-
-            {/* Trust Points */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-                flexWrap: 'wrap',
-                fontSize: '13px',
-                color: 'var(--text-secondary)',
-                fontWeight: 500,
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <Check size={16} color="#34C759" /> Tanpa upload ulang foto
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <Check size={16} color="#34C759" /> Bermerek studiomu
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <Check size={16} color="#34C759" /> Auto-salin RAW lokal
-              </span>
-            </div>
-          </div>
-
-          {/* Right Column: Interactive Gallery Mockup (ATM from Pilihin) */}
+        <div style={{ maxWidth: '860px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
+          {/* Eyebrow Badge */}
           <div
-            className="card-ios"
             style={{
-              padding: '0',
-              overflow: 'hidden',
-              boxShadow: '0 24px 48px -12px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.04)',
-              border: '1px solid var(--border)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 16px',
+              borderRadius: '9999px',
+              backgroundColor: '#F5F5F7',
+              border: '1px solid rgba(0, 0, 0, 0.06)',
+              fontSize: '12px',
+              fontWeight: 700,
+              color: '#1D1D1F',
+              letterSpacing: '0.02em',
+              marginBottom: '22px',
             }}
           >
-            {/* Header of Mockup */}
-            <div
+            <span
               style={{
-                padding: '16px 20px',
-                borderBottom: '1px solid var(--border-light)',
-                backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: '#34C759',
+                boxShadow: '0 0 0 3px rgba(52, 199, 89, 0.2)',
+              }}
+            />
+            <span>Solusi Kurasi Foto Terbaik untuk Fotografer & Klien</span>
+          </div>
+
+          {/* Main Apple Headline */}
+          <h1
+            style={{
+              fontSize: 'clamp(38px, 6.2vw, 68px)',
+              fontWeight: 800,
+              color: '#1D1D1F',
+              lineHeight: 1.06,
+              letterSpacing: '-1.8px',
+              marginBottom: '22px',
+            }}
+          >
+            Seleksi foto klien.
+            <br />
+            <span
+              style={{
+                background: 'linear-gradient(180deg, #1D1D1F 30%, #6E6E73 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              Cepat. Rapi. Tanpa ribet.
+            </span>
+          </h1>
+
+          {/* Subtitle */}
+          <p
+            style={{
+              fontSize: 'clamp(16px, 2.2vw, 20px)',
+              color: '#6E6E73',
+              lineHeight: 1.5,
+              maxWidth: '680px',
+              margin: '0 auto 36px',
+              letterSpacing: '-0.3px',
+              fontWeight: 400,
+            }}
+          >
+            Buat galeri dari folder Google Drive dalam hitungan detik. Klien memilih langsung di HP mereka dengan tap love ❤️, dan file master RAW langsung siap disalin otomatis di laptopmu.
+          </p>
+
+          {/* Hero Action Buttons */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '14px',
+              flexWrap: 'wrap',
+              marginBottom: '32px',
+            }}
+          >
+            <button
+              onClick={onCreateGallery}
+              className="pill-btn"
+              style={{
+                height: '52px',
+                padding: '0 28px',
+                fontSize: '15.5px',
+                fontWeight: 700,
+                borderRadius: '9999px',
+                backgroundColor: '#0071E3',
+                color: '#FFFFFF',
+                boxShadow: '0 4px 18px rgba(0, 113, 227, 0.35)',
+                gap: '8px',
+              }}
+            >
+              <PlusCircle size={18} />
+              Buat Galeri Seleksi
+            </button>
+
+            <button
+              onClick={onOpenDashboard}
+              className="pill-btn"
+              style={{
+                height: '52px',
+                padding: '0 24px',
+                fontSize: '15.5px',
+                fontWeight: 600,
+                borderRadius: '9999px',
+                backgroundColor: '#F5F5F7',
+                color: '#1D1D1F',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
+                gap: '8px',
+              }}
+            >
+              <Laptop size={18} />
+              Buka Dashboard Fotografer
+            </button>
+          </div>
+
+          {/* Apple Trust Micro Points */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '24px',
+              flexWrap: 'wrap',
+              fontSize: '13px',
+              color: '#6E6E73',
+              fontWeight: 500,
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CheckCircle2 size={16} color="#34C759" /> Tanpa upload ulang (Google Drive)
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CheckCircle2 size={16} color="#34C759" /> Klien pilih di HP tanpa aplikasi
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CheckCircle2 size={16} color="#34C759" /> Auto-salin file RAW lokal
+            </span>
+          </div>
+        </div>
+
+        {/* ─── HERO DEVICE FRAME (INTERACTIVE APPLE CANVAS) ─────────────────── */}
+        <div
+          style={{
+            maxWidth: '1040px',
+            margin: '52px auto 0',
+            position: 'relative',
+            zIndex: 2,
+          }}
+        >
+          {/* Apple Hardware Frame Simulation */}
+          <div
+            style={{
+              borderRadius: '28px',
+              padding: '12px',
+              backgroundColor: '#F5F5F7',
+              border: '1px solid rgba(0, 0, 0, 0.08)',
+              boxShadow: '0 32px 64px -16px rgba(0, 0, 0, 0.14), 0 8px 24px -4px rgba(0, 0, 0, 0.04)',
+            }}
+          >
+            <div
+              style={{
+                borderRadius: '20px',
+                overflow: 'hidden',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid rgba(0, 0, 0, 0.06)',
+              }}
+            >
+              {/* Device Preview Header Bar */}
+              <div
+                style={{
+                  padding: '16px 20px',
+                  borderBottom: '1px solid #F2F2F7',
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '12px',
+                }}
+              >
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
+                    <span
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        letterSpacing: '0.12em',
+                        textTransform: 'uppercase',
+                        color: '#86868B',
+                      }}
+                    >
                       TANDAIN STUDIO
                     </span>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#34C759', display: 'inline-block' }} />
-                    <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#34C759' }}>Online</span>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#34C759' }} />
+                    <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#34C759' }}>Galeri Aktif</span>
                   </div>
-                  <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text)', marginTop: '2px', letterSpacing: '-0.3px' }}>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: '#1D1D1F', marginTop: '2px', letterSpacing: '-0.3px' }}>
                     {mockupCategory === 'prewedding' ? 'Prewedding Aditya & Sarah' : 'Wisuda Rani Larasati, S.Ked'}
                   </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    {mockupCategory === 'prewedding' ? 'Outdoor & Studio • Pilih 50 foto album' : 'Universitas Indonesia • Pilih 30 foto'}
+                  <div style={{ fontSize: '12px', color: '#6E6E73' }}>
+                    {mockupCategory === 'prewedding' ? 'Outdoor & Studio • Batas kuota 50 foto album' : 'Universitas Indonesia • Batas kuota 30 foto'}
                   </div>
                 </div>
 
-                {/* Category Pill Switcher */}
-                <div style={{ display: 'flex', backgroundColor: '#F0F0F2', padding: '3px', borderRadius: '10px', gap: '3px' }}>
+                {/* Category Pill Switcher (Apple Segmented Style) */}
+                <div
+                  style={{
+                    display: 'flex',
+                    backgroundColor: '#E5E5EA',
+                    padding: '3px',
+                    borderRadius: '12px',
+                    gap: '2px',
+                  }}
+                >
                   <button
                     type="button"
                     onClick={() => setMockupCategory('prewedding')}
                     style={{
                       border: 'none',
-                      padding: '5px 11px',
-                      borderRadius: '8px',
-                      fontSize: '11.5px',
+                      padding: '6px 14px',
+                      borderRadius: '9px',
+                      fontSize: '12px',
                       fontWeight: 700,
                       cursor: 'pointer',
                       backgroundColor: mockupCategory === 'prewedding' ? '#FFFFFF' : 'transparent',
-                      color: mockupCategory === 'prewedding' ? 'var(--text)' : 'var(--text-secondary)',
+                      color: mockupCategory === 'prewedding' ? '#1D1D1F' : '#6E6E73',
                       boxShadow: mockupCategory === 'prewedding' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                       transition: 'all 0.15s ease',
                     }}
@@ -333,13 +430,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     onClick={() => setMockupCategory('wisuda')}
                     style={{
                       border: 'none',
-                      padding: '5px 11px',
-                      borderRadius: '8px',
-                      fontSize: '11.5px',
+                      padding: '6px 14px',
+                      borderRadius: '9px',
+                      fontSize: '12px',
                       fontWeight: 700,
                       cursor: 'pointer',
                       backgroundColor: mockupCategory === 'wisuda' ? '#FFFFFF' : 'transparent',
-                      color: mockupCategory === 'wisuda' ? 'var(--text)' : 'var(--text-secondary)',
+                      color: mockupCategory === 'wisuda' ? '#1D1D1F' : '#6E6E73',
                       boxShadow: mockupCategory === 'wisuda' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                       transition: 'all 0.15s ease',
                     }}
@@ -349,14 +446,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
               </div>
 
-              {/* Progress Bar & Counter */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                <div style={{ flex: 1, height: '6px', backgroundColor: '#EBEBF0', borderRadius: '9999px', overflow: 'hidden' }}>
+              {/* Progress Indicator */}
+              <div
+                style={{
+                  padding: '12px 20px',
+                  backgroundColor: '#FAFAFC',
+                  borderBottom: '1px solid #F2F2F7',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                }}
+              >
+                <div style={{ flex: 1, height: '6px', backgroundColor: '#E5E5EA', borderRadius: '9999px', overflow: 'hidden' }}>
                   <div
                     style={{
                       height: '100%',
                       width: `${Math.min(100, Math.round(((currentSelected.length + (mockupCategory === 'prewedding' ? 14 : 10)) / currentQuota) * 100))}%`,
-                      backgroundColor: 'var(--heart)',
+                      backgroundColor: '#FF2D55',
                       borderRadius: '9999px',
                       transition: 'width 0.3s ease',
                     }}
@@ -364,312 +470,492 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
                 <div
                   style={{
-                    padding: '3px 10px',
+                    padding: '3px 12px',
                     borderRadius: '9999px',
                     backgroundColor: '#FFF0F3',
                     border: '1px solid #FFE0E6',
-                    color: 'var(--heart)',
+                    color: '#FF2D55',
                     fontSize: '11.5px',
                     fontWeight: 700,
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {currentSelected.length + (mockupCategory === 'prewedding' ? 14 : 10)} <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>/ {currentQuota}</span>
+                  {currentSelected.length + (mockupCategory === 'prewedding' ? 14 : 10)} / {currentQuota} Foto Terpilih
                 </div>
               </div>
-            </div>
 
-            {/* Photo Grid Preview */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: '8px',
-                padding: '14px',
-                backgroundColor: '#FAF9F8',
-              }}
-            >
-              {currentPhotos.map((photo, idx) => {
-                const isSel = currentSelected.includes(idx);
-                return (
-                  <div
-                    key={`${mockupCategory}-${photo.id}`}
-                    onClick={() => togglePreviewPhoto(idx)}
-                    style={{
-                      position: 'relative',
-                      aspectRatio: '1',
-                      borderRadius: '10px',
-                      overflow: 'hidden',
-                      cursor: 'pointer',
-                      outline: isSel ? '2.5px solid var(--heart)' : '1px solid rgba(0,0,0,0.06)',
-                      outlineOffset: '-2.5px',
-                      transform: isSel ? 'scale(0.97)' : 'scale(1)',
-                      transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
-                      boxShadow: isSel ? '0 4px 12px rgba(255, 45, 85, 0.25)' : '0 1px 3px rgba(0,0,0,0.04)',
-                    }}
-                  >
-                    <img
-                      src={photo.url}
-                      alt={photo.name}
-                      loading="eager"
+              {/* Interactive Photo Grid Preview */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                  gap: '10px',
+                  padding: '16px',
+                  backgroundColor: '#FFFFFF',
+                }}
+              >
+                {currentPhotos.map((photo, idx) => {
+                  const isSel = currentSelected.includes(idx);
+                  return (
+                    <div
+                      key={`${mockupCategory}-${photo.id}`}
+                      onClick={() => togglePreviewPhoto(idx)}
                       style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        display: 'block',
+                        position: 'relative',
+                        aspectRatio: '1',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        outline: isSel ? '3px solid #FF2D55' : '1px solid rgba(0,0,0,0.06)',
+                        outlineOffset: '-3px',
+                        transform: isSel ? 'scale(0.97)' : 'scale(1)',
+                        transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
+                        boxShadow: isSel ? '0 4px 14px rgba(255, 45, 85, 0.25)' : 'none',
                       }}
-                    />
+                    >
+                      <img
+                        src={photo.url}
+                        alt={photo.name}
+                        loading="eager"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          display: 'block',
+                        }}
+                      />
 
-                    {/* Heart badge when selected */}
-                    {isSel && (
+                      {/* Heart badge when selected */}
+                      {isSel && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '8px',
+                            right: '8px',
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            backgroundColor: '#FF2D55',
+                            color: '#FFFFFF',
+                            display: 'grid',
+                            placeItems: 'center',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                          }}
+                        >
+                          <Heart size={13} fill="#FFFFFF" />
+                        </div>
+                      )}
+
+                      {/* Photo number badge */}
                       <div
                         style={{
                           position: 'absolute',
-                          top: '6px',
+                          bottom: '6px',
                           right: '6px',
-                          width: '22px',
-                          height: '22px',
-                          borderRadius: '50%',
-                          backgroundColor: 'var(--heart)',
+                          padding: '2px 7px',
+                          borderRadius: '6px',
+                          backgroundColor: 'rgba(0, 0, 0, 0.55)',
+                          backdropFilter: 'blur(4px)',
                           color: '#FFFFFF',
-                          display: 'grid',
-                          placeItems: 'center',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                          animation: 'pulse 0.2s ease-in-out',
+                          fontSize: '10px',
+                          fontWeight: 700,
                         }}
                       >
-                        <Heart size={12} fill="#FFFFFF" />
+                        #{idx + 1}
                       </div>
-                    )}
-
-                    {/* Photo index badge */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        bottom: '5px',
-                        right: '5px',
-                        padding: '1px 5px',
-                        borderRadius: '5px',
-                        backgroundColor: 'rgba(0, 0, 0, 0.65)',
-                        backdropFilter: 'blur(4px)',
-                        color: '#FFFFFF',
-                        fontSize: '9.5px',
-                        fontWeight: 700,
-                      }}
-                    >
-                      {idx + 1}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
 
-            {/* Mockup Bottom Action Bar */}
-            <div
-              style={{
-                padding: '12px 18px',
-                backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                borderTop: '1px solid var(--border-light)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <Sparkles size={13} color="var(--primary)" /> Tap foto untuk coba pilih
-              </span>
-              <button
-                onClick={onCreateGallery}
-                className="pill-btn pill-btn-primary"
-                style={{ height: '34px', fontSize: '12.5px', padding: '0 16px', gap: '5px' }}
+              {/* Simulation hint */}
+              <div
+                style={{
+                  padding: '10px',
+                  textAlign: 'center',
+                  backgroundColor: '#F5F5F7',
+                  fontSize: '12px',
+                  color: '#86868B',
+                  borderTop: '1px solid #E5E5EA',
+                }}
               >
-                Kirim Pilihan WA <ArrowRight size={13} />
-              </button>
+                👆 <b>Simulasi Interaktif:</b> Klik foto di atas untuk memilih / membatalkan foto seperti tampilan klien di layar HP.
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Row (ATM from Pilihin) */}
+      {/* ─── APPLE BENTO GRID: FITUR UTAMA ─────────────────────────────────── */}
       <section
         style={{
-          borderTop: '1px solid var(--border-light)',
-          borderBottom: '1px solid var(--border-light)',
-          backgroundColor: '#FFFFFF',
+          padding: '96px 20px',
+          backgroundColor: '#F5F5F7',
+          borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
         }}
       >
-        <div
-          style={{
-            maxWidth: '1160px',
-            margin: '0 auto',
-            padding: '36px 20px',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-            gap: '24px',
-            textAlign: 'center',
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text)' }}>15 dtk</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>Galeri siap dibagikan</div>
+        <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
+          
+          {/* Section Header */}
+          <div style={{ textAlign: 'center', maxWidth: '680px', margin: '0 auto 56px' }}>
+            <div
+              style={{
+                fontSize: '11.5px',
+                fontWeight: 800,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: '#0071E3',
+                marginBottom: '10px',
+              }}
+            >
+              DIRANCANG UNTUK FOTOGRAFER
+            </div>
+            <h2
+              style={{
+                fontSize: 'clamp(30px, 4.4vw, 46px)',
+                fontWeight: 800,
+                color: '#1D1D1F',
+                letterSpacing: '-1.2px',
+                lineHeight: 1.15,
+              }}
+            >
+              Semua yang kamu butuhkan.
+              <br />
+              Dibuat dengan presisi tinggi.
+            </h2>
+            <p style={{ fontSize: '16px', color: '#6E6E73', marginTop: '14px', lineHeight: 1.6 }}>
+              Tidak ada lagi daftar chat nomor foto yang berantakan atau jam-jam terbuang mencari file RAW satu per satu di laptop.
+            </p>
           </div>
-          <div>
-            <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text)' }}>0 GB</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>Upload ulang (tetap di Drive)</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '32px', fontWeight: 800, color: '#34C759' }}>100%</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>Bebas kuota tanpa sistem token</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text)' }}>5 dtk</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>Salin file RAW di laptop</div>
+
+          {/* Bento Box Grid */}
+          <div className="apple-bento-grid">
+            {/* Bento Card 1: Auto-Ambil RAW di Laptop (Span 7) */}
+            <div
+              className="apple-bento-col-7 bento-card-hover"
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: '24px',
+                padding: '36px',
+                border: '1px solid rgba(0, 0, 0, 0.06)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                minHeight: '340px',
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '14px',
+                    backgroundColor: 'rgba(0, 113, 227, 0.1)',
+                    color: '#0071E3',
+                    display: 'grid',
+                    placeItems: 'center',
+                    marginBottom: '20px',
+                  }}
+                >
+                  <HardDrive size={24} />
+                </div>
+                <h3 style={{ fontSize: '22px', fontWeight: 800, color: '#1D1D1F', letterSpacing: '-0.4px', marginBottom: '10px' }}>
+                  Auto-Ambil File RAW di Laptop
+                </h3>
+                <p style={{ fontSize: '14.5px', color: '#6E6E73', lineHeight: 1.6 }}>
+                  Buka dashboard di laptop via Chrome atau Edge. Tandain otomatis membaca harddisk kamu, mencocokkan nomor file foto yang dipilih klien, dan mengemas file master RAW ke subfolder baru dalam hitungan detik.
+                </p>
+              </div>
+
+              {/* Supported format tags */}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '24px' }}>
+                {['Canon .CR3 / .CR2', 'Sony .ARW', 'Nikon .NEF', 'Fuji .RAF', 'Universal .DNG'].map((ext) => (
+                  <span
+                    key={ext}
+                    style={{
+                      fontSize: '11.5px',
+                      fontWeight: 700,
+                      padding: '4px 10px',
+                      borderRadius: '8px',
+                      backgroundColor: '#F5F5F7',
+                      color: '#1D1D1F',
+                      border: '1px solid rgba(0, 0, 0, 0.06)',
+                    }}
+                  >
+                    {ext}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Bento Card 2: Mode Swipe Klien ala Tinder di HP (Span 5) */}
+            <div
+              className="apple-bento-col-5 bento-card-hover"
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: '24px',
+                padding: '36px',
+                border: '1px solid rgba(0, 0, 0, 0.06)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                minHeight: '340px',
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '14px',
+                    backgroundColor: 'rgba(255, 45, 85, 0.1)',
+                    color: '#FF2D55',
+                    display: 'grid',
+                    placeItems: 'center',
+                    marginBottom: '20px',
+                  }}
+                >
+                  <Smartphone size={24} />
+                </div>
+                <h3 style={{ fontSize: '22px', fontWeight: 800, color: '#1D1D1F', letterSpacing: '-0.4px', marginBottom: '10px' }}>
+                  Mode Swipe ala Tinder di HP
+                </h3>
+                <p style={{ fontSize: '14.5px', color: '#6E6E73', lineHeight: 1.6 }}>
+                  Klien menyortir foto dengan geser jempol ke kanan (suka) atau kiri (lewati). Lengkap dengan gestur pinch-to-zoom dan kunci kuota otomatis.
+                </p>
+              </div>
+
+              <div
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: '14px',
+                  backgroundColor: '#FFF0F3',
+                  border: '1px solid #FFE0E6',
+                  color: '#FF2D55',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <Heart size={16} fill="#FF2D55" />
+                90%+ Klien Memilih Langsung di iPhone & Android
+              </div>
+            </div>
+
+            {/* Bento Card 3: Tanpa Upload Ulang (Google Drive Langsung) (Span 4) */}
+            <div
+              className="apple-bento-col-4 bento-card-hover"
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: '24px',
+                padding: '30px',
+                border: '1px solid rgba(0, 0, 0, 0.06)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+              }}
+            >
+              <div
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(52, 199, 89, 0.1)',
+                  color: '#34C759',
+                  display: 'grid',
+                  placeItems: 'center',
+                  marginBottom: '16px',
+                }}
+              >
+                <Zap size={22} />
+              </div>
+              <h4 style={{ fontSize: '18px', fontWeight: 800, color: '#1D1D1F', marginBottom: '8px' }}>
+                Tanpa Upload Ulang
+              </h4>
+              <p style={{ fontSize: '13.5px', color: '#6E6E73', lineHeight: 1.6 }}>
+                Cukup tempel link folder Google Drive yang sudah kamu punya. Foto master tetap aman di Drive kamu tanpa boros kuota server.
+              </p>
+            </div>
+
+            {/* Bento Card 4: Unduh Foto HD Asli (Span 4) */}
+            <div
+              className="apple-bento-col-4 bento-card-hover"
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: '24px',
+                padding: '30px',
+                border: '1px solid rgba(0, 0, 0, 0.06)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+              }}
+            >
+              <div
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(88, 86, 214, 0.1)',
+                  color: '#5856D6',
+                  display: 'grid',
+                  placeItems: 'center',
+                  marginBottom: '16px',
+                }}
+              >
+                <Download size={22} />
+              </div>
+              <h4 style={{ fontSize: '18px', fontWeight: 800, color: '#1D1D1F', marginBottom: '8px' }}>
+                Unduh Resolusi HD Asli
+              </h4>
+              <p style={{ fontSize: '13.5px', color: '#6E6E73', lineHeight: 1.6 }}>
+                Fotografer dan klien dapat mengunduh foto pilihan dalam resolusi HD penuh asli Google Drive langsung dari HP maupun laptop.
+              </p>
+            </div>
+
+            {/* Bento Card 5: Watermark Fotografer Elegan (Span 4) */}
+            <div
+              className="apple-bento-col-4 bento-card-hover"
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: '24px',
+                padding: '30px',
+                border: '1px solid rgba(0, 0, 0, 0.06)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+              }}
+            >
+              <div
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255, 149, 0, 0.1)',
+                  color: '#FF9500',
+                  display: 'grid',
+                  placeItems: 'center',
+                  marginBottom: '16px',
+                }}
+              >
+                <ShieldCheck size={22} />
+              </div>
+              <h4 style={{ fontSize: '18px', fontWeight: 800, color: '#1D1D1F', marginBottom: '8px' }}>
+                Watermark Pro Otomatis
+              </h4>
+              <p style={{ fontSize: '13.5px', color: '#6E6E73', lineHeight: 1.6 }}>
+                Watermark studio minimalis di bagian atas foto klien secara realtime. Lindungi karyamu dari screenshot liar dengan 1 kali klik.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Interactive Client Gallery Showcase */}
+      {/* ─── APPLE SHOWCASE SECTION: PENGALAMAN GALERI KLIENT ──────────────── */}
       <section
         style={{
           position: 'relative',
-          padding: '80px 0 60px',
+          padding: '96px 0 80px',
           overflow: 'hidden',
-          backgroundColor: '#F8F9FA',
-          color: 'var(--text)',
-          borderTop: '1px solid var(--border-light)',
-          borderBottom: '1px solid var(--border-light)',
+          backgroundColor: '#FFFFFF',
         }}
       >
-        {/* Soft Ambient Light Glows */}
-        <div
-          className="ambient-glow-circle"
-          style={{
-            top: '-50px',
-            left: '20%',
-            width: '400px',
-            height: '400px',
-            background: 'radial-gradient(circle, rgba(255, 45, 85, 0.06) 0%, transparent 70%)',
-          }}
-        />
-        <div
-          className="ambient-glow-circle"
-          style={{
-            bottom: '-50px',
-            right: '20%',
-            width: '420px',
-            height: '420px',
-            background: 'radial-gradient(circle, rgba(0, 122, 255, 0.05) 0%, transparent 70%)',
-          }}
-        />
+        <div style={{ maxWidth: '1080px', margin: '0 auto', padding: '0 20px', textAlign: 'center' }}>
+          <div
+            style={{
+              fontSize: '11.5px',
+              fontWeight: 800,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: '#FF2D55',
+              marginBottom: '10px',
+            }}
+          >
+            PENGALAMAN KLIENT
+          </div>
 
-        <div style={{ maxWidth: '1160px', margin: '0 auto', padding: '0 20px', position: 'relative', zIndex: 1 }}>
-          <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 36px' }}>
-            <div
+          <h2
+            style={{
+              fontSize: 'clamp(28px, 4vw, 44px)',
+              fontWeight: 800,
+              letterSpacing: '-1px',
+              lineHeight: 1.15,
+              color: '#1D1D1F',
+              marginBottom: '14px',
+            }}
+          >
+            Indah di setiap piksel.
+          </h2>
+
+          <p style={{ fontSize: '16px', color: '#6E6E73', maxWidth: '600px', margin: '0 auto 28px', lineHeight: 1.6 }}>
+            Klien foto menikmati pengalaman kurasi yang menyenangkan langsung dari browser smartphone. Tap love ❤️ pada foto favorit, zoom layar penuh, dan kirim saat kuota pas.
+          </p>
+
+          {/* Category Filter Pills (Apple Segmented Control) */}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px',
+              borderRadius: '9999px',
+              backgroundColor: '#F5F5F7',
+              border: '1px solid rgba(0, 0, 0, 0.06)',
+              marginBottom: '36px',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setCarouselCategory('all')}
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '6px 14px',
+                padding: '8px 18px',
                 borderRadius: '9999px',
-                backgroundColor: 'rgba(255, 45, 85, 0.08)',
-                border: '1px solid rgba(255, 45, 85, 0.16)',
-                color: 'var(--heart)',
-                fontSize: '11.5px',
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                marginBottom: '14px',
+                fontSize: '13px',
+                fontWeight: carouselCategory === 'all' ? 700 : 500,
+                color: carouselCategory === 'all' ? '#1D1D1F' : '#6E6E73',
+                backgroundColor: carouselCategory === 'all' ? '#FFFFFF' : 'transparent',
+                boxShadow: carouselCategory === 'all' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.18s ease',
               }}
             >
-              <Sparkles size={13} />
-              <span>Pengalaman Galeri Klien</span>
-            </div>
-
-            <h2
+              Semua Momen ({showcaseList.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setCarouselCategory('prewedding')}
               style={{
-                fontSize: 'clamp(26px, 3.8vw, 38px)',
-                fontWeight: 800,
-                letterSpacing: '-0.6px',
-                lineHeight: 1.18,
-                marginBottom: '14px',
-                color: 'var(--text)',
-              }}
-            >
-              Tampilan Galeri yang <span style={{ color: 'var(--heart)' }}>Elegan & Cepat</span>
-            </h2>
-
-            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '640px', margin: '0 auto' }}>
-              Klien foto menikmati pengalaman kurasi yang menyenangkan langsung dari HP. Cukup tap love ❤️ pada foto favorit, preview layar penuh, dan unduh foto resolusi HD asli.
-            </p>
-
-            {/* Category Filter Pills (iOS Segmented Control) */}
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                marginTop: '22px',
-                padding: '4px',
+                padding: '8px 18px',
                 borderRadius: '9999px',
-                backgroundColor: 'rgba(0, 0, 0, 0.05)',
-                border: '1px solid rgba(0, 0, 0, 0.06)',
+                fontSize: '13px',
+                fontWeight: carouselCategory === 'prewedding' ? 700 : 500,
+                color: carouselCategory === 'prewedding' ? '#1D1D1F' : '#6E6E73',
+                backgroundColor: carouselCategory === 'prewedding' ? '#FFFFFF' : 'transparent',
+                boxShadow: carouselCategory === 'prewedding' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.18s ease',
               }}
             >
-              <button
-                type="button"
-                onClick={() => setCarouselCategory('all')}
-                style={{
-                  padding: '7px 16px',
-                  borderRadius: '9999px',
-                  fontSize: '12.5px',
-                  fontWeight: carouselCategory === 'all' ? 700 : 500,
-                  color: carouselCategory === 'all' ? 'var(--text)' : 'var(--text-secondary)',
-                  backgroundColor: carouselCategory === 'all' ? '#FFFFFF' : 'transparent',
-                  boxShadow: carouselCategory === 'all' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.18s ease',
-                }}
-              >
-                Semua Momen ({showcaseList.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setCarouselCategory('prewedding')}
-                style={{
-                  padding: '7px 16px',
-                  borderRadius: '9999px',
-                  fontSize: '12.5px',
-                  fontWeight: carouselCategory === 'prewedding' ? 700 : 500,
-                  color: carouselCategory === 'prewedding' ? 'var(--text)' : 'var(--text-secondary)',
-                  backgroundColor: carouselCategory === 'prewedding' ? '#FFFFFF' : 'transparent',
-                  boxShadow: carouselCategory === 'prewedding' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.18s ease',
-                }}
-              >
-                💍 Prewedding ({SAMPLE_WEDDING_PHOTOS.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setCarouselCategory('wisuda')}
-                style={{
-                  padding: '7px 16px',
-                  borderRadius: '9999px',
-                  fontSize: '12.5px',
-                  fontWeight: carouselCategory === 'wisuda' ? 700 : 500,
-                  color: carouselCategory === 'wisuda' ? 'var(--text)' : 'var(--text-secondary)',
-                  backgroundColor: carouselCategory === 'wisuda' ? '#FFFFFF' : 'transparent',
-                  boxShadow: carouselCategory === 'wisuda' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.18s ease',
-                }}
-              >
-                🎓 Wisuda ({SAMPLE_GRADUATION_PHOTOS.length})
-              </button>
-            </div>
+              💍 Prewedding ({SAMPLE_WEDDING_PHOTOS.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setCarouselCategory('wisuda')}
+              style={{
+                padding: '8px 18px',
+                borderRadius: '9999px',
+                fontSize: '13px',
+                fontWeight: carouselCategory === 'wisuda' ? 700 : 500,
+                color: carouselCategory === 'wisuda' ? '#1D1D1F' : '#6E6E73',
+                backgroundColor: carouselCategory === 'wisuda' ? '#FFFFFF' : 'transparent',
+                boxShadow: carouselCategory === 'wisuda' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.18s ease',
+              }}
+            >
+              🎓 Wisuda ({SAMPLE_GRADUATION_PHOTOS.length})
+            </button>
           </div>
         </div>
 
@@ -684,6 +970,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   key={`marquee-1-${item.id}-${idx}`}
                   className="carousel-card-1x1 no-save-preview"
                   onClick={() => setActiveLightboxIndex(realIndex)}
+                  style={{
+                    borderRadius: '20px',
+                    overflow: 'hidden',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
+                  }}
                 >
                   <img
                     src={item.url}
@@ -716,7 +1007,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       color: '#FFFFFF',
                       fontSize: '11px',
                       fontWeight: 600,
-                      letterSpacing: '0.02em',
                       border: '1px solid rgba(255, 255, 255, 0.18)',
                     }}
                   >
@@ -736,7 +1026,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       width: '38px',
                       height: '38px',
                       borderRadius: '50%',
-                      backgroundColor: isHearted ? 'var(--heart)' : 'rgba(0, 0, 0, 0.4)',
+                      backgroundColor: isHearted ? '#FF2D55' : 'rgba(0, 0, 0, 0.4)',
                       backdropFilter: 'blur(8px)',
                       WebkitBackdropFilter: 'blur(8px)',
                       border: '1px solid rgba(255, 255, 255, 0.22)',
@@ -751,7 +1041,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <Heart size={16} fill={isHearted ? '#FFFFFF' : 'none'} color="#FFFFFF" />
                   </button>
 
-                  {/* Bottom Vignette & Metadata (Strictly Bottom Anchored) */}
+                  {/* Bottom Vignette & Metadata */}
                   <div className="overlay-scrim">
                     <div>
                       <div
@@ -801,16 +1091,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
 
-        {/* Sleek Subtext Under Carousel */}
+        {/* Subtext Under Carousel */}
         <div
           style={{
             textAlign: 'center',
-            marginTop: '20px',
+            marginTop: '24px',
             fontSize: '13px',
-            color: 'var(--text-tertiary)',
+            color: '#86868B',
             padding: '0 20px',
-            position: 'relative',
-            zIndex: 1,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -819,14 +1107,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           }}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-            <Heart size={14} style={{ color: 'var(--heart)' }} fill="var(--heart)" /> Klik love untuk simulasi seleksi foto
+            <Heart size={14} style={{ color: '#FF2D55' }} fill="#FF2D55" /> Tap love untuk simulasi seleksi foto
           </span>
           <span>•</span>
-          <span>Klik foto untuk preview resolusi penuh</span>
+          <span>Klik foto untuk preview layar penuh & unduh HD asli</span>
         </div>
       </section>
 
-      {/* 1:1 Classy Lightbox Preview Modal */}
+      {/* ─── 1:1 LIGHTBOX MODAL ────────────────────────────────────────────── */}
       {activeLightboxIndex !== null && filteredShowcase[activeLightboxIndex] && (
         <div
           className="no-save-preview"
@@ -835,9 +1123,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             position: 'fixed',
             inset: 0,
             zIndex: 999,
-            backgroundColor: 'rgba(7, 7, 10, 0.92)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
+            backgroundColor: 'rgba(0, 0, 0, 0.88)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -933,7 +1221,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* Anti-Save Shield */}
             <div className="photo-shield-layer" />
 
-            {/* Pro Photographer Watermark (Top-Center, Clean & Minimalist) */}
+            {/* Pro Photographer Watermark */}
             {demoWatermark && (
               <PhotoWatermark
                 studioName={filteredShowcase[activeLightboxIndex].vendor}
@@ -1053,7 +1341,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 height: '44px',
                 padding: '0 20px',
                 backgroundColor: carouselHearted.includes(filteredShowcase[activeLightboxIndex].id)
-                  ? 'var(--heart)'
+                  ? '#FF2D55'
                   : 'rgba(255, 255, 255, 0.15)',
                 color: '#FFFFFF',
                 fontSize: '13.5px',
@@ -1074,132 +1362,42 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       )}
 
-      {/* Problem Section: Seleksi via WhatsApp itu melelahkan */}
+      {/* ─── APPLE COMPARISON: CARA LAMA VS CARA TANDAIN ──────────────────── */}
       <section
         style={{
-          maxWidth: '1160px',
-          margin: '0 auto',
-          padding: '80px 20px',
+          padding: '96px 20px',
+          backgroundColor: '#F5F5F7',
+          borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
         }}
       >
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '48px',
-            alignItems: 'center',
-          }}
-        >
-          <div>
+        <div style={{ maxWidth: '1040px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto 48px' }}>
             <div
               style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                letterSpacing: '0.16em',
-                textTransform: 'uppercase',
-                color: 'var(--text-tertiary)',
-                marginBottom: '12px',
-              }}
-            >
-              MASALAHNYA
-            </div>
-            <h2
-              style={{
-                fontSize: 'clamp(28px, 3.8vw, 40px)',
+                fontSize: '11.5px',
                 fontWeight: 800,
-                color: 'var(--text)',
-                lineHeight: 1.2,
-                marginBottom: '18px',
-              }}
-            >
-              Seleksi foto lewat WhatsApp itu <i>melelahkan</i>.
-            </h2>
-            <p
-              style={{
-                fontSize: '15.5px',
-                color: 'var(--text-secondary)',
-                lineHeight: 1.7,
-                maxWidth: '460px',
-              }}
-            >
-              Daftar nomor foto berantakan, bolak-balik chat, salah hitung, dan salah nomor file. Belum lagi kamu harus mencari satu per satu file RAW di harddisk laptop. Waktu edit berhargamu habis untuk hal yang seharusnya otomatis.
-            </p>
-          </div>
-
-          {/* WhatsApp Chat Chaos Mockup */}
-          <div
-            className="card-ios"
-            style={{
-              padding: '24px',
-              maxWidth: '460px',
-              margin: '0 auto',
-              backgroundColor: '#FFFFFF',
-              boxShadow: '0 12px 32px rgba(0, 0, 0, 0.06)',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                paddingBottom: '14px',
-                borderBottom: '1px solid var(--border-light)',
-                color: 'var(--text-secondary)',
-                fontSize: '13px',
-                fontWeight: 600,
-              }}
-            >
-              <MessageSquare size={16} /> Klien · Chat WhatsApp
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '14px' }}>
-              <div style={{ alignSelf: 'flex-start', backgroundColor: '#F2F2F7', padding: '10px 14px', borderRadius: '14px', fontSize: '13.5px' }}>
-                "Kak yang nomor 012, 018, 025, 033 bagus"
-              </div>
-              <div style={{ alignSelf: 'flex-start', backgroundColor: '#F2F2F7', padding: '10px 14px', borderRadius: '14px', fontSize: '13.5px' }}>
-                "Eh 018 ganti 020 aja deh kak 🙏"
-              </div>
-              <div style={{ alignSelf: 'flex-start', backgroundColor: '#F2F2F7', padding: '10px 14px', borderRadius: '14px', fontSize: '13.5px' }}>
-                "Yang foto baju merah nomor berapa ya?"
-              </div>
-              <div style={{ alignSelf: 'flex-start', backgroundColor: '#F2F2F7', padding: '10px 14px', borderRadius: '14px', fontSize: '13.5px' }}>
-                "Total boleh berapa foto ya kak tadinya?"
-              </div>
-            </div>
-            <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--heart)', fontWeight: 600, textAlign: 'right' }}>
-              ⚠️ Waktu habis cuma buat rekap nomor foto manual
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6 Key Benefits (ATM from Pilihin) */}
-      <section
-        style={{
-          backgroundColor: '#FFFFFF',
-          borderTop: '1px solid var(--border-light)',
-          borderBottom: '1px solid var(--border-light)',
-          padding: '80px 20px',
-        }}
-      >
-        <div style={{ maxWidth: '1160px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto 52px' }}>
-            <div
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                letterSpacing: '0.16em',
+                letterSpacing: '0.12em',
                 textTransform: 'uppercase',
-                color: 'var(--text-tertiary)',
+                color: '#86868B',
                 marginBottom: '10px',
               }}
             >
-              KENAPA TANDAIN
+              PERBANDINGAN ALUR KERJA
             </div>
-            <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 38px)', fontWeight: 800, color: 'var(--text)' }}>
-              Workflow kurasi foto yang seharusnya.
+            <h2
+              style={{
+                fontSize: 'clamp(28px, 4vw, 42px)',
+                fontWeight: 800,
+                color: '#1D1D1F',
+                letterSpacing: '-1.2px',
+                lineHeight: 1.15,
+              }}
+            >
+              Tinggalkan cara lama.
             </h2>
-            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', marginTop: '12px', lineHeight: 1.6 }}>
-              Dibuat khusus untuk fotografer. Membuat galeri cepat, klien senang memilihnya, dan hasil seleksi langsung siap masuk folder RAW di laptopmu.
+            <p style={{ fontSize: '16px', color: '#6E6E73', marginTop: '12px', lineHeight: 1.6 }}>
+              Lihat bagaimana Tandain mengubah proses kurasi foto yang tadinya berbelit menjadi otomatis dan menyenangkan.
             </p>
           </div>
 
@@ -1210,160 +1408,335 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               gap: '24px',
             }}
           >
-            {/* Card 1 */}
-            <div className="card-ios" style={{ padding: '28px' }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(255, 45, 85, 0.08)', display: 'grid', placeItems: 'center', color: 'var(--heart)', marginBottom: '18px' }}>
-                <Heart size={22} />
+            {/* Cara Lama (WhatsApp Chat Manual) */}
+            <div
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: '24px',
+                padding: '36px',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
+              }}
+            >
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 12px',
+                  borderRadius: '9999px',
+                  backgroundColor: '#FFF0F0',
+                  color: '#DC2626',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  marginBottom: '20px',
+                }}
+              >
+                ⚠️ Cara Manual di WhatsApp
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Akhiri seleksi via chat</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                Klien memilih langsung di galeri elegan bermerek studiomu. Hasilnya terurut rapi — tak ada lagi daftar nomor manual yang bikin pusing.
-              </p>
+              <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1D1D1F', marginBottom: '14px' }}>
+                Melelahkan & Rentan Salah
+              </h3>
+              
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {[
+                  'Klien mengetik nomor foto manual ("012, 018, eh ganti 020 aja kak")',
+                  'Fotografer bolak-balik scroll riwayat chat untuk rekap nomor foto',
+                  'Sering salah hitung kuota foto (melebihi atau kurang dari perjanjian paket)',
+                  'Mencari satu per satu file RAW di harddisk laptop yang memakan waktu berjam-jam',
+                ].map((text, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '14px', color: '#6E6E73', lineHeight: 1.5 }}>
+                    <span style={{ color: '#DC2626', fontWeight: 800, fontSize: '16px' }}>✕</span>
+                    <span>{text}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            {/* Card 2 */}
-            <div className="card-ios" style={{ padding: '28px' }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(52, 199, 89, 0.1)', display: 'grid', placeItems: 'center', color: '#34C759', marginBottom: '18px' }}>
-                <Zap size={22} />
+            {/* Cara Modern (Tandain) */}
+            <div
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: '24px',
+                padding: '36px',
+                border: '2px solid #0071E3',
+                boxShadow: '0 12px 36px rgba(0, 113, 227, 0.12)',
+                position: 'relative',
+              }}
+            >
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 12px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'rgba(0, 113, 227, 0.1)',
+                  color: '#0071E3',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  marginBottom: '20px',
+                }}
+              >
+                ✨ Alur Kerja Modern Tandain
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Auto-Ambil RAW di Laptop</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                Cukup buka di laptop via Chrome/Edge, sistem otomatis mencari file master RAW (.CR3, .ARW, .NEF) di harddiskmu dan menyalinnya ke folder baru secara instan.
-              </p>
-            </div>
+              <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1D1D1F', marginBottom: '14px' }}>
+                100% Otomatis & Presisi
+              </h3>
 
-            {/* Card 3: Unduh Foto HD Asli (Google Drive) */}
-            <div className="card-ios" style={{ padding: '28px' }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(0, 122, 255, 0.08)', display: 'grid', placeItems: 'center', color: '#007AFF', marginBottom: '18px' }}>
-                <Download size={22} />
-              </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Unduh Foto HD Asli</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                Klien dan fotografer dapat mengunduh foto pilihan dalam resolusi penuh HD asli Google Drive (2–5 MB per foto) langsung dari HP maupun laptop.
-              </p>
-            </div>
-
-            {/* Card 4 */}
-            <div className="card-ios" style={{ padding: '28px' }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(88, 86, 214, 0.08)', display: 'grid', placeItems: 'center', color: '#5856D6', marginBottom: '18px' }}>
-                <HardDrive size={22} />
-              </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Tanpa upload ulang foto</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                Cukup tempel link folder Google Drive yang sudah kamu punya. Foto tetap aman di Drive fotografer tanpa perlu memindahkan file bergiga-giga.
-              </p>
-            </div>
-
-            {/* Card 5 */}
-            <div className="card-ios" style={{ padding: '28px' }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(255, 149, 0, 0.08)', display: 'grid', placeItems: 'center', color: '#FF9500', marginBottom: '18px' }}>
-                <Sparkles size={22} />
-              </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Klien memilih dengan nyaman</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                Mode Swipe ala Tinder di HP, double-tap love ❤️, pencarian nomor foto, dan batas kuota yang terkunci pas begitu jumlah tercapai.
-              </p>
-            </div>
-
-            {/* Card 6 */}
-            <div className="card-ios" style={{ padding: '28px' }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(52, 199, 89, 0.08)', display: 'grid', placeItems: 'center', color: '#34C759', marginBottom: '18px' }}>
-                <ShieldCheck size={22} />
-              </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Bermerek studiomu</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                Nama studio fotografer tampil di header galeri klien. Galeri terlihat profesional dan terpercaya di mata klien fotomu.
-              </p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {[
+                  'Klien memilih dengan tap love ❤️ langsung di galeri web via WhatsApp',
+                  'Batas kuota terkunci otomatis, klien tidak bisa memilih lebih dari paket',
+                  'Daftar foto terpilih langsung terurut rapi di dashboard fotografer secara realtime',
+                  'Auto-Ambil RAW di laptop via Chrome/Edge — 1 klik file langsung tersalin!',
+                ].map((text, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '14px', color: '#1D1D1F', lineHeight: 1.5, fontWeight: 500 }}>
+                    <CheckCircle2 size={18} color="#0071E3" style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <span>{text}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 3 Step Workflow */}
-      <section style={{ maxWidth: '960px', margin: '0 auto', padding: '80px 20px' }}>
-        <h2 style={{ fontSize: '28px', fontWeight: 800, textAlign: 'center', marginBottom: '40px', color: 'var(--text)' }}>
-          Alur kerja simpel 3 langkah
-        </h2>
+      {/* ─── 3 STEP WORKFLOW: ALUR KERJA SIMPEL ────────────────────────────── */}
+      <section style={{ maxWidth: '1040px', margin: '0 auto', padding: '96px 20px' }}>
+        <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto 52px' }}>
+          <div
+            style={{
+              fontSize: '11.5px',
+              fontWeight: 800,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: '#86868B',
+              marginBottom: '10px',
+            }}
+          >
+            MUDAH DIGUNAKAN
+          </div>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, color: '#1D1D1F', letterSpacing: '-1.2px' }}>
+            Tiga langkah sederhana.
+          </h2>
+        </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px' }}>
-          <div className="card-ios" style={{ padding: '26px' }}>
-            <div style={{ fontSize: '32px', marginBottom: '14px' }}>📁</div>
-            <h3 style={{ fontSize: '17px', fontWeight: 700, marginBottom: '6px' }}>1. Tempel Link Google Drive</h3>
-            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-              Upload preview JPG ke Google Drive, tempel link folder di Tandain. Dalam 15 detik, link galeri siap dikirim ke klien.
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+          {/* Step 1 */}
+          <div
+            style={{
+              padding: '32px',
+              borderRadius: '24px',
+              backgroundColor: '#F5F5F7',
+              border: '1px solid rgba(0, 0, 0, 0.05)',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '13px',
+                fontWeight: 900,
+                color: '#0071E3',
+                marginBottom: '16px',
+                letterSpacing: '0.08em',
+              }}
+            >
+              LANGKAH 01
+            </div>
+            <h3 style={{ fontSize: '19px', fontWeight: 800, color: '#1D1D1F', marginBottom: '10px' }}>
+              Tempel Link Google Drive
+            </h3>
+            <p style={{ fontSize: '14px', color: '#6E6E73', lineHeight: 1.6 }}>
+              Upload foto JPG preview ke folder Google Drive, buat proyek di Tandain, dan dapatkan link galeri unik siap kirim dalam 15 detik.
             </p>
           </div>
 
-          <div className="card-ios" style={{ padding: '26px' }}>
-            <div style={{ fontSize: '32px', marginBottom: '14px' }}>❤️</div>
-            <h3 style={{ fontSize: '17px', fontWeight: 700, marginBottom: '6px' }}>2. Klien Tap Love di HP</h3>
-            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-              Klien membuka link tanpa perlu login atau instal aplikasi. Mereka memilih foto dengan tap love atau swipe santai.
+          {/* Step 2 */}
+          <div
+            style={{
+              padding: '32px',
+              borderRadius: '24px',
+              backgroundColor: '#F5F5F7',
+              border: '1px solid rgba(0, 0, 0, 0.05)',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '13px',
+                fontWeight: 900,
+                color: '#FF2D55',
+                marginBottom: '16px',
+                letterSpacing: '0.08em',
+              }}
+            >
+              LANGKAH 02
+            </div>
+            <h3 style={{ fontSize: '19px', fontWeight: 800, color: '#1D1D1F', marginBottom: '10px' }}>
+              Klien Tap Love di HP
+            </h3>
+            <p style={{ fontSize: '14px', color: '#6E6E73', lineHeight: 1.6 }}>
+              Klien membuka link galeri langsung dari chat WhatsApp. Mereka memilih foto favorit dengan sentuhan cinta ❤️ hingga kuota pas.
             </p>
           </div>
 
-          <div className="card-ios" style={{ padding: '26px' }}>
-            <div style={{ fontSize: '32px', marginBottom: '14px' }}>⚡</div>
-            <h3 style={{ fontSize: '17px', fontWeight: 700, marginBottom: '6px' }}>3. Auto-Ambil RAW di Laptop</h3>
-            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-              Buka di laptop, klik "Ambil RAW". Sistem langsung mencocokkan dan menyalin file RAW yang dipilih klien ke subfolder baru.
+          {/* Step 3 */}
+          <div
+            style={{
+              padding: '32px',
+              borderRadius: '24px',
+              backgroundColor: '#F5F5F7',
+              border: '1px solid rgba(0, 0, 0, 0.05)',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '13px',
+                fontWeight: 900,
+                color: '#34C759',
+                marginBottom: '16px',
+                letterSpacing: '0.08em',
+              }}
+            >
+              LANGKAH 03
+            </div>
+            <h3 style={{ fontSize: '19px', fontWeight: 800, color: '#1D1D1F', marginBottom: '10px' }}>
+              Auto-Ambil RAW di Laptop
+            </h3>
+            <p style={{ fontSize: '14px', color: '#6E6E73', lineHeight: 1.6 }}>
+              Buka dashboard fotografer di laptop, klik "Ambil RAW". Sistem otomatis mencari dan menyalin file RAW master ke folder baru. Selesai!
             </p>
           </div>
         </div>
       </section>
 
-      {/* Bottom CTA Banner */}
+      {/* ─── APPLE DARK FINALE CTA BANNER ─────────────────────────────────── */}
       <section
         style={{
-          maxWidth: '1160px',
+          maxWidth: '1080px',
           margin: '0 auto 80px',
           padding: '0 20px',
         }}
       >
         <div
-          className="card-ios"
           style={{
-            backgroundColor: '#1D1D1F',
+            backgroundColor: '#000000',
             color: '#FFFFFF',
-            padding: '56px 32px',
+            padding: '72px 36px',
             textAlign: 'center',
-            borderRadius: '28px',
+            borderRadius: '32px',
+            position: 'relative',
+            overflow: 'hidden',
+            boxShadow: '0 24px 60px rgba(0, 0, 0, 0.25)',
           }}
         >
-          <h2 style={{ fontSize: 'clamp(26px, 3.8vw, 38px)', fontWeight: 800, marginBottom: '14px', letterSpacing: '-0.5px' }}>
-            Siap kurasi foto lebih cepat & rapi?
-          </h2>
-          <p style={{ fontSize: '15px', color: 'rgba(255, 255, 255, 0.75)', maxWidth: '480px', margin: '0 auto 28px', lineHeight: 1.6 }}>
-            Buat galeri pertamamu sekarang. Tanpa pusing ngetik manual, tanpa bayar token.
-          </p>
-          <button
-            onClick={onCreateGallery}
-            className="pill-btn pill-btn-primary"
+          {/* Subtle Apple Radial Lighting */}
+          <div
             style={{
-              height: '50px',
-              padding: '0 28px',
-              fontSize: '15px',
-              fontWeight: 700,
-              gap: '8px',
+              position: 'absolute',
+              top: '-80px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '600px',
+              height: '350px',
+              background: 'radial-gradient(circle, rgba(0, 113, 227, 0.28) 0%, transparent 70%)',
+              pointerEvents: 'none',
+            }}
+          />
+
+          <h2
+            style={{
+              fontSize: 'clamp(32px, 5vw, 52px)',
+              fontWeight: 800,
+              marginBottom: '16px',
+              letterSpacing: '-1.5px',
+              lineHeight: 1.1,
+              position: 'relative',
+              zIndex: 2,
             }}
           >
-            <PlusCircle size={18} /> Buat Galeri Seleksi Sekarang
-          </button>
+            Mulai kurasi foto dengan
+            <br />
+            standar studio profesional.
+          </h2>
+
+          <p
+            style={{
+              fontSize: '16px',
+              color: 'rgba(255, 255, 255, 0.7)',
+              maxWidth: '520px',
+              margin: '0 auto 36px',
+              lineHeight: 1.6,
+              position: 'relative',
+              zIndex: 2,
+            }}
+          >
+            Tingkatkan kepuasan klien foto kamu dan hemat waktu berjam-jam setiap minggu. Tanpa sistem token, tanpa biaya tersembunyi.
+          </p>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap', position: 'relative', zIndex: 2 }}>
+            <button
+              onClick={onCreateGallery}
+              className="pill-btn"
+              style={{
+                height: '52px',
+                padding: '0 30px',
+                fontSize: '15.5px',
+                fontWeight: 700,
+                borderRadius: '9999px',
+                backgroundColor: '#0071E3',
+                color: '#FFFFFF',
+                boxShadow: '0 4px 20px rgba(0, 113, 227, 0.45)',
+                gap: '8px',
+              }}
+            >
+              <PlusCircle size={18} />
+              Buat Galeri Seleksi Sekarang
+            </button>
+
+            <button
+              onClick={onOpenDashboard}
+              className="pill-btn"
+              style={{
+                height: '52px',
+                padding: '0 24px',
+                fontSize: '15.5px',
+                fontWeight: 600,
+                borderRadius: '9999px',
+                backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                color: '#FFFFFF',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                gap: '8px',
+              }}
+            >
+              <Laptop size={18} />
+              Dashboard Fotografer
+            </button>
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* ─── MINIMALIST APPLE FOOTER ──────────────────────────────────────── */}
       <footer
         style={{
-          borderTop: '1px solid var(--border-light)',
-          padding: '28px 20px',
+          borderTop: '1px solid rgba(0, 0, 0, 0.08)',
+          padding: '36px 20px',
           textAlign: 'center',
           fontSize: '13px',
-          color: 'var(--text-tertiary)',
+          color: '#86868B',
+          backgroundColor: '#FFFFFF',
         }}
       >
-        <p>Tandain — Modern Photo Selector & RAW Matcher untuk Fotografer.</p>
+        <div style={{ maxWidth: '1080px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontWeight: 800, color: '#1D1D1F' }}>Tandain</span>
+            <span>— Modern Photo Selection & RAW Matcher untuk Fotografer.</span>
+          </div>
+          <div>
+            100% Client-Side Privacy • Google Drive Integrated
+          </div>
+        </div>
       </footer>
+
     </div>
   );
 };

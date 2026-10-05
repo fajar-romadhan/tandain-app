@@ -561,5 +561,47 @@ a {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+/* ==========================================================
+   APPLE BENTO GRID & LANDING UTILITIES
+   ========================================================== */
+.apple-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+}
 
+.apple-bento-col-7 {
+  grid-column: span 7;
+}
 
+.apple-bento-col-5 {
+  grid-column: span 5;
+}
+
+.apple-bento-col-4 {
+  grid-column: span 4;
+}
+
+.bento-card-hover {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s ease;
+}
+
+.bento-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+@media (max-width: 900px) {
+  .apple-bento-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .apple-bento-col-7,
+  .apple-bento-col-5,
+  .apple-bento-col-4 {
+    grid-column: span 1 !important;
+  }
+}
