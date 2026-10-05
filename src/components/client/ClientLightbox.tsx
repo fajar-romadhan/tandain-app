@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { X, ChevronLeft, ChevronRight, Heart, ZoomIn, ZoomOut } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Heart, ZoomIn, ZoomOut, Download, Loader2 } from 'lucide-react';
 import type { Photo } from '../../types';
 
 interface ClientLightboxProps {
@@ -29,33 +29,13 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
   const isSelected = selectedFileNames.includes(currentPhoto.name);
   const [isZoomed, setIsZoomed] = useState(false);
   const [showHeartBurst, setShowHeartBurst] = useState(false);
-  const [showSecurityToast, setShowSecurityToast] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const lastTapRef = useRef<number>(0);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Keyboard navigation & screenshot/download prevention
+  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Prevent Save Page / Image
-      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
-        e.preventDefault();
-        setShowSecurityToast(true);
-        setTimeout(() => setShowSecurityToast(false), 2800);
-        return;
-      }
-      // Prevent Print / PDF
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
-        e.preventDefault();
-        setShowSecurityToast(true);
-        setTimeout(() => setShowSecurityToast(false), 2800);
-        return;
-      }
-      // Detect PrintScreen
-      if (e.key === 'PrintScreen') {
-        setShowSecurityToast(true);
-        setTimeout(() => setShowSecurityToast(false), 2800);
-      }
-
       if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowLeft') {
         if (currentIndex > 0) onNavigate(currentIndex - 1);
@@ -72,16 +52,39 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentIndex, photos.length, currentPhoto.name, isSelected, selectedFileNames.length, quota]);
 
+  const handleDownloadPhoto = async () => {
+    if (!currentPhoto || isDownloading) return;
+    setIsDownloading(true);
+    try {
+      const response = await fetch(currentPhoto.url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      const fileName = currentPhoto.name.toLowerCase().endsWith('.jpg') || currentPhoto.name.toLowerCase().endsWith('.jpeg')
+        ? currentPhoto.name
+        : `${currentPhoto.name}.jpg`;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(currentPhoto.url, '_blank');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const triggerToggle = () => {
     if (!isSelected && selectedFileNames.length >= quota) {
-      // Quota full
       return;
     }
     if (!isSelected) {
       setShowHeartBurst(true);
       setTimeout(() => setShowHeartBurst(false), 700);
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        try { navigator.vibrate(12); } catch {}
+        try { navigator.vibrate([15, 30, 20]); } catch {}
       }
     }
     onToggleSelect(currentPhoto.name);
@@ -173,58 +176,59 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={() => setIsZoomed(!isZoomed)}
-          style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-            color: '#FFFFFF',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backdropFilter: 'blur(10px)',
-          }}
-          aria-label="Zoom"
-        >
-          {isZoomed ? <ZoomOut size={18} /> : <ZoomIn size={18} />}
-        </button>
-      </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Download Photo Button */}
+          <button
+            onClick={handleDownloadPhoto}
+            disabled={isDownloading}
+            style={{
+              height: '38px',
+              padding: '0 14px',
+              borderRadius: '9999px',
+              backgroundColor: 'rgba(255, 255, 255, 0.18)',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '13px',
+              fontWeight: 600,
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              cursor: isDownloading ? 'wait' : 'pointer',
+              transition: 'background 0.2s ease',
+            }}
+            title="Download foto JPEG ini"
+            aria-label="Unduh foto"
+          >
+            {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            <span>Unduh JPG</span>
+          </button>
 
-      {/* Security Warning Toast */}
-      {showSecurityToast && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '72px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: 'rgba(20, 20, 22, 0.94)',
-            color: '#FFFFFF',
-            padding: '10px 20px',
-            borderRadius: '9999px',
-            fontSize: '13px',
-            fontWeight: 600,
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
-            zIndex: 100,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          🔒 Mode Preview: Unduhan & tangkapan layar dinonaktifkan untuk privasi vendor.
+          <button
+            onClick={() => setIsZoomed(!isZoomed)}
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backdropFilter: 'blur(10px)',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+            aria-label="Zoom"
+          >
+            {isZoomed ? <ZoomOut size={18} /> : <ZoomIn size={18} />}
+          </button>
         </div>
-      )}
+      </div>
 
       {/* Main Image Container */}
       <div
         className="no-save-preview"
-        onContextMenu={(e) => {
-          e.preventDefault();
-          setShowSecurityToast(true);
-          setTimeout(() => setShowSecurityToast(false), 2800);
-        }}
         style={{
           flex: 1,
           display: 'flex',
@@ -250,9 +254,6 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
           }}
           draggable={false}
         />
-
-        {/* Transparent Shield Layer to block mobile long-press */}
-        <div className="photo-shield-layer" style={{ pointerEvents: 'none' }} />
 
         {/* Optional Watermark for Anti-Theft Protection */}
         {hasWatermark && (
@@ -307,10 +308,14 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
               position: 'absolute',
               pointerEvents: 'none',
               zIndex: 30,
-              filter: 'drop-shadow(0 8px 24px rgba(255,45,85,0.7))',
+              filter: 'drop-shadow(0 10px 32px rgba(255,45,85,0.95))',
             }}
           >
-            <Heart size={110} fill="var(--heart)" color="var(--heart)" />
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Heart size={100} fill="var(--heart)" color="var(--heart)" />
+              <span style={{ position: 'absolute', top: '-18px', right: '-16px', fontSize: '26px' }}>✨</span>
+              <span style={{ position: 'absolute', bottom: '-12px', left: '-16px', fontSize: '22px' }}>💖</span>
+            </div>
           </div>
         )}
 

@@ -60,7 +60,7 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
             required
             value={studioName}
             onChange={(e) => setStudioName(e.target.value)}
-            placeholder="Misal: Budi Visual Story"
+            placeholder="Misal: Tandain Studio"
             style={{
               width: '100%',
               height: '46px',

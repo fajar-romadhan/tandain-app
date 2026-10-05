@@ -94,10 +94,16 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
       setDragOffset(0);
       dragOffsetRef.current = 0;
 
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate(choose ? [15, 25, 20] : 12);
+        } catch {}
+      }
+
       setTimeout(() => {
         setCurrentIndex((prev) => prev + 1);
         setExitDirection(null);
-      }, 260);
+      }, 250);
     },
     [currentIndex, exitDirection, photos, selectedFileNames, quota, onToggleSelect]
   );
@@ -396,7 +402,7 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
           </button>
         )}
 
-        {/* --- Card 2: Background Card (waiting underneath, Bumble-style) --- */}
+        {/* --- Card 2: Background Card (Smoothly scales up from beneath) --- */}
         {nextPhoto && (
           <div
             style={{
@@ -410,11 +416,12 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
               backgroundColor: '#18181B',
               boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
               zIndex: 1,
-              transform: `scale(${0.94 + Math.min(0.06, Math.abs(dragOffset) / 800)}) translateY(${
-                12 - Math.min(12, Math.abs(dragOffset) / 40)
-              }px)`,
-              opacity: 0.8 + Math.min(0.2, Math.abs(dragOffset) / 300),
-              transition: isDragging ? 'none' : 'transform 0.25s ease, opacity 0.25s ease',
+              willChange: 'transform, opacity',
+              transform: `translate3d(0, ${10 - Math.min(10, Math.abs(dragOffset) / 35)}px, 0) scale(${
+                0.94 + Math.min(0.06, Math.abs(dragOffset) / 600)
+              })`,
+              opacity: 0.75 + Math.min(0.25, Math.abs(dragOffset) / 250),
+              transition: isDragging ? 'none' : 'transform 0.24s ease, opacity 0.24s ease',
               pointerEvents: 'none',
             }}
           >
@@ -440,8 +447,7 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerEnd}
             onPointerCancel={handlePointerEnd}
-            onContextMenu={(e) => e.preventDefault()}
-            className="card-ios no-save-preview"
+            className="card-ios"
             style={{
               width: '100%',
               maxWidth: '420px',
@@ -455,18 +461,19 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
               zIndex: 2,
               touchAction: 'none',
               cursor: isDragging ? 'grabbing' : 'grab',
+              willChange: 'transform, opacity',
               transform:
                 exitDirection === 'right'
-                  ? 'translateX(130vw) rotate(28deg)'
+                  ? 'translate3d(120vw, 20px, 0) rotate(24deg)'
                   : exitDirection === 'left'
-                  ? 'translateX(-130vw) rotate(-28deg)'
-                  : `translateX(${dragOffset}px) rotate(${dragOffset * 0.055}deg)`,
+                  ? 'translate3d(-120vw, 20px, 0) rotate(-24deg)'
+                  : `translate3d(${dragOffset}px, ${Math.abs(dragOffset) * 0.08}px, 0) rotate(${dragOffset * 0.045}deg)`,
               opacity: exitDirection ? 0 : 1,
               transition: isDragging
                 ? 'none'
                 : exitDirection
-                ? 'transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.22s ease-out'
-                : 'transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.2)',
+                ? 'transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease-out'
+                : 'transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.25)',
             }}
           >
             <img
@@ -481,9 +488,6 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
               }}
               draggable={false}
             />
-
-            {/* Anti-Download Shield Layer */}
-            <div className="photo-shield-layer" style={{ pointerEvents: 'none' }} />
 
             {/* Anti-Screenshot Studio Watermark */}
             {hasWatermark && (
@@ -560,16 +564,16 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
                 right: '24px',
                 padding: '6px 16px',
                 border: '3px solid #34C759',
-                borderRadius: '12px',
+                borderRadius: '14px',
                 color: '#34C759',
                 fontWeight: 900,
                 fontSize: '20px',
-                transform: 'rotate(15deg)',
-                backgroundColor: 'rgba(0, 0, 0, 0.65)',
-                boxShadow: '0 4px 14px rgba(52, 199, 89, 0.35)',
+                transform: `rotate(14deg) scale(${0.85 + rightOpacity * 0.25})`,
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                boxShadow: '0 4px 16px rgba(52, 199, 89, 0.45)',
                 opacity: rightOpacity,
                 pointerEvents: 'none',
-                transition: isDragging ? 'none' : 'opacity 0.15s ease',
+                transition: isDragging ? 'none' : 'opacity 0.15s ease, transform 0.15s ease',
               }}
             >
               PILIH ❤️
@@ -583,16 +587,16 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
                 left: '24px',
                 padding: '6px 16px',
                 border: '3px solid #FF3B30',
-                borderRadius: '12px',
+                borderRadius: '14px',
                 color: '#FF3B30',
                 fontWeight: 900,
                 fontSize: '20px',
-                transform: 'rotate(-15deg)',
-                backgroundColor: 'rgba(0, 0, 0, 0.65)',
-                boxShadow: '0 4px 14px rgba(255, 59, 48, 0.35)',
+                transform: `rotate(-14deg) scale(${0.85 + leftOpacity * 0.25})`,
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                boxShadow: '0 4px 16px rgba(255, 59, 48, 0.45)',
                 opacity: leftOpacity,
                 pointerEvents: 'none',
-                transition: isDragging ? 'none' : 'opacity 0.15s ease',
+                transition: isDragging ? 'none' : 'opacity 0.15s ease, transform 0.15s ease',
               }}
             >
               LEWATI ✕

@@ -1,7 +1,7 @@
 import type { Photo, Project, StudioProfile } from '../types';
 
 export const DEFAULT_STUDIO: StudioProfile = {
-  studioName: 'Budi Visual Story',
+  studioName: 'Tandain Studio',
   whatsapp: '6281234567890',
   logoUrl: '',
   accentColor: '#1D1D1F',

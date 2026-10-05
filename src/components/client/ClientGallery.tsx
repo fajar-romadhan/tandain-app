@@ -45,38 +45,9 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
   const [swipeInitialIndex, setSwipeInitialIndex] = useState<number>(0);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [burstPhotoId, setBurstPhotoId] = useState<string | null>(null);
-  const [showSecurityToast, setShowSecurityToast] = useState(false);
-
   const deviceId = getDeviceId();
   const isCurrentDeviceSelector = !project.activeSelectorDeviceId || project.activeSelectorDeviceId === deviceId;
   const activeStudioName = project.studioName || studio.studioName || 'Studio Fotografi';
-
-  // Anti-Save & Anti-Screenshot Keyboard Protection
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Prevent Save Page / Image
-      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
-        e.preventDefault();
-        setShowSecurityToast(true);
-        setTimeout(() => setShowSecurityToast(false), 2800);
-        return;
-      }
-      // Prevent Print to PDF
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
-        e.preventDefault();
-        setShowSecurityToast(true);
-        setTimeout(() => setShowSecurityToast(false), 2800);
-        return;
-      }
-      // Detect PrintScreen
-      if (e.key === 'PrintScreen') {
-        setShowSecurityToast(true);
-        setTimeout(() => setShowSecurityToast(false), 2800);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   // Dynamic document title for client
   useEffect(() => {
@@ -138,9 +109,9 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
       }
       // Trigger heart animation & haptic
       setBurstPhotoId(filename);
-      setTimeout(() => setBurstPhotoId(null), 600);
+      setTimeout(() => setBurstPhotoId(null), 650);
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        try { navigator.vibrate(10); } catch {}
+        try { navigator.vibrate([15, 30, 20]); } catch {}
       }
       onUpdateSelections([...project.selectedFileNames, filename]);
     } else {
@@ -410,11 +381,6 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
                       key={photo.id}
                       className="no-save-preview"
                       onClick={() => handlePhotoClick(globalIndex)}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        setShowSecurityToast(true);
-                        setTimeout(() => setShowSecurityToast(false), 2800);
-                      }}
                       style={{
                         position: 'relative',
                         borderRadius: '16px',
@@ -446,12 +412,9 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
                           height: 'auto',
                           display: 'block',
                           objectFit: 'cover',
-                          pointerEvents: 'none',
+                          pointerEvents: 'auto',
                         }}
                       />
-
-                      {/* Anti-Download Shield Layer to block mobile long press save */}
-                      <div className="photo-shield-layer" style={{ pointerEvents: 'none' }} />
 
                       {/* Anti-Screenshot Studio Watermark */}
                       {project.hasWatermark && (
@@ -518,13 +481,25 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+                          boxShadow: isSelected ? '0 4px 18px rgba(255,45,85,0.45)' : '0 4px 14px rgba(0,0,0,0.18)',
                           backdropFilter: 'blur(8px)',
-                          transition: 'all 0.18s var(--ease-spring)',
+                          transition: 'all 0.22s var(--ease-spring)',
+                          transform: isSelected ? 'scale(1.05)' : 'scale(1)',
                           zIndex: 4,
                         }}
                         aria-label={isSelected ? 'Batal pilih' : 'Pilih foto'}
                       >
+                        {isBurst && (
+                          <span
+                            className="animate-heart-ripple"
+                            style={{
+                              position: 'absolute',
+                              inset: 0,
+                              borderRadius: '50%',
+                              pointerEvents: 'none',
+                            }}
+                          />
+                        )}
                         <Heart
                           size={20}
                           fill={isSelected ? '#FFFFFF' : 'none'}
@@ -545,10 +520,14 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
                             justifyContent: 'center',
                             pointerEvents: 'none',
                             zIndex: 10,
-                            filter: 'drop-shadow(0 6px 18px rgba(255,45,85,0.8))',
+                            filter: 'drop-shadow(0 8px 24px rgba(255,45,85,0.9))',
                           }}
                         >
-                          <Heart size={64} fill="var(--heart)" color="var(--heart)" />
+                          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Heart size={68} fill="var(--heart)" color="var(--heart)" />
+                            <span style={{ position: 'absolute', top: '-14px', right: '-12px', fontSize: '18px' }}>✨</span>
+                            <span style={{ position: 'absolute', bottom: '-10px', left: '-12px', fontSize: '16px' }}>💖</span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -672,35 +651,6 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
           studioName={activeStudioName}
           initialIndex={swipeInitialIndex}
         />
-      )}
-
-      {/* Anti-Save / Screenshot Warning Toast */}
-      {showSecurityToast && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '90px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: 'rgba(20, 20, 22, 0.94)',
-            color: '#FFFFFF',
-            padding: '12px 22px',
-            borderRadius: '9999px',
-            fontSize: '13.5px',
-            fontWeight: 600,
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)',
-            zIndex: 3000,
-            whiteSpace: 'nowrap',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-        >
-          <ShieldAlert size={18} color="#FFD60A" />
-          <span>Foto dilindungi hak cipta {activeStudioName}. Fitur unduh dinonaktifkan.</span>
-        </div>
       )}
 
       {/* Review Modal */}

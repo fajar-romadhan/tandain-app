@@ -48,7 +48,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     ...SAMPLE_WEDDING_PHOTOS.map((p, idx) => ({
       ...p,
       category: 'prewedding' as const,
-      vendor: 'Budi Visual Story',
+      vendor: 'Tandain Gallery',
       label: `Prewedding Story #${String(idx + 1).padStart(2, '0')}`,
     })),
     ...SAMPLE_GRADUATION_PHOTOS.map((p, idx) => ({
@@ -292,7 +292,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
-                      BUDI VISUAL STORY
+                      TANDAIN STUDIO
                     </span>
                     <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#34C759', display: 'inline-block' }} />
                     <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#34C759' }}>Online</span>

@@ -659,7 +659,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
                   setStudioName(e.target.value);
                   setErrorMsg('');
                 }}
-                placeholder="Misal: Budi Visual / Reka Art Photography"
+                placeholder="Misal: Tandain Studio / Reka Art Photography"
                 style={{
                   width: '100%',
                   height: '46px',
