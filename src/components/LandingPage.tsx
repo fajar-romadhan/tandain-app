@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { SAMPLE_GRADUATION_PHOTOS, SAMPLE_WEDDING_PHOTOS } from '../services/sampleData';
 import { downloadPhotoHd } from '../services/photoDownload';
+import { PhotoWatermark } from './common/PhotoWatermark';
 import type { AuthUser } from '../types';
 
 interface LandingPageProps {
@@ -932,35 +933,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* Anti-Save Shield */}
             <div className="photo-shield-layer" />
 
-            {/* Optional Subtle Watermark Overlay */}
+            {/* Pro Photographer Watermark (Top-Center, Clean & Minimalist) */}
             {demoWatermark && (
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  zIndex: 3,
-                  display: 'grid',
-                  placeItems: 'center',
-                  pointerEvents: 'none',
-                }}
-              >
-                <div
-                  style={{
-                    transform: 'rotate(-25deg)',
-                    color: 'rgba(255, 255, 255, 0.3)',
-                    fontSize: 'clamp(18px, 4.5vw, 28px)',
-                    fontWeight: 900,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    textShadow: '0 2px 10px rgba(0,0,0,0.5)',
-                    border: '3px dashed rgba(255, 255, 255, 0.3)',
-                    padding: '8px 20px',
-                    borderRadius: '12px',
-                  }}
-                >
-                  {filteredShowcase[activeLightboxIndex].vendor}
-                </div>
-              </div>
+              <PhotoWatermark
+                studioName={filteredShowcase[activeLightboxIndex].vendor}
+                size="md"
+                style={{ top: '20px' }}
+              />
             )}
 
             {/* Prev / Next Navigation Arrows */}

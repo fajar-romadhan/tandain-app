@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { X, ChevronLeft, ChevronRight, Heart, ZoomIn, ZoomOut, Download, Loader2 } from 'lucide-react';
 import type { Photo } from '../../types';
 import { downloadPhotoHd } from '../../services/photoDownload';
+import { PhotoWatermark } from '../common/PhotoWatermark';
 
 interface ClientLightboxProps {
   photos: Photo[];
@@ -244,49 +245,9 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
           draggable={false}
         />
 
-        {/* Optional Watermark for Anti-Theft Protection */}
+        {/* Pro Photographer Watermark (Top-Center, Clean & Minimalist) */}
         {hasWatermark && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              pointerEvents: 'none',
-              zIndex: 3,
-            }}
-          >
-            <div style={{ textAlign: 'center', transform: 'rotate(-25deg)', userSelect: 'none' }}>
-              <span
-                style={{
-                  display: 'block',
-                  fontSize: 'clamp(28px, 6vw, 56px)',
-                  fontWeight: 900,
-                  color: 'rgba(255, 255, 255, 0.28)',
-                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.6)',
-                  letterSpacing: '5px',
-                  textTransform: 'uppercase',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {studioName || 'PREVIEW ONLY'}
-              </span>
-              <span
-                style={{
-                  display: 'block',
-                  fontSize: 'clamp(11px, 2vw, 15px)',
-                  fontWeight: 700,
-                  letterSpacing: '2px',
-                  color: 'rgba(255, 255, 255, 0.22)',
-                  textShadow: '0 1px 4px rgba(0, 0, 0, 0.6)',
-                  marginTop: '4px',
-                }}
-              >
-                HAK CIPTA DILINDUNGI • PREVIEW ONLY
-              </span>
-            </div>
-          </div>
+          <PhotoWatermark studioName={studioName} size="lg" style={{ top: '24px' }} />
         )}
 
         {/* Double Tap Big Heart Burst Animation */}

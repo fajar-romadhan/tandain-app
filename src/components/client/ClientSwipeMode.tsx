@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Heart, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, Download, Loader2 } from 'lucide-react';
 import type { Photo } from '../../types';
 import { downloadPhotoHd } from '../../services/photoDownload';
+import { PhotoWatermark } from '../common/PhotoWatermark';
 
 interface ClientSwipeModeProps {
   photos: Photo[];
@@ -540,50 +541,9 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
               draggable={false}
             />
 
-            {/* Anti-Screenshot Studio Watermark */}
+            {/* Pro Photographer Watermark (Top-Center, Clean & Minimalist) */}
             {hasWatermark && (
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  pointerEvents: 'none',
-                  zIndex: 3,
-                  overflow: 'hidden',
-                }}
-              >
-                <div style={{ textAlign: 'center', transform: 'rotate(-25deg)', userSelect: 'none' }}>
-                  <span
-                    style={{
-                      display: 'block',
-                      fontSize: 'clamp(20px, 5vw, 32px)',
-                      fontWeight: 800,
-                      letterSpacing: '2px',
-                      color: 'rgba(255, 255, 255, 0.45)',
-                      textShadow: '0 1px 6px rgba(0, 0, 0, 0.7)',
-                      textTransform: 'uppercase',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {studioName || 'PREVIEW ONLY'}
-                  </span>
-                  <span
-                    style={{
-                      display: 'block',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      letterSpacing: '1px',
-                      color: 'rgba(255, 255, 255, 0.4)',
-                      textShadow: '0 1px 4px rgba(0, 0, 0, 0.7)',
-                      marginTop: '2px',
-                    }}
-                  >
-                    PREVIEW ONLY • JAGA PRIVASI VENDOR
-                  </span>
-                </div>
-              </div>
+              <PhotoWatermark studioName={studioName} size="md" />
             )}
 
             {/* Gradient Overlay for Photo Details & Direct Download Button */}

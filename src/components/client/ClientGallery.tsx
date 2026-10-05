@@ -19,6 +19,7 @@ import { StatusBadge } from '../StatusBadge';
 import type { Project, StudioProfile, Photo } from '../../types';
 import { getDeviceId } from '../../services/storage';
 import { downloadPhotoHd } from '../../services/photoDownload';
+import { PhotoWatermark } from '../common/PhotoWatermark';
 
 interface ClientGalleryProps {
   project: Project;
@@ -465,57 +466,17 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
                         }}
                       />
 
-                      {/* Anti-Screenshot Studio Watermark */}
+                      {/* Pro Photographer Watermark (Top-Center, Clean & Minimalist) */}
                       {project.hasWatermark && (
-                        <div
-                          style={{
-                            position: 'absolute',
-                            inset: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            pointerEvents: 'none',
-                            zIndex: 3,
-                            overflow: 'hidden',
-                          }}
-                        >
-                          <div style={{ textAlign: 'center', transform: 'rotate(-25deg)', userSelect: 'none' }}>
-                            <span
-                              style={{
-                                display: 'block',
-                                fontSize: 'clamp(14px, 3.5vw, 20px)',
-                                fontWeight: 800,
-                                letterSpacing: '1.5px',
-                                color: 'rgba(255, 255, 255, 0.48)',
-                                textShadow: '0 1px 5px rgba(0, 0, 0, 0.7)',
-                                textTransform: 'uppercase',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {activeStudioName}
-                            </span>
-                            <span
-                              style={{
-                                display: 'block',
-                                fontSize: '9px',
-                                fontWeight: 600,
-                                letterSpacing: '0.8px',
-                                color: 'rgba(255, 255, 255, 0.4)',
-                                textShadow: '0 1px 3px rgba(0, 0, 0, 0.7)',
-                                marginTop: '2px',
-                              }}
-                            >
-                              PREVIEW ONLY
-                            </span>
-                          </div>
-                        </div>
+                        <PhotoWatermark studioName={activeStudioName} size="sm" />
                       )}
 
-                      {/* Filename Badge Top-Left */}
+                      {/* Filename Badge */}
                       <div
                         style={{
                           position: 'absolute',
-                          top: '10px',
+                          top: project.hasWatermark ? undefined : '10px',
+                          bottom: project.hasWatermark ? '58px' : undefined,
                           left: '10px',
                           padding: '3px 8px',
                           borderRadius: '6px',

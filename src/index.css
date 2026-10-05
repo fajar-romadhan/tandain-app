@@ -546,4 +546,20 @@ a {
   animation: pulseDot 1.8s infinite ease-in-out;
 }
 
+@keyframes fadeInWatermark {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.pro-photo-watermark {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+
 
