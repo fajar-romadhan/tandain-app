@@ -12,7 +12,6 @@ import {
   Lock,
   Share2,
   Trash2,
-  RefreshCw,
   Eye,
   ShieldCheck,
   MessageCircle,
@@ -101,13 +100,6 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
       hasWatermark: nextWm,
     };
     onUpdateProject(updated);
-  };
-
-  const handleExtendExpiry = () => {
-    const current = new Date(project.expiresAt).getTime();
-    const extended = new Date(Math.max(Date.now(), current) + 86400000 * 30).toISOString();
-    onUpdateProject({ ...project, expiresAt: extended });
-    alert('Masa aktif galeri berhasil diperpanjang 30 hari ke depan! 🎉');
   };
 
   const daysLeft = Math.max(
@@ -331,15 +323,6 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
           >
             <ShieldCheck size={16} />
             {project.hasWatermark ? 'Watermark: Aktif' : 'Watermark: Nonaktif'}
-          </button>
-
-          {/* Extend Expiry */}
-          <button
-            onClick={handleExtendExpiry}
-            className="pill-btn pill-btn-ghost"
-            style={{ height: '42px' }}
-          >
-            <RefreshCw size={16} /> Perpanjang 30 Hari
           </button>
         </div>
       </div>

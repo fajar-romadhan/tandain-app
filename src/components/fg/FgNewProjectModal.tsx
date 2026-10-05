@@ -1,7 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  ChevronDown,
-  ChevronUp,
   PlusCircle,
   FolderOpen,
   Loader2,
@@ -12,6 +10,9 @@ import {
   Check,
   Eye,
   ShieldCheck,
+  Clock,
+  Lock,
+  Calendar,
 } from 'lucide-react';
 import { Modal } from '../Modal';
 import {
@@ -41,8 +42,8 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
   const [studioName, setStudioName] = useState(studio?.studioName || '');
   const [whatsapp, setWhatsapp] = useState(studio?.whatsapp || '');
   const [quota, setQuota] = useState<string>('50');
+  const [retentionDays, setRetentionDays] = useState<string>('30');
   const [sessionDate, setSessionDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [pinEnabled, setPinEnabled] = useState(false);
   const [pinValue, setPinValue] = useState('');
   const [watermarkEnabled, setWatermarkEnabled] = useState(false);
@@ -185,6 +186,16 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
       return;
     }
 
+    const daysNum = parseInt(retentionDays, 10);
+    if (!retentionDays.trim() || isNaN(daysNum) || daysNum <= 0) {
+      setErrorMsg('Waktu penyimpanan project wajib diisi (minimal 1 hari, maksimal 40 hari).');
+      return;
+    }
+    if (daysNum > 40) {
+      setErrorMsg('Maksimal waktu penyimpanan galeri adalah 40 hari demi efisiensi server.');
+      return;
+    }
+
     const folderId = extractDriveFolderId(driveUrl);
     if (!folderId) {
       setErrorMsg('Format link Google Drive belum valid. Pastikan link berisi folder publik.');
@@ -226,7 +237,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
         status: 'belum_dibuka',
         locked: false,
         createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 86400000 * 30).toISOString(), // 30 days
+        expiresAt: new Date(Date.now() + 86400000 * daysNum).toISOString(),
         photos: finalPhotos,
         selectedFileNames: [],
         revisionRound: 1,
@@ -780,7 +791,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
           </div>
 
           {/* Quota */}
-          <div style={{ marginBottom: '20px' }}>
+          <div style={{ marginBottom: '18px' }}>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
               Batas Maksimal Foto yang Boleh Dipilih (Kuota)*
             </label>
@@ -817,88 +828,210 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
             </div>
           </div>
 
-          {/* Advanced Accordion */}
-          <div style={{ marginBottom: '24px', borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
+          {/* Waktu Project Tersimpan (Maksimal 40 Hari) */}
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Clock size={16} color="var(--accent)" /> Waktu Project Tersimpan (Hari)*
+              </label>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  backgroundColor: '#FFF3E0',
+                  color: '#E65100',
+                  padding: '2px 8px',
+                  borderRadius: '999px',
+                }}
+              >
+                Maksimal 40 Hari
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ position: 'relative', width: '120px' }}>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  required
+                  value={retentionDays}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, '');
+                    if (val === '') {
+                      setRetentionDays('');
+                    } else {
+                      const num = parseInt(val, 10);
+                      if (num > 40) {
+                        setRetentionDays('40');
+                      } else {
+                        setRetentionDays(String(num));
+                      }
+                    }
+                  }}
+                  onBlur={() => {
+                    const n = parseInt(retentionDays, 10);
+                    if (!retentionDays || isNaN(n) || n <= 0) {
+                      setRetentionDays('30');
+                    } else if (n > 40) {
+                      setRetentionDays('40');
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    height: '46px',
+                    padding: '0 14px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'var(--bg)',
+                    outline: 'none',
+                    fontSize: '16px',
+                    fontWeight: 700,
+                  }}
+                />
+              </div>
+              <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>
+                Hari
+              </span>
+
+              {/* Quick Select Presets */}
+              <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto', flexWrap: 'wrap' }}>
+                {[7, 14, 30, 40].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setRetentionDays(String(d))}
+                    style={{
+                      padding: '6px 10px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: retentionDays === String(d) ? 700 : 500,
+                      border: retentionDays === String(d) ? '1.5px solid var(--accent)' : '1px solid var(--border)',
+                      backgroundColor: retentionDays === String(d) ? 'rgba(0, 122, 255, 0.08)' : 'var(--bg)',
+                      color: retentionDays === String(d) ? 'var(--accent)' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {d} Hari{d === 40 ? ' (Maks)' : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <p style={{ fontSize: '11.5px', color: 'var(--text-tertiary)', marginTop: '6px', lineHeight: 1.4 }}>
+              Fotografer wajib mengisi batas waktu simpan galeri (maks. 40 hari). Tidak ada opsi perpanjangan agar kapasitas penyimpanan tetap efisien.
+            </p>
+          </div>
+
+          {/* Pengaturan Tambahan: Tanggal Sesi & Kunci PIN Galeri (Tampil Langsung, Tanpa Toggle) */}
+          <div
+            style={{
+              marginBottom: '24px',
+              borderTop: '1px solid var(--border-light)',
+              paddingTop: '18px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+            }}
+          >
+            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Calendar size={15} color="var(--accent)" /> Pengaturan Tambahan (Tanggal Sesi & Kunci PIN)
+            </div>
+
+            {/* Tanggal Sesi Foto */}
+            <div>
+              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, marginBottom: '6px' }}>
+                Tanggal Sesi Foto
+              </label>
+              <input
+                type="date"
+                value={sessionDate}
+                onChange={(e) => setSessionDate(e.target.value)}
+                style={{
+                  height: '42px',
+                  padding: '0 12px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--bg)',
+                  fontSize: '16px',
+                  color: 'var(--text)',
+                }}
+              />
+            </div>
+
+            {/* Kunci PIN Toggle */}
+            <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                width: '100%',
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
-                color: 'var(--text-secondary)',
-                fontSize: '13px',
-                fontWeight: 600,
+                padding: '12px 14px',
+                borderRadius: '12px',
+                backgroundColor: pinEnabled ? 'rgba(0, 122, 255, 0.04)' : '#F5F5F7',
+                border: pinEnabled ? '1px solid #BFDBFE' : '1px solid var(--border-light)',
+                transition: 'all 0.18s ease',
               }}
             >
-              <span>Pengaturan Lanjutan (Tanggal Sesi & Kunci PIN Galeri)</span>
-              {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-
-            {showAdvanced && (
-              <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* Date */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
-                    Tanggal Sesi Foto
-                  </label>
-                  <input
-                    type="date"
-                    value={sessionDate}
-                    onChange={(e) => setSessionDate(e.target.value)}
-                    style={{
-                      height: '40px',
-                      padding: '0 12px',
-                      borderRadius: '10px',
-                      border: '1px solid var(--border)',
-                      backgroundColor: 'var(--bg)',
-                      fontSize: '13px',
-                    }}
-                  />
-                </div>
-
-                {/* PIN Toggle */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                <label
+                  htmlFor="pinToggle"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: 'var(--text)',
+                  }}
+                >
                   <input
                     type="checkbox"
                     id="pinToggle"
                     checked={pinEnabled}
                     onChange={(e) => setPinEnabled(e.target.checked)}
-                    style={{ width: '18px', height: '18px', marginTop: '2px', cursor: 'pointer' }}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                   />
-                  <div style={{ flex: 1 }}>
-                    <label htmlFor="pinToggle" style={{ fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
-                      Kunci Galeri dengan PIN
-                    </label>
-                    {pinEnabled && (
-                      <input
-                        type="text"
-                        maxLength={8}
-                        placeholder="Ketik PIN (misal 2026)"
-                        value={pinValue}
-                        onChange={(e) => setPinValue(e.target.value)}
-                        style={{
-                          marginTop: '8px',
-                          width: '180px',
-                          height: '38px',
-                          padding: '0 12px',
-                          borderRadius: '10px',
-                          border: '1px solid var(--border)',
-                          backgroundColor: 'var(--bg)',
-                          fontSize: '16px',
-                          fontWeight: 700,
-                        }}
-                      />
-                    )}
-                  </div>
-                </div>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Lock size={14} /> Kunci Galeri dengan Kode PIN
+                  </span>
+                </label>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    backgroundColor: pinEnabled ? '#E3F2FD' : 'var(--border)',
+                    color: pinEnabled ? '#007AFF' : 'var(--text-secondary)',
+                  }}
+                >
+                  {pinEnabled ? 'PIN AKTIF' : 'TANPA PIN'}
+                </span>
               </div>
-            )}
+
+              {pinEnabled && (
+                <div style={{ marginTop: '10px', paddingLeft: '28px' }}>
+                  <input
+                    type="text"
+                    maxLength={8}
+                    placeholder="Ketik PIN (misal: 1234)"
+                    value={pinValue}
+                    onChange={(e) => setPinValue(e.target.value)}
+                    style={{
+                      width: '180px',
+                      height: '42px',
+                      padding: '0 12px',
+                      borderRadius: '10px',
+                      border: '1px solid var(--border)',
+                      backgroundColor: '#FFFFFF',
+                      fontSize: '16px',
+                      fontWeight: 700,
+                      letterSpacing: '1px',
+                    }}
+                  />
+                  <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
+                    Klien wajib memasukkan PIN ini untuk membuka galeri foto.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {errorMsg && (
