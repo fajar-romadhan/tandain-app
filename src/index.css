@@ -270,3 +270,120 @@ a {
   }
 }
 
+/* ==========================================================
+   CLASSY 1:1 PHOTO PREVIEW CAROUSEL SHOWCASE
+   ========================================================== */
+
+@keyframes marqueeInfinite {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes marqueeInfiniteReverse {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.carousel-track-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  padding: 12px 0 24px;
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+
+.carousel-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 16px;
+  animation: marqueeInfinite 45s linear infinite;
+  will-change: transform;
+}
+
+.carousel-marquee-track-rev {
+  display: flex;
+  width: max-content;
+  gap: 16px;
+  animation: marqueeInfiniteReverse 50s linear infinite;
+  will-change: transform;
+}
+
+.carousel-track-wrapper:hover .carousel-marquee-track,
+.carousel-track-wrapper:hover .carousel-marquee-track-rev {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carousel-marquee-track,
+  .carousel-marquee-track-rev {
+    animation: none;
+  }
+  .carousel-track-wrapper {
+    overflow-x: auto;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+}
+
+.carousel-card-1x1 {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  aspect-ratio: 1 / 1;
+  border-radius: 20px;
+  overflow: hidden;
+  background-color: #121217;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+@media (max-width: 640px) {
+  .carousel-card-1x1 {
+    width: 185px;
+    height: 185px;
+    border-radius: 16px;
+  }
+}
+
+.carousel-card-1x1:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 20px 42px -12px rgba(0, 0, 0, 0.22), 0 0 0 2px rgba(255, 45, 85, 0.45);
+}
+
+.carousel-card-1x1 .overlay-info {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.0) 45%, rgba(0, 0, 0, 0.75) 100%);
+  display: flex;
+  flex-direction: column;
+  justifyContent: space-between;
+  padding: 14px;
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+}
+
+.carousel-card-1x1:hover .overlay-info {
+  opacity: 1;
+}
+
+/* Subtle Shimmer for Modern Aesthetic */
+.ambient-glow-circle {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+

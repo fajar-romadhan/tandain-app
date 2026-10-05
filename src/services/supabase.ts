@@ -354,13 +354,13 @@ export const isGoogleProviderEnabled = async (): Promise<boolean> => {
   }
 };
 
-export const signInWithGoogle = async (): Promise<void> => {
+export const signInWithGoogle = async (redirectTo?: string): Promise<void> => {
   const client = getSupabaseClient();
   if (!client) {
     throw new Error('Koneksi ke server belum tersedia. Coba muat ulang halaman.');
   }
 
-  const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/?view=fg` : '';
+  const redirectUrl = redirectTo || (typeof window !== 'undefined' ? `${window.location.origin}/?view=fg` : '');
   const { error } = await client.auth.signInWithOAuth({
     provider: 'google',
     options: {

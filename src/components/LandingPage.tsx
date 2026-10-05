@@ -11,6 +11,10 @@ import {
   MessageSquare,
   ShieldCheck,
   Zap,
+  Eye,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { SAMPLE_GRADUATION_PHOTOS, SAMPLE_WEDDING_PHOTOS } from '../services/sampleData';
 import type { AuthUser } from '../types';
@@ -32,6 +36,39 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [mockupCategory, setMockupCategory] = useState<'wedding' | 'wisuda'>('wedding');
   const [weddingSelected, setWeddingSelected] = useState<number[]>([0, 1, 3, 5]);
   const [wisudaSelected, setWisudaSelected] = useState<number[]>([0, 2, 4, 6]);
+
+  // 1:1 Carousel Showcase state & interactive preview
+  const [carouselCategory, setCarouselCategory] = useState<'all' | 'wedding' | 'wisuda'>('all');
+  const [carouselHearted, setCarouselHearted] = useState<string[]>(['wed-01', 'wisuda-02', 'wed-05', 'wisuda-07']);
+  const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
+  const [demoWatermark, setDemoWatermark] = useState<boolean>(true);
+
+  // Showcase item list
+  const showcaseList = [
+    ...SAMPLE_WEDDING_PHOTOS.map((p, idx) => ({
+      ...p,
+      category: 'wedding' as const,
+      vendor: 'Budi Visual Story',
+      label: `Wedding Story #${String(idx + 1).padStart(2, '0')}`,
+    })),
+    ...SAMPLE_GRADUATION_PHOTOS.map((p, idx) => ({
+      ...p,
+      category: 'wisuda' as const,
+      vendor: 'Studio Mahasiswa UI',
+      label: `Graduation UI #${String(idx + 1).padStart(2, '0')}`,
+    })),
+  ];
+
+  const filteredShowcase = showcaseList.filter((item) =>
+    carouselCategory === 'all' ? true : item.category === carouselCategory
+  );
+
+  const toggleCarouselHeart = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setCarouselHearted((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
 
   const currentPhotos = (mockupCategory === 'wedding' ? SAMPLE_WEDDING_PHOTOS : SAMPLE_GRADUATION_PHOTOS).slice(0, 8);
   const currentSelected = mockupCategory === 'wedding' ? weddingSelected : wisudaSelected;
@@ -487,6 +524,480 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
       </section>
+
+      {/* 1:1 Aspect Ratio Photo Preview Carousel Showcase */}
+      <section
+        style={{
+          position: 'relative',
+          padding: '76px 0 54px',
+          overflow: 'hidden',
+          backgroundColor: '#0C0C12',
+          color: '#FFFFFF',
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        }}
+      >
+        {/* Soft Ambient Light Blobs (Pure CSS blur, 60 FPS) */}
+        <div
+          className="ambient-glow-circle"
+          style={{
+            top: '-40px',
+            left: '15%',
+            width: '340px',
+            height: '340px',
+            background: 'radial-gradient(circle, rgba(255, 45, 85, 0.18) 0%, transparent 70%)',
+          }}
+        />
+        <div
+          className="ambient-glow-circle"
+          style={{
+            bottom: '-40px',
+            right: '15%',
+            width: '380px',
+            height: '380px',
+            background: 'radial-gradient(circle, rgba(0, 122, 255, 0.14) 0%, transparent 70%)',
+          }}
+        />
+
+        <div style={{ maxWidth: '1160px', margin: '0 auto', padding: '0 20px', position: 'relative', zIndex: 1 }}>
+          <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 36px' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 14px',
+                borderRadius: '9999px',
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                color: '#FF7A90',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                marginBottom: '14px',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              <Sparkles size={13} />
+              <span>Preview 1:1 Aspect Ratio • Estetika Modern</span>
+            </div>
+
+            <h2
+              style={{
+                fontSize: 'clamp(26px, 3.8vw, 38px)',
+                fontWeight: 800,
+                letterSpacing: '-0.6px',
+                lineHeight: 1.18,
+                marginBottom: '14px',
+              }}
+            >
+              Tampilan Galeri 1:1 yang <span style={{ color: 'var(--heart)' }}>Elegan & Cepat</span>
+            </h2>
+
+            <p style={{ fontSize: '15px', color: 'rgba(255, 255, 255, 0.72)', lineHeight: 1.6 }}>
+              Klien foto fokus pada ekspresi dan kehangatan momen tanpa distraksi visual. Animasi halus 60 FPS, proteksi anti-save, serta tap love interaktif.
+            </p>
+
+            {/* Category Filter Pills */}
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                marginTop: '22px',
+                padding: '4px',
+                borderRadius: '9999px',
+                backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setCarouselCategory('all')}
+                style={{
+                  padding: '7px 16px',
+                  borderRadius: '9999px',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  color: carouselCategory === 'all' ? '#0C0C12' : 'rgba(255,255,255,0.7)',
+                  backgroundColor: carouselCategory === 'all' ? '#FFFFFF' : 'transparent',
+                  transition: 'all 0.18s ease',
+                }}
+              >
+                Semua Momen ({showcaseList.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setCarouselCategory('wedding')}
+                style={{
+                  padding: '7px 16px',
+                  borderRadius: '9999px',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  color: carouselCategory === 'wedding' ? '#0C0C12' : 'rgba(255,255,255,0.7)',
+                  backgroundColor: carouselCategory === 'wedding' ? '#FFFFFF' : 'transparent',
+                  transition: 'all 0.18s ease',
+                }}
+              >
+                💍 Wedding ({SAMPLE_WEDDING_PHOTOS.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setCarouselCategory('wisuda')}
+                style={{
+                  padding: '7px 16px',
+                  borderRadius: '9999px',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  color: carouselCategory === 'wisuda' ? '#0C0C12' : 'rgba(255,255,255,0.7)',
+                  backgroundColor: carouselCategory === 'wisuda' ? '#FFFFFF' : 'transparent',
+                  transition: 'all 0.18s ease',
+                }}
+              >
+                🎓 Wisuda ({SAMPLE_GRADUATION_PHOTOS.length})
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Dual Marquee Track (Infinite Seamless Loop) */}
+        <div className="carousel-track-wrapper">
+          <div className="carousel-marquee-track">
+            {[...filteredShowcase, ...filteredShowcase].map((item, idx) => {
+              const isHearted = carouselHearted.includes(item.id);
+              const realIndex = idx % filteredShowcase.length;
+              return (
+                <div
+                  key={`marquee-1-${item.id}-${idx}`}
+                  className="carousel-card-1x1 no-save-preview"
+                  onClick={() => setActiveLightboxIndex(realIndex)}
+                >
+                  <img
+                    src={item.url}
+                    alt={item.name}
+                    loading="lazy"
+                    decoding="async"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                  />
+
+                  {/* Anti-Save Transparent Shield */}
+                  <div className="photo-shield-layer" />
+
+                  {/* Watermark Tag */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '12px',
+                      left: '12px',
+                      zIndex: 3,
+                      padding: '3px 8px',
+                      borderRadius: '6px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.55)',
+                      backdropFilter: 'blur(6px)',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {item.category === 'wedding' ? '💍 Wedding' : '🎓 Wisuda'}
+                  </div>
+
+                  {/* Top Right Heart Action */}
+                  <button
+                    type="button"
+                    onClick={(e) => toggleCarouselHeart(item.id, e)}
+                    style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      zIndex: 4,
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      backgroundColor: isHearted ? 'var(--heart)' : 'rgba(0, 0, 0, 0.45)',
+                      backdropFilter: 'blur(6px)',
+                      color: '#FFFFFF',
+                      display: 'grid',
+                      placeItems: 'center',
+                      transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                      transform: isHearted ? 'scale(1.08)' : 'scale(1)',
+                    }}
+                  >
+                    <Heart size={16} fill={isHearted ? '#FFFFFF' : 'none'} />
+                  </button>
+
+                  {/* Bottom Vignette & Metadata */}
+                  <div className="overlay-info" style={{ zIndex: 3 }}>
+                    <div />
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#FFFFFF', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+                        {item.name}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span>{item.vendor}</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'rgba(255,255,255,0.9)' }}>
+                          <Eye size={12} /> Tap preview
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Caption Hint Under Carousel */}
+        <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '12.5px', color: 'rgba(255, 255, 255, 0.55)', padding: '0 20px', position: 'relative', zIndex: 1 }}>
+          💡 Sentuh atau hover foto untuk jeda • Klik foto untuk simulasi preview layar penuh 1:1
+        </div>
+      </section>
+
+      {/* 1:1 Classy Lightbox Preview Modal */}
+      {activeLightboxIndex !== null && filteredShowcase[activeLightboxIndex] && (
+        <div
+          className="no-save-preview"
+          onClick={() => setActiveLightboxIndex(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 999,
+            backgroundColor: 'rgba(7, 7, 10, 0.92)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            animation: 'fadeIn 0.2s ease-out forwards',
+          }}
+        >
+          {/* Top Bar Controls */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: '500px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '14px',
+              color: '#FFFFFF',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 700 }}>
+                {filteredShowcase[activeLightboxIndex].name}
+              </div>
+              <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)' }}>
+                {filteredShowcase[activeLightboxIndex].vendor} • {activeLightboxIndex + 1} dari {filteredShowcase.length}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setDemoWatermark(!demoWatermark)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  backgroundColor: demoWatermark ? 'rgba(52, 199, 89, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+                  color: demoWatermark ? '#34C759' : 'rgba(255, 255, 255, 0.7)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                }}
+              >
+                Watermark: {demoWatermark ? 'ON' : 'OFF'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveLightboxIndex(null)}
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(255, 255, 255, 0.14)',
+                  color: '#FFFFFF',
+                  display: 'grid',
+                  placeItems: 'center',
+                  border: 'none',
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* 1:1 Photo Frame */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '480px',
+              aspectRatio: '1 / 1',
+              borderRadius: '24px',
+              overflow: 'hidden',
+              backgroundColor: '#16161E',
+              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.6)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+            }}
+          >
+            <img
+              src={filteredShowcase[activeLightboxIndex].url}
+              alt={filteredShowcase[activeLightboxIndex].name}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block',
+              }}
+            />
+
+            {/* Anti-Save Shield */}
+            <div className="photo-shield-layer" />
+
+            {/* Optional Subtle Watermark Overlay */}
+            {demoWatermark && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  zIndex: 3,
+                  display: 'grid',
+                  placeItems: 'center',
+                  pointerEvents: 'none',
+                }}
+              >
+                <div
+                  style={{
+                    transform: 'rotate(-25deg)',
+                    color: 'rgba(255, 255, 255, 0.3)',
+                    fontSize: 'clamp(18px, 4.5vw, 28px)',
+                    fontWeight: 900,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+                    border: '3px dashed rgba(255, 255, 255, 0.3)',
+                    padding: '8px 20px',
+                    borderRadius: '12px',
+                  }}
+                >
+                  {filteredShowcase[activeLightboxIndex].vendor}
+                </div>
+              </div>
+            )}
+
+            {/* Prev / Next Navigation Arrows */}
+            <button
+              type="button"
+              onClick={() =>
+                setActiveLightboxIndex(
+                  (activeLightboxIndex - 1 + filteredShowcase.length) % filteredShowcase.length
+                )
+              }
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 5,
+                width: '42px',
+                height: '42px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                color: '#FFFFFF',
+                display: 'grid',
+                placeItems: 'center',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.18)',
+              }}
+            >
+              <ChevronLeft size={22} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setActiveLightboxIndex((activeLightboxIndex + 1) % filteredShowcase.length)
+              }
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 5,
+                width: '42px',
+                height: '42px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                color: '#FFFFFF',
+                display: 'grid',
+                placeItems: 'center',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.18)',
+              }}
+            >
+              <ChevronRight size={22} />
+            </button>
+          </div>
+
+          {/* Bottom Interactive Bar */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: '480px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: '16px',
+            }}
+          >
+            <span style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)' }}>
+              🔒 Mode preview privasi (anti-download)
+            </span>
+
+            <button
+              type="button"
+              onClick={() => toggleCarouselHeart(filteredShowcase[activeLightboxIndex].id)}
+              className="pill-btn"
+              style={{
+                height: '44px',
+                padding: '0 20px',
+                backgroundColor: carouselHearted.includes(filteredShowcase[activeLightboxIndex].id)
+                  ? 'var(--heart)'
+                  : 'rgba(255, 255, 255, 0.15)',
+                color: '#FFFFFF',
+                fontSize: '13.5px',
+                fontWeight: 700,
+                gap: '8px',
+                border: '1px solid rgba(255,255,255,0.18)',
+              }}
+            >
+              <Heart
+                size={16}
+                fill={carouselHearted.includes(filteredShowcase[activeLightboxIndex].id) ? '#FFFFFF' : 'none'}
+              />
+              {carouselHearted.includes(filteredShowcase[activeLightboxIndex].id)
+                ? 'Terpilih (Tap Batalkan)'
+                : 'Pilih Foto Ini'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Problem Section: Seleksi via WhatsApp itu melelahkan */}
       <section
