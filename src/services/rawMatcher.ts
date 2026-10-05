@@ -143,3 +143,170 @@ export const matchAndCopyLocalFiles = async (
     errors,
   };
 };
+
+// ---------------------------------------------------------------------------
+// Safari & Alternative Browser Support (WebKit directory input + Mac Script)
+// ---------------------------------------------------------------------------
+
+export interface SafariMatchedFile {
+  file: File;
+  name: string;
+  size: number;
+  extension: string;
+  relativePath: string;
+}
+
+export interface SafariMatchingResult {
+  totalTarget: number;
+  matched: SafariMatchedFile[];
+  matchedNames: string[];
+  missing: string[];
+  totalBytes: number;
+}
+
+export const matchLocalFilesFromList = (
+  fileList: FileList | File[],
+  selectedFileNames: string[],
+  targetTypes: 'raw' | 'jpg' | 'both'
+): SafariMatchingResult => {
+  const filesArray = Array.from(fileList);
+  const matched: SafariMatchedFile[] = [];
+  const missing: string[] = [];
+  const matchedNames: string[] = [];
+  let totalBytes = 0;
+
+  for (const rawSelected of selectedFileNames) {
+    const base = getBaseName(rawSelected);
+    const candidateFiles: File[] = [];
+
+    for (const f of filesArray) {
+      const ext = (f.name.split('.').pop() || '').toLowerCase();
+      const candidateBase = getBaseName(f.name);
+
+      if (candidateBase === base) {
+        const isRaw = RAW_EXTENSIONS.includes(ext);
+        const isJpg = ext === 'jpg' || ext === 'jpeg';
+
+        if (targetTypes === 'raw' && isRaw) {
+          candidateFiles.push(f);
+        } else if (targetTypes === 'jpg' && isJpg) {
+          candidateFiles.push(f);
+        } else if (targetTypes === 'both' && (isRaw || isJpg)) {
+          candidateFiles.push(f);
+        }
+      }
+    }
+
+    if (candidateFiles.length === 0) {
+      missing.push(rawSelected);
+    } else {
+      for (const cf of candidateFiles) {
+        matched.push({
+          file: cf,
+          name: cf.name,
+          size: cf.size,
+          extension: (cf.name.split('.').pop() || '').toLowerCase(),
+          relativePath: cf.webkitRelativePath || cf.name,
+        });
+        matchedNames.push(cf.name);
+        totalBytes += cf.size;
+      }
+    }
+  }
+
+  return {
+    totalTarget: selectedFileNames.length,
+    matched,
+    matchedNames,
+    missing,
+    totalBytes,
+  };
+};
+
+/**
+ * Generates an executable macOS .command bash script.
+ * Double clicking this file in Finder automatically creates the target folder
+ * and copies the matched RAW files using native macOS cp in 0.5 seconds!
+ */
+export const generateMacCopyScript = (
+  fileNames: string[],
+  clientName: string
+): string => {
+  const cleanClient = (clientName || 'Klien').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const nowStr = new Date().toISOString().split('T')[0];
+  const destDir = `TANDAIN_${cleanClient}_RAW_${nowStr}`;
+
+  // Generate find commands that search both current dir and camera subfolders (e.g. 100CANON)
+  const copyLines = fileNames
+    .map((name) => {
+      const base = getBaseName(name);
+      return `find . -maxdepth 3 -type f -iname "${base}.*" -exec cp -v {} "$DEST_DIR/" \\; 2>/dev/null || true`;
+    })
+    .join('\n');
+
+  return `#!/bin/bash
+# ========================================================
+# TANDAIN — Script Otomatis Salin RAW (macOS Safari Helper)
+# Klien: ${clientName}
+# Tanggal: ${nowStr}
+# ========================================================
+
+cd "$(dirname "$0")" || exit 1
+DEST_DIR="${destDir}"
+mkdir -p "$DEST_DIR"
+
+echo "=================================================="
+echo "  🚀 TANDAIN: Menyalin File RAW Pilihan Klien"
+echo "  Klien: ${clientName}"
+echo "  Target Folder: $DEST_DIR"
+echo "=================================================="
+
+${copyLines}
+
+echo ""
+echo "=================================================="
+echo "  ✅ SELESAI! Seluruh file pilihan telah disalin."
+echo "  Lokasi: $(pwd)/$DEST_DIR"
+echo "=================================================="
+`;
+};
+
+/**
+ * Generates a 1-line command ready to paste into macOS Terminal
+ */
+export const generateTerminalCopyCommand = (
+  fileNames: string[],
+  clientName: string
+): string => {
+  const cleanClient = (clientName || 'Klien').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const nowStr = new Date().toISOString().split('T')[0];
+  const destDir = `TANDAIN_${cleanClient}_RAW_${nowStr}`;
+
+  const patterns = fileNames.map((name) => `"${getBaseName(name)}.*"`).join(' ');
+
+  return `mkdir -p "${destDir}" && for f in ${patterns}; do find . -maxdepth 3 -type f -iname "$f" -exec cp {} "${destDir}/" \\; ; done && echo "✅ Selesai salin RAW ke ${destDir}"`;
+};
+
+export const downloadTextFile = (content: string, filename: string): void => {
+  const blob = new Blob([content], { type: 'application/x-sh;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+};
+
+export const downloadSingleFile = (file: File): void => {
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+};
+
