@@ -59,6 +59,51 @@ export const FgAuthModal: React.FC<FgAuthModalProps> = ({ isOpen, onClose, onSuc
     tempUser: AuthUser | null;
   } | null>(null);
 
+  // 🔒 Mode Testing Khusus Owner / Developer (TIDAK DITAMPILKAN KE PUBLIK)
+  // Hanya aktif jika URL memiliki parameter ?demo=1 / ?test=1, atau disimpan di localStorage
+  const [showDevTestBox, setShowDevTestBox] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('demo') === '0' || params.get('test') === '0') {
+        localStorage.removeItem('tandain_show_demo');
+        return false;
+      }
+      if (params.get('demo') === '1' || params.get('test') === '1' || params.get('dev') === '1') {
+        localStorage.setItem('tandain_show_demo', 'true');
+        return true;
+      }
+      return localStorage.getItem('tandain_show_demo') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  // Rahasia tap 3x untuk mengaktifkan / menonaktifkan mode testing bagi owner
+  const secretClickRef = React.useRef<{ count: number; timer: ReturnType<typeof setTimeout> | null }>({ count: 0, timer: null });
+  const handleSecretToggle = () => {
+    if (secretClickRef.current.timer) clearTimeout(secretClickRef.current.timer);
+    secretClickRef.current.count += 1;
+    if (secretClickRef.current.count >= 3) {
+      secretClickRef.current.count = 0;
+      setShowDevTestBox((current) => {
+        const next = !current;
+        try {
+          if (next) {
+            localStorage.setItem('tandain_show_demo', 'true');
+          } else {
+            localStorage.removeItem('tandain_show_demo');
+          }
+        } catch {}
+        return next;
+      });
+      return;
+    }
+    secretClickRef.current.timer = setTimeout(() => {
+      secretClickRef.current.count = 0;
+    }, 1200);
+  };
+
   const resetForm = () => {
     setEmail('');
     setPassword('');
@@ -180,120 +225,134 @@ export const FgAuthModal: React.FC<FgAuthModalProps> = ({ isOpen, onClose, onSuc
     >
       <div style={{ padding: '4px 0 10px' }}>
         {/* ==========================================================
-            AKUN TESTING SIAP PAKAI (0 DETIK TANPA DAFTAR)
+            AKUN TESTING SIAP PAKAI (KHUSUS OWNER / DEV - TIDAK DITAMPILKAN KE PUBLIK)
+            Akses privat: buka link dengan ?demo=1 atau tap 3x icon perisai di bawah
             ========================================================== */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, #F0F6FF 0%, #E8F1FE 100%)',
-            border: '1.5px solid #BFDBFE',
-            borderRadius: '16px',
-            padding: '14px 16px',
-            marginBottom: '16px',
-            boxShadow: '0 2px 8px rgba(37, 99, 235, 0.08)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⚡</span>
-              <div>
-                <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1E40AF', display: 'block' }}>
-                  Akun Testing Siap Pakai
-                </span>
-                <span style={{ fontSize: '11.5px', color: '#3B82F6', fontWeight: 500 }}>
-                  Langsung masuk tanpa perlu mendaftar
-                </span>
+        {showDevTestBox && (
+          <>
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #F0F6FF 0%, #E8F1FE 100%)',
+                border: '1.5px solid #BFDBFE',
+                borderRadius: '16px',
+                padding: '14px 16px',
+                marginBottom: '16px',
+                boxShadow: '0 2px 8px rgba(37, 99, 235, 0.08)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⚡</span>
+                  <div>
+                    <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1E40AF', display: 'block' }}>
+                      Akun Testing Siap Pakai (Mode Internal)
+                    </span>
+                    <span style={{ fontSize: '11.5px', color: '#3B82F6', fontWeight: 500 }}>
+                      Hanya tampil untuk Anda (Privat)
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDevTestBox(false);
+                    try {
+                      localStorage.removeItem('tandain_show_demo');
+                    } catch {}
+                  }}
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    backgroundColor: '#DBEAFE',
+                    color: '#1D4ED8',
+                    padding: '3px 9px',
+                    borderRadius: '999px',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                  title="Sembunyikan panel testing"
+                >
+                  Tutup ✕
+                </button>
+              </div>
+
+              <div
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                  borderRadius: '10px',
+                  padding: '8px 12px',
+                  marginBottom: '10px',
+                  border: '1px solid #DBEAFE',
+                  fontSize: '12px',
+                  color: '#374151',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '3px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Studio: <b>{DEMO_TESTING_ACCOUNT.studioName}</b></span>
+                  <span style={{ color: '#2563EB', fontWeight: 600 }}>Siap Pakai</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: '#6B7280' }}>
+                  <span>Email: <code style={{ color: '#1F2937' }}>{DEMO_TESTING_ACCOUNT.email}</code></span>
+                  <span>Pass: <code style={{ color: '#1F2937' }}>{DEMO_TESTING_ACCOUNT.password}</code></span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  id="btn-quick-testing-login"
+                  type="button"
+                  onClick={handleQuickTestLogin}
+                  style={{
+                    flex: 1,
+                    minHeight: '44px',
+                    borderRadius: '10px',
+                    backgroundColor: '#2563EB',
+                    color: '#FFFFFF',
+                    fontSize: '13.5px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '7px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <Zap size={16} /> Masuk Akun Testing (1-Klik)
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAutoFillTestCredentials}
+                  title="Isi otomatis ke formulir login di bawah"
+                  style={{
+                    minHeight: '44px',
+                    padding: '0 14px',
+                    borderRadius: '10px',
+                    backgroundColor: '#FFFFFF',
+                    color: '#1D4ED8',
+                    border: '1px solid #BFDBFE',
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Isi Form
+                </button>
               </div>
             </div>
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                backgroundColor: '#DBEAFE',
-                color: '#1D4ED8',
-                padding: '3px 9px',
-                borderRadius: '999px',
-                letterSpacing: '0.2px',
-              }}
-            >
-              3 Demo Project
-            </span>
-          </div>
 
-          <div
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.85)',
-              borderRadius: '10px',
-              padding: '8px 12px',
-              marginBottom: '10px',
-              border: '1px solid #DBEAFE',
-              fontSize: '12px',
-              color: '#374151',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '3px',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Studio: <b>{DEMO_TESTING_ACCOUNT.studioName}</b></span>
-              <span style={{ color: '#2563EB', fontWeight: 600 }}>Siap Pakai</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: '#6B7280' }}>
-              <span>Email: <code style={{ color: '#1F2937' }}>{DEMO_TESTING_ACCOUNT.email}</code></span>
-              <span>Pass: <code style={{ color: '#1F2937' }}>{DEMO_TESTING_ACCOUNT.password}</code></span>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              id="btn-quick-testing-login"
-              type="button"
-              onClick={handleQuickTestLogin}
-              style={{
-                flex: 1,
-                minHeight: '44px',
-                borderRadius: '10px',
-                backgroundColor: '#2563EB',
-                color: '#FFFFFF',
-                fontSize: '13.5px',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '7px',
-                border: 'none',
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <Zap size={16} /> Masuk Akun Testing (1-Klik)
-            </button>
-            <button
-              type="button"
-              onClick={handleAutoFillTestCredentials}
-              title="Isi otomatis ke formulir login di bawah"
-              style={{
-                minHeight: '44px',
-                padding: '0 14px',
-                borderRadius: '10px',
-                backgroundColor: '#FFFFFF',
-                color: '#1D4ED8',
-                border: '1px solid #BFDBFE',
-                fontSize: '12.5px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              Isi Form
-            </button>
-          </div>
-        </div>
-
-        {/* Subtitle / 2 Jalur Header */}
-        <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '14px' }}>
-          Atau masuk dengan akun Anda sendiri via formulir web atau akun Google:
-        </p>
+            {/* Subtitle saat mode testing aktif */}
+            <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '14px' }}>
+              Atau masuk dengan akun Anda sendiri via formulir web atau akun Google:
+            </p>
+          </>
+        )}
 
         {/* ==========================================================
             JALUR 1: AKUN WEB TANDAIN (DAFTAR & MASUK LANGSUNG)
@@ -477,7 +536,7 @@ export const FgAuthModal: React.FC<FgAuthModalProps> = ({ isOpen, onClose, onSuc
                   <label style={{ fontSize: '12.5px', fontWeight: 600 }}>
                     Email Studio*
                   </label>
-                  {activeTab === 'login' && (
+                  {activeTab === 'login' && showDevTestBox && (
                     <button
                       type="button"
                       onClick={handleAutoFillTestCredentials}
@@ -691,9 +750,14 @@ export const FgAuthModal: React.FC<FgAuthModalProps> = ({ isOpen, onClose, onSuc
             gap: '8px',
             fontSize: '12px',
             color: 'var(--text-secondary)',
+            userSelect: 'none',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div
+            onClick={handleSecretToggle}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'default' }}
+            title=""
+          >
             <ShieldCheck size={14} color="#007AFF" />
             <span>2 Jalur Aman: Data galeri & foto RAW Anda terisolasi aman</span>
           </div>
