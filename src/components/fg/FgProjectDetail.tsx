@@ -14,6 +14,7 @@ import {
   Trash2,
   RefreshCw,
   Eye,
+  ShieldCheck,
 } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import { FgRawModal } from './FgRawModal';
@@ -80,6 +81,15 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
     onUpdateProject(updated);
   };
 
+  const handleToggleWatermark = () => {
+    const nextWm = !project.hasWatermark;
+    const updated: Project = {
+      ...project,
+      hasWatermark: nextWm,
+    };
+    onUpdateProject(updated);
+  };
+
   const handleExtendExpiry = () => {
     const current = new Date(project.expiresAt).getTime();
     const extended = new Date(Math.max(Date.now(), current) + 86400000 * 30).toISOString();
@@ -128,13 +138,35 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
       <div className="card-ios" style={{ padding: '24px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
               <StatusBadge status={project.status} />
               {project.pin && (
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Lock size={13} /> PIN: <b>{project.pin}</b>
                 </span>
               )}
+              {/* Watermark Toggle Badge */}
+              <button
+                type="button"
+                onClick={handleToggleWatermark}
+                style={{
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  padding: '3px 9px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  backgroundColor: project.hasWatermark ? '#E3F2FD' : 'var(--border-light)',
+                  color: project.hasWatermark ? '#007AFF' : 'var(--text-secondary)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  border: 'none',
+                }}
+                title="Bebas ubah watermark: klik untuk nyalakan/matikan"
+              >
+                <ShieldCheck size={13} />
+                {project.hasWatermark ? 'Watermark: ON' : 'Watermark: OFF'}
+              </button>
               {daysLeft <= 5 && (
                 <span style={{ fontSize: '12px', color: '#B25E00', fontWeight: 600 }}>
                   ⚠️ Habis dalam {daysLeft} hari
@@ -240,6 +272,21 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
           >
             {project.locked ? <Unlock size={16} /> : <Lock size={16} />}
             {project.locked ? 'Buka Kunci (Beri Revisi)' : 'Kunci Pilihan'}
+          </button>
+
+          {/* Watermark Toggle */}
+          <button
+            onClick={handleToggleWatermark}
+            className="pill-btn pill-btn-ghost"
+            style={{
+              height: '42px',
+              gap: '6px',
+              color: project.hasWatermark ? '#007AFF' : 'var(--text-secondary)',
+            }}
+            title="Klik untuk menyalakan atau mematikan watermark pada preview foto klien"
+          >
+            <ShieldCheck size={16} />
+            {project.hasWatermark ? 'Watermark: Aktif' : 'Watermark: Nonaktif'}
           </button>
 
           {/* Extend Expiry */}

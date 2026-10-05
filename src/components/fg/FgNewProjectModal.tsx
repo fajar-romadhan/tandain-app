@@ -622,9 +622,65 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
                 }}
               />
             </div>
-            <p style={{ fontSize: '11.5px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-              Nama ini akan ditampilkan sebagai identitas vendor dan teks watermark di foto preview klien.
-            </p>
+
+            {/* Pilihan Watermark: Bebas Mau Pakai atau Tidak */}
+            <div
+              style={{
+                marginTop: '10px',
+                padding: '12px 14px',
+                borderRadius: '12px',
+                backgroundColor: watermarkEnabled ? 'rgba(0, 122, 255, 0.05)' : '#F5F5F7',
+                border: watermarkEnabled ? '1px solid #B8D5FA' : '1px solid var(--border-light)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                transition: 'all 0.18s ease',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                <label
+                  htmlFor="wmOptionToggle"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: 'var(--text)',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    id="wmOptionToggle"
+                    checked={watermarkEnabled}
+                    onChange={(e) => setWatermarkEnabled(e.target.checked)}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                  <span>Pasang Watermark Nama Studio di Preview Foto</span>
+                </label>
+
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    backgroundColor: watermarkEnabled ? '#E3F2FD' : 'var(--border)',
+                    color: watermarkEnabled ? '#007AFF' : 'var(--text-secondary)',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {watermarkEnabled ? 'WATERMARK ON' : 'BEBAS / OFF'}
+                </span>
+              </div>
+
+              <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: 0, paddingLeft: '28px', lineHeight: 1.4 }}>
+                {watermarkEnabled
+                  ? `✓ Teks "${studioName.trim() || '(Nama Studio)'}" akan dipasang melintang transparan pada preview foto klien.`
+                  : '○ Foto preview klien tampil jernih tanpa watermark (opsional, fotografer bebas memilih).'}
+              </p>
+            </div>
           </div>
 
           {/* Photographer WhatsApp for Client Confirmation */}
@@ -721,7 +777,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
                 fontWeight: 600,
               }}
             >
-              <span>Pengaturan Lanjutan (Tanggal, PIN, Watermark)</span>
+              <span>Pengaturan Lanjutan (Tanggal Sesi & Kunci PIN Galeri)</span>
               {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
 
@@ -781,37 +837,6 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
                       />
                     )}
                   </div>
-                </div>
-
-                {/* Watermark Toggle */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <input
-                      type="checkbox"
-                      id="wmToggle"
-                      checked={watermarkEnabled}
-                      onChange={(e) => setWatermarkEnabled(e.target.checked)}
-                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                    />
-                    <label htmlFor="wmToggle" style={{ fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
-                      Pasang Watermark Nama Studio di Preview Foto
-                    </label>
-                  </div>
-                  {watermarkEnabled && (
-                    <div
-                      style={{
-                        marginLeft: '28px',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                        fontSize: '12px',
-                        color: 'var(--text-secondary)',
-                        borderLeft: '3px solid var(--accent)',
-                      }}
-                    >
-                      Teks Watermark: <b>{studioName.trim() || '(Isi Nama Studio di atas)'}</b>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
