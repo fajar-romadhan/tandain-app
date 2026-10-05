@@ -356,7 +356,7 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
                       </div>
 
                       {/* Right: Actions */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <button
                           onClick={(e) => handleCopyLink(project, e)}
                           className={`pill-btn ${copiedId === project.id ? 'pill-btn-heart' : 'pill-btn-secondary'}`}
@@ -382,7 +382,10 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
                         </a>
 
                         <button
-                          onClick={() => onOpenClientView(project.slug)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenClientView(project.slug);
+                          }}
                           className="pill-btn pill-btn-ghost"
                           style={{ height: '36px', width: '36px', padding: 0 }}
                           title="Buka galeri klien"
@@ -390,7 +393,31 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
                           <ExternalLink size={16} />
                         </button>
 
-                        <ChevronRight size={18} color="var(--text-tertiary)" />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectProject(project);
+                          }}
+                          className="pill-btn pill-btn-ghost"
+                          style={{
+                            height: '36px',
+                            width: '36px',
+                            padding: 0,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--text)',
+                            backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                          title="Buka detail project"
+                          aria-label="Buka detail project"
+                        >
+                          <ChevronRight size={20} />
+                        </button>
                       </div>
                     </div>
                   );
