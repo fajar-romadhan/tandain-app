@@ -37,6 +37,12 @@ export interface Project {
   submittedAt?: string;
   revisionRound: number;
   submissionHistory: SubmissionHistory[];
+  /** Supabase auth user id of the photographer who owns this project */
+  ownerId?: string;
+  /** Studio branding snapshot shown to the client (they never see the FG's localStorage) */
+  studioName?: string;
+  studioWhatsapp?: string;
+  waTemplate?: string;
 }
 
 export interface StudioProfile {

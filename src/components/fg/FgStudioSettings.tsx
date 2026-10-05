@@ -21,8 +21,6 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
   const [accentColor, setAccentColor] = useState(studio.accentColor);
   const [waTemplate, setWaTemplate] = useState(studio.waTemplate);
   const [googleApiKey, setGoogleApiKey] = useState(studio.googleApiKey || '');
-  const [supabaseUrl, setSupabaseUrl] = useState(studio.supabaseUrl || '');
-  const [supabaseAnonKey, setSupabaseAnonKey] = useState(studio.supabaseAnonKey || '');
   const [showIntegrations, setShowIntegrations] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -35,8 +33,6 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
       accentColor,
       waTemplate,
       googleApiKey: googleApiKey.trim() || undefined,
-      supabaseUrl: supabaseUrl.trim() || undefined,
-      supabaseAnonKey: supabaseAnonKey.trim() || undefined,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -49,7 +45,7 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
           Pengaturan Studio
         </h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-          Atur nama brand, nomor WhatsApp konfirmasi, warna aksen, dan integrasi cloud.
+          Atur nama brand, nomor WhatsApp konfirmasi, warna aksen, dan integrasi Google Drive.
         </p>
       </div>
 
@@ -191,7 +187,7 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Database size={16} color="var(--primary)" />
-              <span>Integrasi Cloud & Google Drive API (Opsional)</span>
+              <span>Integrasi Google Drive API (Opsional)</span>
             </div>
             {showIntegrations ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
@@ -199,7 +195,7 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
           {showIntegrations && (
             <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
               <div style={{ backgroundColor: '#F5F5F7', padding: '14px', borderRadius: '12px', fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                💡 <b>Catatan:</b> Tanpa mengisi bagian ini, Tandain tetap bisa digunakan secara normal di laptop. Isi bagian ini jika ingin memindai folder Google Drive live tanpa batas atau sinkronisasi database cloud antar perangkat HP & laptop.
+                💡 <b>Catatan:</b> Tanpa mengisi bagian ini, Tandain tetap bisa digunakan secara normal. Isi API Key jika ingin memindai folder Google Drive berukuran besar tanpa batas.
               </div>
 
               {/* Google Drive API Key */}
@@ -222,52 +218,6 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
                   value={googleApiKey}
                   onChange={(e) => setGoogleApiKey(e.target.value)}
                   placeholder="AIzaSy..."
-                  style={{
-                    width: '100%',
-                    height: '42px',
-                    padding: '0 12px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'var(--bg)',
-                    fontSize: '13px',
-                    fontFamily: 'monospace',
-                  }}
-                />
-              </div>
-
-              {/* Supabase URL */}
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                  Supabase Project URL
-                </label>
-                <input
-                  type="text"
-                  value={supabaseUrl}
-                  onChange={(e) => setSupabaseUrl(e.target.value)}
-                  placeholder="https://xyzcompany.supabase.co"
-                  style={{
-                    width: '100%',
-                    height: '42px',
-                    padding: '0 12px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'var(--bg)',
-                    fontSize: '13px',
-                    fontFamily: 'monospace',
-                  }}
-                />
-              </div>
-
-              {/* Supabase Anon Key */}
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
-                  Supabase Anon Public Key
-                </label>
-                <input
-                  type="password"
-                  value={supabaseAnonKey}
-                  onChange={(e) => setSupabaseAnonKey(e.target.value)}
-                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                   style={{
                     width: '100%',
                     height: '42px',

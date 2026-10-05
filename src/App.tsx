@@ -6,264 +6,285 @@ import { ClientGallery } from './components/client/ClientGallery';
 import { FgNewProjectModal } from './components/fg/FgNewProjectModal';
 import { FgAuthModal } from './components/fg/FgAuthModal';
 import {
-  loadProjects,
-  saveProjects,
-  updateProject,
-  loadStudioProfile,
-  saveStudioProfile,
-  subscribeRealtime,
-  broadcastEvent,
   getDeviceId,
+  loadCachedProjects,
+  saveCachedProjects,
+  loadCachedStudio,
+  saveCachedStudio,
+  createDefaultStudio,
+  studioFromProject,
+  clearLegacyStorage,
 } from './services/storage';
 import {
-  getCurrentAuthUser,
   subscribeAuthChanges,
   signOutUser,
   saveProjectToCloud,
+  deleteProjectFromCloud,
+  fetchOwnerProjects,
+  subscribeOwnerProjects,
+  fetchStudioProfileFromCloud,
+  saveStudioProfileToCloud,
   fetchProjectFromCloud,
+  clientUpdateProjectInCloud,
   subscribeProjectFromCloud,
 } from './services/supabase';
 import type { Project, StudioProfile, AuthUser } from './types';
 
+type View = 'landing' | 'dashboard' | 'project_detail' | 'client';
+type PostLoginAction = 'dashboard' | 'create';
+
+const POST_LOGIN_KEY = 'tandain_post_login_action';
+
+const upsertInList = (list: Project[], project: Project): Project[] => {
+  const idx = list.findIndex((p) => p.id === project.id);
+  if (idx === -1) return [project, ...list];
+  const next = [...list];
+  next[idx] = project;
+  return next;
+};
+
+const getInitialClientSlug = (): string | null =>
+  typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('p');
+
 export function App() {
-  const [projects, setProjects] = useState<Project[]>(() => loadProjects());
-  const [studio, setStudio] = useState<StudioProfile>(() => loadStudioProfile());
+  // --- Auth (Google is the only photographer login) ---
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<'landing' | 'dashboard' | 'project_detail' | 'client'>('landing');
+
+  // --- Photographer data: ONLY the logged-in vendor's projects ---
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [studio, setStudio] = useState<StudioProfile>(() => createDefaultStudio());
+
+  // --- Client gallery (opened via ?p=slug, no login) ---
+  const [clientSlug] = useState<string | null>(getInitialClientSlug);
+  const [clientProject, setClientProject] = useState<Project | null>(null);
+  const [clientNotFound, setClientNotFound] = useState(false);
+
+  // --- UI ---
+  const [currentView, setCurrentView] = useState<View>(() => (getInitialClientSlug() ? 'client' : 'landing'));
   const [dashboardTab, setDashboardTab] = useState<'projects' | 'settings'>('projects');
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [syncError, setSyncError] = useState('');
 
-  // Sync projects and subscribe to cross-tab & auth updates
+  const ownerId = user?.id;
+
+  // 1. Auth subscription (fires immediately with the current session)
   useEffect(() => {
-    // 1. Check existing logged-in Google user
-    getCurrentAuthUser().then((authUser) => {
-      if (authUser) setUser(authUser);
-    });
-
-    const unsubscribeAuth = subscribeAuthChanges((authUser) => {
+    clearLegacyStorage();
+    return subscribeAuthChanges((authUser) => {
       setUser(authUser);
+      setAuthReady(true);
     });
-
-    // 2. Check URL query parameters for ?p=slug (client view) or ?view=fg
-    const params = new URLSearchParams(window.location.search);
-    const clientSlug = params.get('p');
-    const viewParam = params.get('view');
-
-    if (clientSlug) {
-      const match = projects.find((p) => p.slug === clientSlug || p.id === clientSlug);
-      if (match) {
-        setActiveProjectId(match.id);
-        setCurrentView('client');
-
-        // Mark as opened if not already
-        if (match.status === 'belum_dibuka') {
-          const updated: Project = {
-            ...match,
-            status: 'lagi_milih',
-            lastOpenedAt: new Date().toISOString(),
-          };
-          updateProject(updated);
-          setProjects(loadProjects());
-          saveProjectToCloud(updated);
-          broadcastEvent({
-            type: 'SELECTION_CHANGE',
-            projectId: match.id,
-            selectedFileNames: match.selectedFileNames,
-            deviceId: getDeviceId(),
-          });
-        }
-      } else {
-        // Not in local storage, attempt to fetch from Supabase Cloud
-        fetchProjectFromCloud(clientSlug).then((cloudProj) => {
-          if (cloudProj) {
-            const updated = [cloudProj, ...loadProjects()];
-            setProjects(updated);
-            saveProjects(updated);
-            setActiveProjectId(cloudProj.id);
-            setCurrentView('client');
-
-            if (cloudProj.status === 'belum_dibuka') {
-              const openedProj: Project = {
-                ...cloudProj,
-                status: 'lagi_milih',
-                lastOpenedAt: new Date().toISOString(),
-              };
-              updateProject(openedProj);
-              saveProjectToCloud(openedProj);
-            }
-          }
-        });
-      }
-    } else if (viewParam === 'fg') {
-      setCurrentView('dashboard');
-    }
-
-    const unsubscribeStorage = subscribeRealtime((_event) => {
-      // Reload projects from storage to get the fresh state
-      setProjects(loadProjects());
-    });
-
-    return () => {
-      unsubscribeAuth();
-      unsubscribeStorage();
-    };
   }, []);
 
-  const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
-
-  // Real-time Cloud subscription for active project if in client or project_detail view
+  // 2. Load this vendor's data whenever the logged-in account changes
   useEffect(() => {
-    if (!activeProject?.slug) return;
-    const unsubscribeCloud = subscribeProjectFromCloud(activeProject.slug, (cloudUpdated) => {
-      updateProject(cloudUpdated);
-      setProjects(loadProjects());
-    });
-    return () => {
-      unsubscribeCloud();
-    };
-  }, [activeProject?.slug]);
+    if (!ownerId) {
+      setProjects([]);
+      setStudio(createDefaultStudio());
+      return;
+    }
 
-  // Handlers for Photographer actions
+    setProjects(loadCachedProjects(ownerId));
+    setStudio(loadCachedStudio(ownerId, user?.name));
+
+    let cancelled = false;
+
+    fetchOwnerProjects(ownerId).then((list) => {
+      if (cancelled) return;
+      if (list) {
+        setProjects(list);
+        saveCachedProjects(ownerId, list);
+      } else {
+        setSyncError('Gagal memuat galeri dari server. Periksa koneksi internet kamu.');
+      }
+    });
+
+    fetchStudioProfileFromCloud(ownerId).then((profile) => {
+      if (cancelled || !profile) return;
+      setStudio((prev) => {
+        const merged = { ...prev, ...profile };
+        saveCachedStudio(ownerId, merged);
+        return merged;
+      });
+    });
+
+    const unsubscribe = subscribeOwnerProjects(ownerId, (event, payload) => {
+      setProjects((prev) => {
+        const next =
+          event === 'DELETE' ? prev.filter((p) => p.id !== payload.id) : upsertInList(prev, payload as Project);
+        saveCachedProjects(ownerId, next);
+        return next;
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ownerId]);
+
+  // 3. Post-login routing (?view=fg after Google redirect, or a pending action)
+  useEffect(() => {
+    if (!authReady) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('p')) return;
+
+    const pending = sessionStorage.getItem(POST_LOGIN_KEY) as PostLoginAction | null;
+    const wantsDashboard = params.get('view') === 'fg' || pending !== null;
+
+    if (wantsDashboard) {
+      if (user) {
+        sessionStorage.removeItem(POST_LOGIN_KEY);
+        setDashboardTab('projects');
+        setCurrentView('dashboard');
+        if (pending === 'create') setIsCreateModalOpen(true);
+      } else {
+        setIsAuthModalOpen(true);
+      }
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authReady]);
+
+  // 4. Kick logged-out users out of photographer screens
+  useEffect(() => {
+    if (authReady && !user && (currentView === 'dashboard' || currentView === 'project_detail')) {
+      setCurrentView('landing');
+    }
+  }, [authReady, user, currentView]);
+
+  // 5. Client gallery: load project by slug from the cloud
+  useEffect(() => {
+    if (!clientSlug) return;
+    let cancelled = false;
+
+    fetchProjectFromCloud(clientSlug).then((proj) => {
+      if (cancelled) return;
+      if (!proj) {
+        setClientNotFound(true);
+        return;
+      }
+      let opened = proj;
+      if (proj.status === 'belum_dibuka' && !proj.locked) {
+        opened = { ...proj, status: 'lagi_milih', lastOpenedAt: new Date().toISOString() };
+        clientUpdateProjectInCloud(opened);
+      }
+      setClientProject(opened);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clientSlug]);
+
+  // 6. Client gallery: live updates (e.g. photographer unlocks / changes quota)
+  const clientProjectSlug = clientProject?.slug;
+  useEffect(() => {
+    if (!clientProjectSlug) return;
+    return subscribeProjectFromCloud(clientProjectSlug, (updated) => setClientProject(updated));
+  }, [clientProjectSlug]);
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  const commitProjects = (next: Project[]) => {
+    setProjects(next);
+    if (ownerId) saveCachedProjects(ownerId, next);
+  };
+
+  const reportSync = (ok: boolean, action: string) => {
+    if (!ok) setSyncError(`Gagal ${action} ke server. Perubahan belum tersimpan permanen.`);
+  };
+
+  /** Run an action only when logged in; otherwise open Google login and resume after redirect. */
+  const requireLogin = (action: PostLoginAction, run: () => void) => {
+    if (user) {
+      run();
+      return;
+    }
+    sessionStorage.setItem(POST_LOGIN_KEY, action);
+    setIsAuthModalOpen(true);
+  };
+
+  // ---------------------------------------------------------------------------
+  // Photographer handlers
+  // ---------------------------------------------------------------------------
+
+  const activeProject = projects.find((p) => p.id === activeProjectId) || null;
+
   const handleSelectProject = (project: Project) => {
     setActiveProjectId(project.id);
     setCurrentView('project_detail');
   };
 
   const handleCreateProject = (newProject: Project) => {
-    const updated = [newProject, ...projects];
-    setProjects(updated);
-    saveProjects(updated);
-    setActiveProjectId(newProject.id);
+    if (!ownerId) return;
+    const stamped: Project = {
+      ...newProject,
+      ownerId,
+      studioName: studio.studioName,
+      studioWhatsapp: studio.whatsapp,
+      waTemplate: studio.waTemplate,
+    };
+    commitProjects([stamped, ...projects]);
+    setActiveProjectId(stamped.id);
     setCurrentView('project_detail');
-    saveProjectToCloud(newProject);
+    setIsCreateModalOpen(false);
+    saveProjectToCloud(stamped, ownerId).then((ok) => reportSync(ok, 'menyimpan galeri'));
   };
 
   const handleUpdateProject = (updated: Project) => {
-    updateProject(updated);
-    setProjects(loadProjects());
-    saveProjectToCloud(updated);
-    broadcastEvent({
-      type: 'PROJECT_LOCKED_CHANGE',
-      projectId: updated.id,
-      locked: updated.locked,
-    });
+    if (!ownerId) return;
+    commitProjects(upsertInList(projects, updated));
+    saveProjectToCloud(updated, ownerId).then((ok) => reportSync(ok, 'memperbarui galeri'));
   };
 
   const handleDeleteProject = (id: string) => {
-    const remaining = projects.filter((p) => p.id !== id);
-    setProjects(remaining);
-    saveProjects(remaining);
+    if (!ownerId) return;
+    commitProjects(projects.filter((p) => p.id !== id));
     setActiveProjectId(null);
     setCurrentView('dashboard');
+    deleteProjectFromCloud(id, ownerId).then((ok) => reportSync(ok, 'menghapus galeri'));
   };
 
   const handleUpdateStudio = (updated: StudioProfile) => {
+    if (!ownerId) return;
     setStudio(updated);
-    saveStudioProfile(updated);
-  };
-
-  const handleStudioLogin = (studioName: string, whatsapp: string) => {
-    const updatedStudio: StudioProfile = {
-      ...studio,
-      studioName: studioName.trim(),
-      whatsapp: whatsapp ? whatsapp.replace(/[^0-9]/g, '') : studio.whatsapp,
-    };
-    setStudio(updatedStudio);
-    saveStudioProfile(updatedStudio);
-    setUser({
-      id: `studio_${Date.now()}`,
-      name: studioName.trim(),
-    });
-    setIsAuthModalOpen(false);
-    setDashboardTab('projects');
-    setCurrentView('dashboard');
+    saveCachedStudio(ownerId, updated);
+    // Keep the client-facing branding snapshot on every project in sync
+    commitProjects(
+      projects.map((p) => ({
+        ...p,
+        studioName: updated.studioName,
+        studioWhatsapp: updated.whatsapp,
+        waTemplate: updated.waTemplate,
+      }))
+    );
+    saveStudioProfileToCloud(ownerId, updated).then((ok) => reportSync(ok, 'menyimpan profil studio'));
   };
 
   const handleLogout = async () => {
     await signOutUser();
     setUser(null);
-  };
-
-  // Handlers for Client actions
-  const handleClientUpdateSelections = (fileNames: string[]) => {
-    if (!activeProject) return;
-    const deviceId = getDeviceId();
-    const updated: Project = {
-      ...activeProject,
-      selectedFileNames: fileNames,
-      status: activeProject.status === 'belum_dibuka' ? 'lagi_milih' : activeProject.status,
-      activeSelectorDeviceId: activeProject.activeSelectorDeviceId || deviceId,
-    };
-    updateProject(updated);
-    setProjects(loadProjects());
-    saveProjectToCloud(updated);
-    broadcastEvent({
-      type: 'SELECTION_CHANGE',
-      projectId: activeProject.id,
-      selectedFileNames: fileNames,
-      deviceId,
-    });
-  };
-
-  const handleClientSubmitFinal = () => {
-    if (!activeProject) return;
-    const updated: Project = {
-      ...activeProject,
-      locked: true,
-      status: 'udah_kirim',
-      submittedAt: new Date().toISOString(),
-      submissionHistory: [
-        ...activeProject.submissionHistory,
-        {
-          round: activeProject.revisionRound,
-          fileNames: activeProject.selectedFileNames,
-          submittedAt: new Date().toISOString(),
-        },
-      ],
-    };
-    updateProject(updated);
-    setProjects(loadProjects());
-    saveProjectToCloud(updated);
-    broadcastEvent({
-      type: 'PROJECT_SUBMITTED',
-      projectId: activeProject.id,
-      selectedFileNames: activeProject.selectedFileNames,
-    });
-  };
-
-  const handleClientTakeover = () => {
-    if (!activeProject) return;
-    const deviceId = getDeviceId();
-    const updated: Project = {
-      ...activeProject,
-      activeSelectorDeviceId: deviceId,
-    };
-    updateProject(updated);
-    setProjects(loadProjects());
-    saveProjectToCloud(updated);
-    broadcastEvent({
-      type: 'SELECTOR_TAKEOVER',
-      projectId: activeProject.id,
-      newDeviceId: deviceId,
-    });
-  };
-
-  const handleOpenClientView = (slug: string) => {
-    const match = projects.find((p) => p.slug === slug || p.id === slug);
-    if (match) {
-      setActiveProjectId(match.id);
-      setCurrentView('client');
-      // Update browser history so URL can be copied/reloaded
-      const newUrl = `${window.location.pathname}?p=${match.slug}`;
-      window.history.pushState({}, '', newUrl);
-    }
+    setActiveProjectId(null);
+    setCurrentView('landing');
   };
 
   const handleOpenDashboard = () => {
-    setCurrentView('dashboard');
-    window.history.pushState({}, '', window.location.pathname);
+    requireLogin('dashboard', () => {
+      setDashboardTab('projects');
+      setCurrentView('dashboard');
+      window.history.pushState({}, '', window.location.pathname);
+    });
+  };
+
+  const handleCreateGallery = () => {
+    requireLogin('create', () => setIsCreateModalOpen(true));
   };
 
   const handleOpenLanding = () => {
@@ -271,26 +292,76 @@ export function App() {
     window.history.pushState({}, '', window.location.pathname);
   };
 
-  const handleProjectCreatedFromLanding = (newProject: Project) => {
-    handleCreateProject(newProject);
-    setActiveProjectId(newProject.id);
-    setCurrentView('project_detail');
-    setIsCreateModalOpen(false);
+  /** Photographer previews their own gallery as the client sees it. */
+  const handleOpenClientView = (slug: string) => {
+    const match = projects.find((p) => p.slug === slug || p.id === slug);
+    if (!match) return;
+    setClientProject(match);
+    setClientNotFound(false);
+    setCurrentView('client');
+    window.history.pushState({}, '', `${window.location.pathname}?p=${match.slug}`);
   };
+
+  // ---------------------------------------------------------------------------
+  // Client handlers (go through the restricted RPC — no login needed)
+  // ---------------------------------------------------------------------------
+
+  const applyClientUpdate = (updated: Project) => {
+    setClientProject(updated);
+    // If the owner is previewing their own gallery, reflect it in the dashboard too
+    if (ownerId && updated.ownerId === ownerId) commitProjects(upsertInList(projects, updated));
+    clientUpdateProjectInCloud(updated).then((ok) => reportSync(ok, 'menyimpan pilihan'));
+  };
+
+  const handleClientUpdateSelections = (fileNames: string[]) => {
+    if (!clientProject) return;
+    const deviceId = getDeviceId();
+    applyClientUpdate({
+      ...clientProject,
+      selectedFileNames: fileNames,
+      status: clientProject.status === 'belum_dibuka' ? 'lagi_milih' : clientProject.status,
+      activeSelectorDeviceId: clientProject.activeSelectorDeviceId || deviceId,
+    });
+  };
+
+  const handleClientSubmitFinal = () => {
+    if (!clientProject) return;
+    const now = new Date().toISOString();
+    applyClientUpdate({
+      ...clientProject,
+      locked: true,
+      status: 'udah_kirim',
+      submittedAt: now,
+      submissionHistory: [
+        ...clientProject.submissionHistory,
+        { round: clientProject.revisionRound, fileNames: clientProject.selectedFileNames, submittedAt: now },
+      ],
+    });
+  };
+
+  const handleClientTakeover = () => {
+    if (!clientProject) return;
+    applyClientUpdate({ ...clientProject, activeSelectorDeviceId: getDeviceId() });
+  };
+
+  const isOwnerPreview = !!(clientProject && ownerId && clientProject.ownerId === ownerId);
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh' }}>
-      {/* Render Current View */}
       {currentView === 'landing' && (
         <LandingPage
-          onCreateGallery={() => setIsCreateModalOpen(true)}
+          onCreateGallery={handleCreateGallery}
           onOpenDashboard={handleOpenDashboard}
           onOpenLogin={() => setIsAuthModalOpen(true)}
           user={user}
         />
       )}
 
-      {currentView === 'dashboard' && (
+      {currentView === 'dashboard' && user && (
         <FgDashboard
           projects={projects}
           studio={studio}
@@ -306,7 +377,7 @@ export function App() {
         />
       )}
 
-      {currentView === 'project_detail' && activeProject && (
+      {currentView === 'project_detail' && user && activeProject && (
         <FgProjectDetail
           project={activeProject}
           studio={studio}
@@ -317,42 +388,82 @@ export function App() {
         />
       )}
 
-      {currentView === 'client' && activeProject && (
+      {currentView === 'client' && clientProject && (
         <ClientGallery
-          project={activeProject}
-          studio={studio}
+          project={clientProject}
+          studio={studioFromProject(clientProject)}
           onUpdateSelections={handleClientUpdateSelections}
           onSubmitFinal={handleClientSubmitFinal}
           onTakeover={handleClientTakeover}
-          onBackToDashboard={handleOpenDashboard}
+          onBackToDashboard={isOwnerPreview ? handleOpenDashboard : undefined}
         />
       )}
 
-      {/* Global Quick Create Modal */}
+      {currentView === 'client' && !clientProject && (
+        <div
+          style={{
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            padding: '24px',
+            textAlign: 'center',
+            backgroundColor: 'var(--bg)',
+          }}
+        >
+          <span style={{ fontSize: '40px' }}>{clientNotFound ? '🔍' : '📸'}</span>
+          <h1 style={{ fontSize: '19px', fontWeight: 700, color: 'var(--text)' }}>
+            {clientNotFound ? 'Galeri tidak ditemukan' : 'Membuka galeri...'}
+          </h1>
+          {clientNotFound && (
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', maxWidth: '340px', lineHeight: 1.5 }}>
+              Link galeri mungkin salah atau sudah dihapus. Hubungi fotografer kamu untuk meminta link terbaru.
+            </p>
+          )}
+        </div>
+      )}
+
       <FgNewProjectModal
-        isOpen={isCreateModalOpen}
+        isOpen={isCreateModalOpen && !!user}
         onClose={() => setIsCreateModalOpen(false)}
-        onProjectCreated={handleProjectCreatedFromLanding}
+        onProjectCreated={handleCreateProject}
         studio={studio}
       />
 
-      {/* Photographer Google & Studio Login Modal */}
       <FgAuthModal
         isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onStudioLogin={handleStudioLogin}
-        onContinueAsGuest={() => {
+        onClose={() => {
           setIsAuthModalOpen(false);
-          setDashboardTab('projects');
-          setCurrentView('dashboard');
+          sessionStorage.removeItem(POST_LOGIN_KEY);
         }}
-        onOpenSettings={() => {
-          setIsAuthModalOpen(false);
-          setDashboardTab('settings');
-          setCurrentView('dashboard');
-        }}
-        studio={studio}
       />
+
+      {syncError && (
+        <div
+          role="alert"
+          onClick={() => setSyncError('')}
+          style={{
+            position: 'fixed',
+            left: '50%',
+            bottom: '24px',
+            transform: 'translateX(-50%)',
+            zIndex: 2000,
+            maxWidth: 'calc(100% - 32px)',
+            padding: '12px 16px',
+            borderRadius: '14px',
+            backgroundColor: '#1D1D1F',
+            color: '#FFFFFF',
+            fontSize: '13px',
+            fontWeight: 500,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+            cursor: 'pointer',
+          }}
+        >
+          ⚠️ {syncError} <span style={{ opacity: 0.6, marginLeft: '6px' }}>Tutup</span>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import type { Project, StudioProfile } from '../types';
-import { DEFAULT_STUDIO, INITIAL_PROJECTS } from './sampleData';
+import { DEFAULT_STUDIO } from './sampleData';
 
 const STORAGE_KEYS = {
   PROJECTS: 'tandain_projects_v1',
@@ -51,63 +51,64 @@ export const getDeviceId = (): string => {
   return id;
 };
 
-export const loadProjects = (): Project[] => {
-  if (typeof window === 'undefined') return INITIAL_PROJECTS;
-  const raw = localStorage.getItem(STORAGE_KEYS.PROJECTS);
-  if (!raw) {
-    localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(INITIAL_PROJECTS));
-    return INITIAL_PROJECTS;
-  }
+// ---------------------------------------------------------------------------
+// Per-vendor local cache (Supabase is the source of truth; this only makes the
+// dashboard appear instantly). Keys are namespaced by the Google user id so two
+// studios sharing one laptop never see each other's projects.
+// ---------------------------------------------------------------------------
+
+const projectsKey = (ownerId: string) => `${STORAGE_KEYS.PROJECTS}:${ownerId}`;
+const studioKey = (ownerId: string) => `${STORAGE_KEYS.STUDIO}:${ownerId}`;
+
+export const loadCachedProjects = (ownerId: string): Project[] => {
+  if (typeof window === 'undefined') return [];
   try {
-    return JSON.parse(raw);
+    const raw = localStorage.getItem(projectsKey(ownerId));
+    return raw ? (JSON.parse(raw) as Project[]) : [];
   } catch {
-    return INITIAL_PROJECTS;
+    return [];
   }
 };
 
-export const saveProjects = (projects: Project[]) => {
+export const saveCachedProjects = (ownerId: string, projects: Project[]) => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
+  localStorage.setItem(projectsKey(ownerId), JSON.stringify(projects));
 };
 
-export const getProjectBySlug = (slug: string): Project | undefined => {
-  const all = loadProjects();
-  return all.find((p) => p.slug.toLowerCase() === slug.toLowerCase() || p.id === slug);
-};
+/** Default profile for a freshly signed-in vendor (prefilled with their Google name). */
+export const createDefaultStudio = (displayName?: string): StudioProfile => ({
+  ...DEFAULT_STUDIO,
+  studioName: displayName || '',
+  whatsapp: '',
+});
 
-export const updateProject = (updated: Project): Project => {
-  const all = loadProjects();
-  const index = all.findIndex((p) => p.id === updated.id);
-  if (index >= 0) {
-    all[index] = updated;
-  } else {
-    all.unshift(updated);
-  }
-  saveProjects(all);
-  return updated;
-};
-
-export const loadStudioProfile = (): StudioProfile => {
-  if (typeof window === 'undefined') return DEFAULT_STUDIO;
-  const raw = localStorage.getItem(STORAGE_KEYS.STUDIO);
-  if (!raw) {
-    localStorage.setItem(STORAGE_KEYS.STUDIO, JSON.stringify(DEFAULT_STUDIO));
-    return DEFAULT_STUDIO;
-  }
+export const loadCachedStudio = (ownerId: string, displayName?: string): StudioProfile => {
+  const fallback = createDefaultStudio(displayName);
+  if (typeof window === 'undefined') return fallback;
   try {
-    const parsed = JSON.parse(raw);
-    return {
-      ...DEFAULT_STUDIO,
-      ...parsed,
-      supabaseUrl: parsed.supabaseUrl || DEFAULT_STUDIO.supabaseUrl,
-      supabaseAnonKey: parsed.supabaseAnonKey || DEFAULT_STUDIO.supabaseAnonKey,
-    };
+    const raw = localStorage.getItem(studioKey(ownerId));
+    return raw ? { ...fallback, ...(JSON.parse(raw) as Partial<StudioProfile>) } : fallback;
   } catch {
-    return DEFAULT_STUDIO;
+    return fallback;
   }
 };
 
-export const saveStudioProfile = (profile: StudioProfile) => {
+export const saveCachedStudio = (ownerId: string, profile: StudioProfile) => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEYS.STUDIO, JSON.stringify(profile));
+  localStorage.setItem(studioKey(ownerId), JSON.stringify(profile));
+};
+
+/** Branding the CLIENT sees — taken from the project itself, never from the visitor's device. */
+export const studioFromProject = (project: Project): StudioProfile => ({
+  ...DEFAULT_STUDIO,
+  studioName: project.studioName || 'Studio Foto',
+  whatsapp: project.studioWhatsapp || '',
+  waTemplate: project.waTemplate || DEFAULT_STUDIO.waTemplate,
+});
+
+/** Remove legacy global keys from the pre-login era so old demo data can't leak in. */
+export const clearLegacyStorage = () => {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(STORAGE_KEYS.PROJECTS);
+  localStorage.removeItem(STORAGE_KEYS.STUDIO);
 };
