@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Save, Check } from 'lucide-react';
+import { Save, ArrowLeft } from 'lucide-react';
 import type { StudioProfile } from '../../types';
 
 interface FgStudioSettingsProps {
   studio: StudioProfile;
   onSave: (updated: StudioProfile) => void;
+  onBack?: () => void;
 }
 
 const COLOR_PRESETS = [
@@ -15,12 +16,11 @@ const COLOR_PRESETS = [
   { name: 'Rose Luxury', hex: '#C0392B' },
 ];
 
-export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSave }) => {
+export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSave, onBack }) => {
   const [studioName, setStudioName] = useState(studio.studioName);
   const [whatsapp, setWhatsapp] = useState(studio.whatsapp);
   const [accentColor, setAccentColor] = useState(studio.accentColor);
   const [waTemplate, setWaTemplate] = useState(studio.waTemplate);
-  const [saved, setSaved] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,12 +31,28 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
       accentColor,
       waTemplate,
     });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
   };
 
   return (
     <div style={{ maxWidth: '640px', margin: '0 auto', padding: '24px 16px' }}>
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="pill-btn pill-btn-ghost"
+          style={{
+            height: '34px',
+            fontSize: '13px',
+            gap: '6px',
+            marginBottom: '16px',
+            padding: '0 10px',
+            color: 'var(--text-secondary)',
+          }}
+        >
+          <ArrowLeft size={15} /> Kembali ke Daftar Project
+        </button>
+      )}
+
       <div style={{ marginBottom: '24px' }}>
         <h2 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text)', marginBottom: '4px' }}>
           Pengaturan Studio
@@ -66,7 +82,7 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
               border: '1px solid var(--border)',
               backgroundColor: 'var(--bg)',
               outline: 'none',
-              fontSize: '14px',
+              fontSize: '16px',
             }}
           />
         </div>
@@ -90,7 +106,7 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
               border: '1px solid var(--border)',
               backgroundColor: 'var(--bg)',
               outline: 'none',
-              fontSize: '14px',
+              fontSize: '16px',
             }}
           />
           <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
@@ -197,7 +213,8 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
               border: '1px solid var(--border)',
               backgroundColor: 'var(--bg)',
               outline: 'none',
-              fontSize: '13px',
+              fontSize: '16px',
+              fontFamily: 'inherit',
               lineHeight: 1.5,
               resize: 'vertical',
             }}
@@ -207,21 +224,37 @@ export const FgStudioSettings: React.FC<FgStudioSettingsProps> = ({ studio, onSa
           </p>
         </div>
 
-        <button
-          type="submit"
-          className="pill-btn pill-btn-primary"
-          style={{ width: '100%', height: '48px', fontSize: '15px' }}
-        >
-          {saved ? (
-            <>
-              <Check size={18} /> Pengaturan Berhasil Disimpan
-            </>
-          ) : (
-            <>
-              <Save size={18} /> Simpan Pengaturan Studio
-            </>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="pill-btn pill-btn-ghost"
+              style={{
+                height: '48px',
+                padding: '0 20px',
+                fontSize: '14px',
+                border: '1px solid var(--border)',
+                fontWeight: 600,
+              }}
+            >
+              Batal
+            </button>
           )}
-        </button>
+          <button
+            type="submit"
+            className="pill-btn pill-btn-primary"
+            style={{
+              flex: 1,
+              height: '48px',
+              fontSize: '15px',
+              gap: '8px',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.16)',
+            }}
+          >
+            <Save size={18} /> Simpan Pengaturan Studio
+          </button>
+        </div>
       </form>
     </div>
   );

@@ -61,6 +61,7 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
     }
   });
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const handleDismissGuideBanner = () => {
     setShowGuideBanner(false);
@@ -316,7 +317,16 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
           </div>
         )}
         {activeTab === 'settings' ? (
-          <FgStudioSettings studio={studio} onSave={onUpdateStudio} />
+          <FgStudioSettings
+            studio={studio}
+            onSave={(updated) => {
+              onUpdateStudio(updated);
+              setActiveTab('projects');
+              setToastMessage('Pengaturan studio berhasil disimpan! ✨');
+              setTimeout(() => setToastMessage(null), 3000);
+            }}
+            onBack={() => setActiveTab('projects')}
+          />
         ) : (
           <div>
             {/* Search & Filter Bar */}
@@ -588,6 +598,34 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
         onClose={() => setIsGuideModalOpen(false)}
         onOpenNewProject={() => setIsNewProjectModalOpen(true)}
       />
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 'calc(24px + env(safe-area-inset-bottom))',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'var(--text)',
+            color: '#FFFFFF',
+            padding: '10px 22px',
+            borderRadius: '9999px',
+            fontSize: '13.5px',
+            fontWeight: 600,
+            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            zIndex: 9999,
+            animation: 'scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            pointerEvents: 'none',
+          }}
+        >
+          <Check size={16} style={{ color: '#34C759' }} />
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 };
