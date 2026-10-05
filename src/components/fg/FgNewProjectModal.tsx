@@ -15,6 +15,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { Modal } from '../Modal';
+import { ModernDatePicker } from '../common/ModernDatePicker';
 import {
   extractDriveFolderId,
   getPhotosForDriveFolder,
@@ -938,34 +939,20 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
               <Calendar size={15} color="var(--accent)" /> Pengaturan Tambahan (Tanggal Sesi & Kunci PIN)
             </div>
 
-            {/* Tanggal Sesi Foto */}
-            <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, marginBottom: '6px' }}>
-                Tanggal Sesi Foto
-              </label>
-              <input
-                type="date"
-                value={sessionDate}
-                onChange={(e) => setSessionDate(e.target.value)}
-                style={{
-                  height: '42px',
-                  padding: '0 12px',
-                  borderRadius: '10px',
-                  border: '1px solid var(--border)',
-                  backgroundColor: 'var(--bg)',
-                  fontSize: '16px',
-                  color: 'var(--text)',
-                }}
-              />
-            </div>
+            {/* Tanggal Sesi Foto (Modern Apple-style Calendar) */}
+            <ModernDatePicker
+              value={sessionDate}
+              onChange={(newDate) => setSessionDate(newDate)}
+              label="Tanggal Sesi Foto"
+            />
 
             {/* Kunci PIN Toggle */}
             <div
               style={{
-                padding: '12px 14px',
-                borderRadius: '12px',
+                padding: '14px 16px',
+                borderRadius: '14px',
                 backgroundColor: pinEnabled ? 'rgba(0, 122, 255, 0.04)' : '#F5F5F7',
-                border: pinEnabled ? '1px solid #BFDBFE' : '1px solid var(--border-light)',
+                border: pinEnabled ? '1px solid rgba(0, 122, 255, 0.28)' : '1px solid var(--border-light)',
                 transition: 'all 0.18s ease',
               }}
             >
@@ -977,7 +964,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
                     alignItems: 'center',
                     gap: '10px',
                     cursor: 'pointer',
-                    fontSize: '13px',
+                    fontSize: '13.5px',
                     fontWeight: 600,
                     color: 'var(--text)',
                   }}
@@ -989,18 +976,22 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
                     onChange={(e) => setPinEnabled(e.target.checked)}
                     style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                   />
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <Lock size={14} /> Kunci Galeri dengan Kode PIN
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Lock size={15} style={{ color: pinEnabled ? 'var(--accent)' : 'var(--text-secondary)' }} />
+                    Kunci Galeri dengan Kode PIN
                   </span>
                 </label>
+
                 <span
                   style={{
                     fontSize: '11px',
                     fontWeight: 700,
-                    padding: '2px 8px',
+                    padding: '3px 10px',
                     borderRadius: '9999px',
-                    backgroundColor: pinEnabled ? '#E3F2FD' : 'var(--border)',
-                    color: pinEnabled ? '#007AFF' : 'var(--text-secondary)',
+                    backgroundColor: pinEnabled ? 'rgba(0, 122, 255, 0.1)' : 'var(--border-light)',
+                    color: pinEnabled ? 'var(--accent)' : 'var(--text-tertiary)',
+                    border: pinEnabled ? '1px solid rgba(0, 122, 255, 0.22)' : 'none',
+                    letterSpacing: '0.3px',
                   }}
                 >
                   {pinEnabled ? 'PIN AKTIF' : 'TANPA PIN'}
@@ -1008,27 +999,86 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
               </div>
 
               {pinEnabled && (
-                <div style={{ marginTop: '10px', paddingLeft: '28px' }}>
-                  <input
-                    type="text"
-                    maxLength={8}
-                    placeholder="Ketik PIN (misal: 1234)"
-                    value={pinValue}
-                    onChange={(e) => setPinValue(e.target.value)}
-                    style={{
-                      width: '180px',
-                      height: '42px',
-                      padding: '0 12px',
-                      borderRadius: '10px',
-                      border: '1px solid var(--border)',
-                      backgroundColor: '#FFFFFF',
-                      fontSize: '16px',
-                      fontWeight: 700,
-                      letterSpacing: '1px',
-                    }}
-                  />
-                  <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
-                    Klien wajib memasukkan PIN ini untuk membuka galeri foto.
+                <div
+                  style={{
+                    marginTop: '12px',
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    backgroundColor: 'var(--surface)',
+                    border: '1px solid rgba(0, 122, 255, 0.18)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    animation: 'scaleUp 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: '1 1 180px', maxWidth: '300px' }}>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={8}
+                        placeholder="Contoh PIN: 1234"
+                        value={pinValue}
+                        onChange={(e) => setPinValue(e.target.value.replace(/[^0-9]/g, ''))}
+                        style={{
+                          width: '100%',
+                          height: '42px',
+                          padding: '0 14px',
+                          borderRadius: '10px',
+                          border: '1.5px solid var(--border)',
+                          backgroundColor: 'var(--bg)',
+                          fontSize: '16px',
+                          fontWeight: 700,
+                          letterSpacing: '2px',
+                          color: 'var(--text)',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                          transition: 'all 0.18s ease',
+                        }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--accent)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 122, 255, 0.15)';
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--border)';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const randomPin = String(Math.floor(1000 + Math.random() * 9000));
+                        setPinValue(randomPin);
+                      }}
+                      style={{
+                        height: '42px',
+                        padding: '0 14px',
+                        borderRadius: '10px',
+                        border: '1px solid var(--border-light)',
+                        backgroundColor: 'var(--surface-sunken)',
+                        color: 'var(--text)',
+                        fontSize: '12.5px',
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        whiteSpace: 'nowrap',
+                      }}
+                      title="Buat 4 digit angka acak otomatis"
+                    >
+                      <span>🎲 Acak PIN</span>
+                    </button>
+                  </div>
+
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                    Klien wajib memasukkan PIN ini sebelum bisa membuka dan memilih foto di galeri.
                   </p>
                 </div>
               )}
