@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   BookOpen,
@@ -22,6 +22,15 @@ export const FgGuideModal: React.FC<FgGuideModalProps> = ({
   onOpenNewProject,
 }) => {
   const [activeTab, setActiveTab] = useState<'workflow' | 'dashboard' | 'raw_guide'>('workflow');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -131,58 +140,100 @@ export const FgGuideModal: React.FC<FgGuideModalProps> = ({
           </button>
         </div>
 
-        {/* Segmented Navigation Tabs */}
+        {/* Modern Segmented Navigation Tabs */}
         <div
           style={{
-            display: 'flex',
+            padding: '12px 24px 10px',
+            backgroundColor: 'var(--surface)',
             borderBottom: '1px solid var(--border-light)',
-            backgroundColor: 'var(--bg)',
-            padding: '8px 16px',
-            gap: '8px',
-            overflowX: 'auto',
           }}
         >
-          <button
-            onClick={() => setActiveTab('workflow')}
-            className={`pill-btn ${activeTab === 'workflow' ? 'pill-btn-primary' : 'pill-btn-ghost'}`}
+          <div
             style={{
-              height: '36px',
-              fontSize: '13px',
-              gap: '6px',
-              whiteSpace: 'nowrap',
-              fontWeight: activeTab === 'workflow' ? 700 : 500,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              backgroundColor: 'var(--surface-sunken)',
+              padding: '4px',
+              borderRadius: '12px',
+              border: '1px solid var(--border-light)',
+              gap: '4px',
             }}
           >
-            <Sparkles size={15} /> 1. Tutorial Alur Kerja (A - Z)
-          </button>
+            <button
+              onClick={() => setActiveTab('workflow')}
+              type="button"
+              style={{
+                height: '36px',
+                fontSize: '13px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.18s ease',
+                fontWeight: activeTab === 'workflow' ? 700 : 500,
+                backgroundColor: activeTab === 'workflow' ? 'var(--surface)' : 'transparent',
+                color: activeTab === 'workflow' ? 'var(--text)' : 'var(--text-secondary)',
+                boxShadow: activeTab === 'workflow' ? '0 2px 8px rgba(0, 0, 0, 0.08)' : 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <Sparkles size={14} style={{ color: activeTab === 'workflow' ? 'var(--accent)' : 'inherit' }} />
+              <span>1. Alur Kerja</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`pill-btn ${activeTab === 'dashboard' ? 'pill-btn-primary' : 'pill-btn-ghost'}`}
-            style={{
-              height: '36px',
-              fontSize: '13px',
-              gap: '6px',
-              whiteSpace: 'nowrap',
-              fontWeight: activeTab === 'dashboard' ? 700 : 500,
-            }}
-          >
-            <ShieldCheck size={15} /> 2. Fungsi Dashboard & Tombol
-          </button>
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              type="button"
+              style={{
+                height: '36px',
+                fontSize: '13px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.18s ease',
+                fontWeight: activeTab === 'dashboard' ? 700 : 500,
+                backgroundColor: activeTab === 'dashboard' ? 'var(--surface)' : 'transparent',
+                color: activeTab === 'dashboard' ? 'var(--text)' : 'var(--text-secondary)',
+                boxShadow: activeTab === 'dashboard' ? '0 2px 8px rgba(0, 0, 0, 0.08)' : 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <ShieldCheck size={14} style={{ color: activeTab === 'dashboard' ? 'var(--accent)' : 'inherit' }} />
+              <span>2. Fitur Tombol</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('raw_guide')}
-            className={`pill-btn ${activeTab === 'raw_guide' ? 'pill-btn-primary' : 'pill-btn-ghost'}`}
-            style={{
-              height: '36px',
-              fontSize: '13px',
-              gap: '6px',
-              whiteSpace: 'nowrap',
-              fontWeight: activeTab === 'raw_guide' ? 700 : 500,
-            }}
-          >
-            <Laptop size={15} /> 3. Cara Sakti Ambil RAW Laptop
-          </button>
+            <button
+              onClick={() => setActiveTab('raw_guide')}
+              type="button"
+              style={{
+                height: '36px',
+                fontSize: '13px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.18s ease',
+                fontWeight: activeTab === 'raw_guide' ? 700 : 500,
+                backgroundColor: activeTab === 'raw_guide' ? 'var(--surface)' : 'transparent',
+                color: activeTab === 'raw_guide' ? 'var(--text)' : 'var(--text-secondary)',
+                boxShadow: activeTab === 'raw_guide' ? '0 2px 8px rgba(0, 0, 0, 0.08)' : 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <Laptop size={14} style={{ color: activeTab === 'raw_guide' ? 'var(--accent)' : 'inherit' }} />
+              <span>3. Ambil RAW</span>
+            </button>
+          </div>
         </div>
 
         {/* Modal Scrollable Body */}
@@ -200,18 +251,38 @@ export const FgGuideModal: React.FC<FgGuideModalProps> = ({
               <div
                 style={{
                   padding: '14px 18px',
-                  borderRadius: '14px',
-                  backgroundColor: 'rgba(0, 122, 255, 0.06)',
-                  border: '1px solid rgba(0, 122, 255, 0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
+                  borderRadius: '16px',
+                  backgroundColor: 'var(--surface-sunken)',
+                  border: '1px solid var(--border-light)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
                 }}
               >
-                <span style={{ fontSize: '24px' }}>⚡</span>
-                <p style={{ margin: 0, fontSize: '13px', color: 'var(--text)', lineHeight: 1.5 }}>
-                  <strong>Alur 5 Menit:</strong> Siapkan Google Drive ➔ Buat Proyek ➔ Kirim Link WA ke Klien ➔ Klien Pilih Foto di HP ➔ Ambil RAW Otomatis di Laptop Anda!
-                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '16px' }}>⚡</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>
+                    Alur Singkat 5 Menit:
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    flexWrap: 'wrap',
+                    fontSize: '12px',
+                    color: 'var(--text-secondary)',
+                  }}
+                >
+                  <span style={{ padding: '3px 8px', borderRadius: '6px', backgroundColor: 'var(--surface)', border: '1px solid var(--border-light)', fontWeight: 600 }}>1. Siapkan Drive</span>
+                  <span style={{ opacity: 0.35 }}>➔</span>
+                  <span style={{ padding: '3px 8px', borderRadius: '6px', backgroundColor: 'var(--surface)', border: '1px solid var(--border-light)', fontWeight: 600 }}>2. Buat Proyek</span>
+                  <span style={{ opacity: 0.35 }}>➔</span>
+                  <span style={{ padding: '3px 8px', borderRadius: '6px', backgroundColor: 'var(--surface)', border: '1px solid var(--border-light)', fontWeight: 600 }}>3. Kirim WA ke Klien</span>
+                  <span style={{ opacity: 0.35 }}>➔</span>
+                  <span style={{ padding: '3px 8px', borderRadius: '6px', backgroundColor: 'var(--surface)', border: '1px solid var(--border-light)', fontWeight: 600 }}>4. Klien Pilih di HP</span>
+                  <span style={{ opacity: 0.35 }}>➔</span>
+                  <span style={{ padding: '3px 8px', borderRadius: '6px', backgroundColor: 'rgba(0, 122, 255, 0.08)', color: 'var(--accent)', border: '1px solid rgba(0, 122, 255, 0.2)', fontWeight: 700 }}>5. Auto Ambil RAW ⚡</span>
+                </div>
               </div>
 
               {/* STEP 1 */}

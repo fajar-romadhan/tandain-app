@@ -212,25 +212,27 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
           <div
             style={{
               marginBottom: '20px',
-              padding: '16px 20px',
+              padding: '14px 18px',
               borderRadius: '16px',
-              background: 'linear-gradient(135deg, rgba(0, 122, 255, 0.08) 0%, rgba(52, 199, 89, 0.06) 100%)',
-              border: '1px solid rgba(0, 122, 255, 0.22)',
+              backgroundColor: 'var(--surface)',
+              border: '1px solid var(--border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: '16px',
               flexWrap: 'wrap',
-              boxShadow: 'var(--shadow-sm)',
+              boxShadow: '0 2px 12px rgba(0, 0, 0, 0.03)',
+              position: 'relative',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: '1 1 300px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 320px' }}>
               <div
                 style={{
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(0, 122, 255, 0.12)',
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '11px',
+                  backgroundColor: 'rgba(0, 122, 255, 0.08)',
+                  border: '1px solid rgba(0, 122, 255, 0.18)',
                   color: 'var(--accent)',
                   display: 'flex',
                   alignItems: 'center',
@@ -238,23 +240,45 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
                   flexShrink: 0,
                 }}
               >
-                <Sparkles size={20} />
+                <Sparkles size={18} />
               </div>
               <div>
-                <h3 style={{ margin: 0, fontSize: '14.5px', fontWeight: 700, color: 'var(--text)' }}>
-                  Panduan Cepat Fotografer (Workflow 5 Menit)
-                </h3>
-                <p style={{ margin: '3px 0 0 0', fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                  Siapkan Google Drive ➔ Buat Proyek ➔ Klien Pilih di HP ➔ Ambil RAW Otomatis di Laptop Anda!
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>
+                    Alur Kerja Fotografer
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '9999px',
+                      backgroundColor: 'rgba(0, 122, 255, 0.08)',
+                      color: 'var(--accent)',
+                      border: '1px solid rgba(0, 122, 255, 0.18)',
+                      letterSpacing: '0.2px',
+                    }}
+                  >
+                    Workflow 5 Menit
+                  </span>
+                </div>
+                <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                  Siapkan Drive ➔ Buat Proyek ➔ Klien Pilih di HP ➔ Ambil RAW Otomatis di Laptop!
                 </p>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <button
                 onClick={() => setIsGuideModalOpen(true)}
                 className="pill-btn pill-btn-primary"
-                style={{ height: '36px', fontSize: '12.5px', gap: '6px' }}
+                style={{
+                  height: '36px',
+                  fontSize: '12.5px',
+                  padding: '0 14px',
+                  gap: '6px',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                }}
               >
                 <BookOpen size={14} /> Pelajari Panduan Lengkap
               </button>
@@ -262,19 +286,31 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
                 onClick={handleDismissGuideBanner}
                 className="pill-btn pill-btn-ghost"
                 style={{
-                  width: '32px',
-                  height: '32px',
+                  width: '30px',
+                  height: '30px',
                   padding: 0,
                   borderRadius: '50%',
                   color: 'var(--text-tertiary)',
+                  backgroundColor: 'var(--bg)',
+                  border: '1px solid var(--border-light)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  transition: 'all 0.15s ease',
+                  cursor: 'pointer',
                 }}
-                title="Tutup banner ini"
-                aria-label="Tutup banner ini"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--text)';
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-tertiary)';
+                  e.currentTarget.style.borderColor = 'var(--border-light)';
+                }}
+                title="Sembunyikan panduan cepat ini"
+                aria-label="Sembunyikan panduan cepat ini"
               >
-                <X size={16} />
+                <X size={15} />
               </button>
             </div>
           </div>
