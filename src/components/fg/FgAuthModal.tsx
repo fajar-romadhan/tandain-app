@@ -6,6 +6,8 @@ import {
   signInWithEmail,
   signUpWithEmail,
   startDirectStudioSession,
+  DEMO_TESTING_ACCOUNT,
+  loginTestingAccount,
 } from '../../services/supabase';
 import type { AuthUser } from '../../types';
 import {
@@ -21,6 +23,7 @@ import {
   CheckCircle2,
   ArrowRight,
   UserCheck,
+  Zap,
 } from 'lucide-react';
 
 interface FgAuthModalProps {
@@ -152,6 +155,22 @@ export const FgAuthModal: React.FC<FgAuthModalProps> = ({ isOpen, onClose, onSuc
     }
   };
 
+  // ⚡ Masuk Langsung Akun Testing (1-Klik 0-Detik)
+  const handleQuickTestLogin = () => {
+    setErrorMsg('');
+    const testUser = loginTestingAccount();
+    if (onSuccess) onSuccess(testUser);
+    handleModalClose();
+  };
+
+  // ⚡ Isi Otomatis Kredensial Testing ke Form
+  const handleAutoFillTestCredentials = () => {
+    setActiveTab('login');
+    setEmail(DEMO_TESTING_ACCOUNT.email);
+    setPassword(DEMO_TESTING_ACCOUNT.password);
+    setErrorMsg('');
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -160,9 +179,120 @@ export const FgAuthModal: React.FC<FgAuthModalProps> = ({ isOpen, onClose, onSuc
       maxWidth="460px"
     >
       <div style={{ padding: '4px 0 10px' }}>
+        {/* ==========================================================
+            AKUN TESTING SIAP PAKAI (0 DETIK TANPA DAFTAR)
+            ========================================================== */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, #F0F6FF 0%, #E8F1FE 100%)',
+            border: '1.5px solid #BFDBFE',
+            borderRadius: '16px',
+            padding: '14px 16px',
+            marginBottom: '16px',
+            boxShadow: '0 2px 8px rgba(37, 99, 235, 0.08)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⚡</span>
+              <div>
+                <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1E40AF', display: 'block' }}>
+                  Akun Testing Siap Pakai
+                </span>
+                <span style={{ fontSize: '11.5px', color: '#3B82F6', fontWeight: 500 }}>
+                  Langsung masuk tanpa perlu mendaftar
+                </span>
+              </div>
+            </div>
+            <span
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                backgroundColor: '#DBEAFE',
+                color: '#1D4ED8',
+                padding: '3px 9px',
+                borderRadius: '999px',
+                letterSpacing: '0.2px',
+              }}
+            >
+              3 Demo Project
+            </span>
+          </div>
+
+          <div
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.85)',
+              borderRadius: '10px',
+              padding: '8px 12px',
+              marginBottom: '10px',
+              border: '1px solid #DBEAFE',
+              fontSize: '12px',
+              color: '#374151',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '3px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Studio: <b>{DEMO_TESTING_ACCOUNT.studioName}</b></span>
+              <span style={{ color: '#2563EB', fontWeight: 600 }}>Siap Pakai</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: '#6B7280' }}>
+              <span>Email: <code style={{ color: '#1F2937' }}>{DEMO_TESTING_ACCOUNT.email}</code></span>
+              <span>Pass: <code style={{ color: '#1F2937' }}>{DEMO_TESTING_ACCOUNT.password}</code></span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              id="btn-quick-testing-login"
+              type="button"
+              onClick={handleQuickTestLogin}
+              style={{
+                flex: 1,
+                minHeight: '44px',
+                borderRadius: '10px',
+                backgroundColor: '#2563EB',
+                color: '#FFFFFF',
+                fontSize: '13.5px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '7px',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Zap size={16} /> Masuk Akun Testing (1-Klik)
+            </button>
+            <button
+              type="button"
+              onClick={handleAutoFillTestCredentials}
+              title="Isi otomatis ke formulir login di bawah"
+              style={{
+                minHeight: '44px',
+                padding: '0 14px',
+                borderRadius: '10px',
+                backgroundColor: '#FFFFFF',
+                color: '#1D4ED8',
+                border: '1px solid #BFDBFE',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Isi Form
+            </button>
+          </div>
+        </div>
+
         {/* Subtitle / 2 Jalur Header */}
-        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '16px' }}>
-          Tersedia <b>2 jalur masuk</b> untuk menggunakan seluruh fitur Tandain. Pilih jalur yang paling nyaman untuk studio Anda:
+        <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '14px' }}>
+          Atau masuk dengan akun Anda sendiri via formulir web atau akun Google:
         </p>
 
         {/* ==========================================================
@@ -343,9 +473,31 @@ export const FgAuthModal: React.FC<FgAuthModalProps> = ({ isOpen, onClose, onSuc
 
               {/* Email */}
               <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, marginBottom: '5px' }}>
-                  Email Studio*
-                </label>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 600 }}>
+                    Email Studio*
+                  </label>
+                  {activeTab === 'login' && (
+                    <button
+                      type="button"
+                      onClick={handleAutoFillTestCredentials}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: 0,
+                        fontSize: '11.5px',
+                        color: '#007AFF',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                      }}
+                    >
+                      <Zap size={12} /> Isi Akun Testing
+                    </button>
+                  )}
+                </div>
                 <div style={{ position: 'relative' }}>
                   <Mail
                     size={17}

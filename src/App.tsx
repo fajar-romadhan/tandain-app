@@ -14,6 +14,7 @@ import {
   createDefaultStudio,
   studioFromProject,
   clearLegacyStorage,
+  findLocalProjectBySlug,
 } from './services/storage';
 import {
   subscribeAuthChanges,
@@ -27,7 +28,9 @@ import {
   fetchProjectFromCloud,
   clientUpdateProjectInCloud,
   subscribeProjectFromCloud,
+  DEMO_TESTING_ACCOUNT,
 } from './services/supabase';
+import { INITIAL_PROJECTS } from './services/sampleData';
 import type { Project, StudioProfile, AuthUser } from './types';
 
 type View = 'landing' | 'dashboard' | 'project_detail' | 'client';
@@ -87,7 +90,19 @@ export function App() {
       return;
     }
 
-    setProjects(loadCachedProjects(ownerId));
+    const cached = loadCachedProjects(ownerId);
+    if (cached.length === 0 && ownerId === DEMO_TESTING_ACCOUNT.id) {
+      const seeded = INITIAL_PROJECTS.map((p) => ({
+        ...p,
+        ownerId,
+        studioName: DEMO_TESTING_ACCOUNT.studioName,
+        studioWhatsapp: DEMO_TESTING_ACCOUNT.whatsapp,
+      }));
+      setProjects(seeded);
+      saveCachedProjects(ownerId, seeded);
+    } else {
+      setProjects(cached);
+    }
     setStudio(loadCachedStudio(ownerId, user?.name));
 
     let cancelled = false;
@@ -164,14 +179,17 @@ export function App() {
 
     fetchProjectFromCloud(clientSlug).then((proj) => {
       if (cancelled) return;
-      if (!proj) {
+      const found = proj || findLocalProjectBySlug(clientSlug);
+      if (!found) {
         setClientNotFound(true);
         return;
       }
-      let opened = proj;
-      if (proj.status === 'belum_dibuka' && !proj.locked) {
-        opened = { ...proj, status: 'lagi_milih', lastOpenedAt: new Date().toISOString() };
-        clientUpdateProjectInCloud(opened);
+      let opened = found;
+      if (found.status === 'belum_dibuka' && !found.locked) {
+        opened = { ...found, status: 'lagi_milih', lastOpenedAt: new Date().toISOString() };
+        if (proj) {
+          clientUpdateProjectInCloud(opened);
+        }
       }
       setClientProject(opened);
     });

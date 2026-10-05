@@ -395,11 +395,54 @@ export const setLocalWebUser = (user: AuthUser | null): void => {
 };
 
 /**
+ * Akun Pengujian Resmi (Testing / Demo Account)
+ * Siap pakai 0-detik tanpa perlu registrasi, untuk mempermudah testing di laptop maupun smartphone.
+ */
+export const DEMO_TESTING_ACCOUNT = {
+  email: 'testing@tandain.id',
+  password: 'demo123456',
+  studioName: 'Lensa Cerita Photography',
+  whatsapp: '081234567890',
+  id: 'studio_demo_testing_account',
+};
+
+export const loginTestingAccount = (): AuthUser => {
+  const user: AuthUser = {
+    id: DEMO_TESTING_ACCOUNT.id,
+    email: DEMO_TESTING_ACCOUNT.email,
+    name: DEMO_TESTING_ACCOUNT.studioName,
+  };
+  setLocalWebUser(user);
+
+  // Initialize cached studio profile
+  saveStudioProfileToCloud(user.id, {
+    studioName: DEMO_TESTING_ACCOUNT.studioName,
+    whatsapp: DEMO_TESTING_ACCOUNT.whatsapp,
+    accentColor: '#1D1D1F',
+    waTemplate: '',
+  }).catch(console.warn);
+
+  return user;
+};
+
+/**
  * Jalur Masuk 1: Masuk dengan Email & Password Studio
  */
 export const signInWithEmail = async (email: string, pass: string): Promise<AuthUser> => {
-  const client = getSupabaseClient();
   const cleanEmail = email.trim().toLowerCase();
+
+  // 1. Cek instan jika user memasukkan kredensial akun testing
+  if (
+    (cleanEmail === DEMO_TESTING_ACCOUNT.email.toLowerCase() ||
+      cleanEmail === 'demo@tandain.id' ||
+      cleanEmail === 'demo@tandain.com' ||
+      cleanEmail === 'testing@tandain.com') &&
+    pass.trim() === DEMO_TESTING_ACCOUNT.password
+  ) {
+    return loginTestingAccount();
+  }
+
+  const client = getSupabaseClient();
 
   if (!client) {
     const local = getLocalWebUser();

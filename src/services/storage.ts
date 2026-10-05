@@ -75,6 +75,27 @@ export const saveCachedProjects = (ownerId: string, projects: Project[]) => {
   localStorage.setItem(projectsKey(ownerId), JSON.stringify(projects));
 };
 
+/** Search across all locally cached project lists on this device by slug. */
+export const findLocalProjectBySlug = (slug: string): Project | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(STORAGE_KEYS.PROJECTS)) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const list = JSON.parse(raw) as Project[];
+          const match = list.find((p) => p.slug === slug);
+          if (match) return match;
+        }
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
 /** Default profile for a freshly signed-in vendor (prefilled with their Google name). */
 export const createDefaultStudio = (displayName?: string): StudioProfile => ({
   ...DEFAULT_STUDIO,
