@@ -157,7 +157,7 @@ export const INITIAL_PROJECTS: Project[] = [
   {
     id: 'proj-andi-rina',
     slug: 'andi-rina-wedding',
-    clientName: 'Andi & Rina — Wedding Day',
+    clientName: 'Andi & Rina — Prewedding Day',
     sessionDate: '2026-09-28',
     driveFolderUrl: 'https://drive.google.com/drive/folders/1AndiRinaWeddingPlataran2026',
     driveFolderId: '1AndiRinaWeddingPlataran2026',

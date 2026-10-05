@@ -567,7 +567,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
                 setClientName(e.target.value);
                 setErrorMsg('');
               }}
-              placeholder="Misal: Wisuda Rani & Aditya / Wedding Sarah"
+              placeholder="Misal: Wisuda Rani & Aditya / Prewedding Sarah"
               style={{
                 width: '100%',
                 height: '46px',

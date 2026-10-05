@@ -32,13 +32,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onOpenLogin: _onOpenLogin,
   user,
 }) => {
-  // Mini interactive state for the hero preview card (Wedding & Wisuda)
-  const [mockupCategory, setMockupCategory] = useState<'wedding' | 'wisuda'>('wedding');
-  const [weddingSelected, setWeddingSelected] = useState<number[]>([0, 1, 3, 5]);
+  // Mini interactive state for the hero preview card (Prewedding & Wisuda)
+  const [mockupCategory, setMockupCategory] = useState<'prewedding' | 'wisuda'>('prewedding');
+  const [preweddingSelected, setPreweddingSelected] = useState<number[]>([0, 1, 3, 5]);
   const [wisudaSelected, setWisudaSelected] = useState<number[]>([0, 2, 4, 6]);
 
   // 1:1 Carousel Showcase state & interactive preview
-  const [carouselCategory, setCarouselCategory] = useState<'all' | 'wedding' | 'wisuda'>('all');
+  const [carouselCategory, setCarouselCategory] = useState<'all' | 'prewedding' | 'wisuda'>('all');
   const [carouselHearted, setCarouselHearted] = useState<string[]>(['wed-01', 'wisuda-02', 'wed-05', 'wisuda-07']);
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
   const [demoWatermark, setDemoWatermark] = useState<boolean>(true);
@@ -47,9 +47,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const showcaseList = [
     ...SAMPLE_WEDDING_PHOTOS.map((p, idx) => ({
       ...p,
-      category: 'wedding' as const,
+      category: 'prewedding' as const,
       vendor: 'Budi Visual Story',
-      label: `Wedding Story #${String(idx + 1).padStart(2, '0')}`,
+      label: `Prewedding Story #${String(idx + 1).padStart(2, '0')}`,
     })),
     ...SAMPLE_GRADUATION_PHOTOS.map((p, idx) => ({
       ...p,
@@ -70,13 +70,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     );
   };
 
-  const currentPhotos = (mockupCategory === 'wedding' ? SAMPLE_WEDDING_PHOTOS : SAMPLE_GRADUATION_PHOTOS).slice(0, 8);
-  const currentSelected = mockupCategory === 'wedding' ? weddingSelected : wisudaSelected;
-  const currentQuota = mockupCategory === 'wedding' ? 50 : 30;
+  const currentPhotos = (mockupCategory === 'prewedding' ? SAMPLE_WEDDING_PHOTOS : SAMPLE_GRADUATION_PHOTOS).slice(0, 8);
+  const currentSelected = mockupCategory === 'prewedding' ? preweddingSelected : wisudaSelected;
+  const currentQuota = mockupCategory === 'prewedding' ? 50 : 30;
 
   const togglePreviewPhoto = (idx: number) => {
-    if (mockupCategory === 'wedding') {
-      setWeddingSelected((prev) => (prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]));
+    if (mockupCategory === 'prewedding') {
+      setPreweddingSelected((prev) => (prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]));
     } else {
       setWisudaSelected((prev) => (prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]));
     }
@@ -298,10 +298,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#34C759' }}>Online</span>
                   </div>
                   <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text)', marginTop: '2px', letterSpacing: '-0.3px' }}>
-                    {mockupCategory === 'wedding' ? 'The Wedding of Aditya & Sarah' : 'Wisuda Rani Larasati, S.Ked'}
+                    {mockupCategory === 'prewedding' ? 'Prewedding Aditya & Sarah' : 'Wisuda Rani Larasati, S.Ked'}
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    {mockupCategory === 'wedding' ? 'Akad & Resepsi • Pilih 50 foto album' : 'Universitas Indonesia • Pilih 30 foto'}
+                    {mockupCategory === 'prewedding' ? 'Outdoor & Studio • Pilih 50 foto album' : 'Universitas Indonesia • Pilih 30 foto'}
                   </div>
                 </div>
 
@@ -309,7 +309,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <div style={{ display: 'flex', backgroundColor: '#F0F0F2', padding: '3px', borderRadius: '10px', gap: '3px' }}>
                   <button
                     type="button"
-                    onClick={() => setMockupCategory('wedding')}
+                    onClick={() => setMockupCategory('prewedding')}
                     style={{
                       border: 'none',
                       padding: '5px 11px',
@@ -317,13 +317,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       fontSize: '11.5px',
                       fontWeight: 700,
                       cursor: 'pointer',
-                      backgroundColor: mockupCategory === 'wedding' ? '#FFFFFF' : 'transparent',
-                      color: mockupCategory === 'wedding' ? 'var(--text)' : 'var(--text-secondary)',
-                      boxShadow: mockupCategory === 'wedding' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                      backgroundColor: mockupCategory === 'prewedding' ? '#FFFFFF' : 'transparent',
+                      color: mockupCategory === 'prewedding' ? 'var(--text)' : 'var(--text-secondary)',
+                      boxShadow: mockupCategory === 'prewedding' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                       transition: 'all 0.15s ease',
                     }}
                   >
-                    💍 Wedding
+                    💍 Prewedding
                   </button>
                   <button
                     type="button"
@@ -352,7 +352,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div
                     style={{
                       height: '100%',
-                      width: `${Math.min(100, Math.round(((currentSelected.length + (mockupCategory === 'wedding' ? 14 : 10)) / currentQuota) * 100))}%`,
+                      width: `${Math.min(100, Math.round(((currentSelected.length + (mockupCategory === 'prewedding' ? 14 : 10)) / currentQuota) * 100))}%`,
                       backgroundColor: 'var(--heart)',
                       borderRadius: '9999px',
                       transition: 'width 0.3s ease',
@@ -371,7 +371,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {currentSelected.length + (mockupCategory === 'wedding' ? 14 : 10)} <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>/ {currentQuota}</span>
+                  {currentSelected.length + (mockupCategory === 'prewedding' ? 14 : 10)} <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>/ {currentQuota}</span>
                 </div>
               </div>
             </div>
@@ -630,18 +630,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setCarouselCategory('wedding')}
+                onClick={() => setCarouselCategory('prewedding')}
                 style={{
                   padding: '7px 16px',
                   borderRadius: '9999px',
                   fontSize: '12.5px',
                   fontWeight: 700,
-                  color: carouselCategory === 'wedding' ? '#0C0C12' : 'rgba(255,255,255,0.7)',
-                  backgroundColor: carouselCategory === 'wedding' ? '#FFFFFF' : 'transparent',
+                  color: carouselCategory === 'prewedding' ? '#0C0C12' : 'rgba(255,255,255,0.7)',
+                  backgroundColor: carouselCategory === 'prewedding' ? '#FFFFFF' : 'transparent',
                   transition: 'all 0.18s ease',
                 }}
               >
-                💍 Wedding ({SAMPLE_WEDDING_PHOTOS.length})
+                💍 Prewedding ({SAMPLE_WEDDING_PHOTOS.length})
               </button>
               <button
                 type="button"
@@ -708,7 +708,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       textTransform: 'uppercase',
                     }}
                   >
-                    {item.category === 'wedding' ? '💍 Wedding' : '🎓 Wisuda'}
+                    {item.category === 'prewedding' ? '💍 Prewedding' : '🎓 Wisuda'}
                   </div>
 
                   {/* Top Right Heart Action */}
