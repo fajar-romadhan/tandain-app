@@ -119,14 +119,20 @@ export const ClientPinModal: React.FC<ClientPinModalProps> = ({ project, studio,
         </form>
 
         <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-light)' }}>
-          <a
-            href={`https://wa.me/${(project.studioWhatsapp || studio.whatsapp || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Halo ${project.studioName || studio.studioName}, saya client ${project.clientName}. Mau tanya PIN untuk buka galeri Tandain ya.`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}
-          >
-            Lupa atau belum dapat PIN? Chat Fotografer
-          </a>
+          {(() => {
+            const rawWa = (project.studioWhatsapp || studio.whatsapp || '').replace(/[^0-9]/g, '');
+            const targetWa = rawWa.startsWith('0') ? '62' + rawWa.slice(1) : rawWa;
+            return (
+              <a
+                href={`https://wa.me/${targetWa}?text=${encodeURIComponent(`Halo ${project.studioName || studio.studioName}, saya client ${project.clientName}. Mau tanya PIN untuk buka galeri Tandain ya.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}
+              >
+                Lupa atau belum dapat PIN? Chat Fotografer
+              </a>
+            );
+          })()}
         </div>
       </div>
     </div>

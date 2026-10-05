@@ -396,7 +396,7 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
           {/* Watermark Toggle */}
           <button
             onClick={handleToggleWatermark}
-            className={`pill-btn ${project.hasWatermark ? 'btn-blue' : 'pill-btn-ghost'} ${watermarkAnimating ? 'animate-watermark-flip' : ''}`}
+            className={`pill-btn ${project.hasWatermark ? 'pill-btn-blue' : 'pill-btn-ghost'} ${watermarkAnimating ? 'animate-watermark-flip' : ''}`}
             style={{
               height: '40px',
               fontSize: '13px',
@@ -457,6 +457,8 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
                 <img
                   src={photo.url}
                   alt={photo.name}
+                  loading="lazy"
+                  decoding="async"
                   style={{
                     width: '100%',
                     height: '140px',

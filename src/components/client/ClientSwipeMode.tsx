@@ -593,6 +593,7 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
           <button
             type="button"
             onClick={handlePrevPhoto}
+            className="desktop-swipe-arrow"
             style={{
               position: 'absolute',
               left: 'max(12px, calc(50% - 245px))',
@@ -621,6 +622,7 @@ export const ClientSwipeMode: React.FC<ClientSwipeModeProps> = ({
           <button
             type="button"
             onClick={handleNextPhoto}
+            className="desktop-swipe-arrow"
             style={{
               position: 'absolute',
               right: 'max(12px, calc(50% - 245px))',

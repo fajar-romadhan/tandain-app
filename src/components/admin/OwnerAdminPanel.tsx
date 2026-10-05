@@ -835,16 +835,20 @@ export default function OwnerAdminPanel() {
                       </div>
                       <div style={{ fontSize: '12.5px', color: '#8E8E9F', display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
                         <span>✉️ {vendor.email || '-'}</span>
-                        {vendor.whatsapp && (
-                          <a
-                            href={`https://wa.me/${vendor.whatsapp.replace(/[^0-9]/g, '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: '#34D399', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}
-                          >
-                            <MessageCircle size={13} /> {vendor.whatsapp}
-                          </a>
-                        )}
+                        {vendor.whatsapp && (() => {
+                          const cleanWa = vendor.whatsapp.replace(/[^0-9]/g, '');
+                          const waTarget = cleanWa.startsWith('0') ? '62' + cleanWa.slice(1) : cleanWa;
+                          return (
+                            <a
+                              href={`https://wa.me/${waTarget}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: '#34D399', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}
+                            >
+                              <MessageCircle size={13} /> {vendor.whatsapp}
+                            </a>
+                          );
+                        })()}
                         <span>📅 Daftar: {new Date(vendor.created_at).toLocaleDateString('id-ID')}</span>
                       </div>
                     </div>

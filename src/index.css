@@ -437,6 +437,15 @@ a {
     height: 200px;
     border-radius: 16px;
   }
+  .desktop-swipe-arrow {
+    display: none !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .lightbox-dl-text {
+    display: none !important;
+  }
 }
 
 .carousel-card-1x1:hover {

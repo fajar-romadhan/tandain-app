@@ -444,6 +444,8 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
                           <img
                             src={coverPhoto.url}
                             alt=""
+                            loading="lazy"
+                            decoding="async"
                             style={{
                               width: '56px',
                               height: '56px',

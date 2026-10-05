@@ -43,7 +43,13 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
   // View states
   const [filterMode, setFilterMode] = useState<'all' | 'selected'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [gridColumns, setGridColumns] = useState<2 | 3 | 4>(2);
+  const [gridColumns, setGridColumns] = useState<2 | 3 | 4>(() => {
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth >= 1024) return 4;
+      if (window.innerWidth >= 640) return 3;
+    }
+    return 2;
+  });
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [isSwipeMode, setIsSwipeMode] = useState(false);
   const [swipeInitialIndex, setSwipeInitialIndex] = useState<number>(0);
@@ -177,7 +183,7 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
   const progressPercent = Math.min(100, (project.selectedFileNames.length / project.quota) * 100);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', paddingBottom: '120px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', paddingBottom: 'calc(120px + env(safe-area-inset-bottom))' }}>
       {/* Read-Only / Other Device Warning Banner */}
       {!isCurrentDeviceSelector && !project.locked && (
         <div
@@ -385,7 +391,14 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
 
             {/* Grid Size Toggle */}
             <button
-              onClick={() => setGridColumns(gridColumns === 2 ? 3 : 2)}
+              onClick={() => {
+                setGridColumns((prev) => {
+                  if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+                    return prev === 4 ? 3 : prev === 3 ? 2 : 4;
+                  }
+                  return prev === 2 ? 3 : 2;
+                });
+              }}
               className="pill-btn pill-btn-ghost"
               style={{ width: '40px', height: '40px', padding: 0 }}
               title="Ganti ukuran kotak"
@@ -519,8 +532,8 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
                           position: 'absolute',
                           bottom: '10px',
                           left: '10px',
-                          width: '42px',
-                          height: '42px',
+                          width: '44px',
+                          height: '44px',
                           borderRadius: '50%',
                           backgroundColor: 'rgba(0, 0, 0, 0.52)',
                           border: '1px solid rgba(255, 255, 255, 0.35)',

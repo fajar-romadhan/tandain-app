@@ -42,7 +42,8 @@ export const ClientReviewModal: React.FC<ClientReviewModalProps> = ({
     } catch {}
   };
 
-  const targetWhatsapp = (project.studioWhatsapp || studio.whatsapp || '').replace(/[^0-9]/g, '');
+  const rawWhatsapp = (project.studioWhatsapp || studio.whatsapp || '').replace(/[^0-9]/g, '');
+  const targetWhatsapp = rawWhatsapp.startsWith('0') ? '62' + rawWhatsapp.slice(1) : rawWhatsapp;
   const targetStudioName = project.studioName || studio.studioName || 'Fotografer';
   const studioAccent = project.accentColor || studio.accentColor || '#1D1D1F';
 
@@ -134,6 +135,8 @@ Mohon segera diproses ya kak. Terima kasih! ✨`;
                   <img
                     src={photo.url}
                     alt={photo.name}
+                    loading="lazy"
+                    decoding="async"
                     style={{
                       width: '44px',
                       height: '44px',

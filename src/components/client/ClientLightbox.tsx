@@ -319,7 +319,7 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
             aria-label="Unduh foto resolusi HD asli"
           >
             {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-            <span>{isDownloading ? 'Mengunduh...' : 'Unduh Foto HD'}</span>
+            <span className="lightbox-dl-text">{isDownloading ? 'Mengunduh...' : 'Unduh HD'}</span>
           </button>
 
           {/* Glass Zoom Control Bar */}
@@ -426,6 +426,7 @@ export const ClientLightbox: React.FC<ClientLightboxProps> = ({
         <img
           src={currentPhoto.url}
           alt={currentPhoto.name}
+          decoding="async"
           style={{
             maxWidth: '100%',
             maxHeight: 'calc(100vh - 170px)',
