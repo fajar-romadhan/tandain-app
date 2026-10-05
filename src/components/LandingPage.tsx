@@ -123,20 +123,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             >
               Tandain
             </span>
-            <span
-              style={{
-                fontSize: '10.5px',
-                fontWeight: 700,
-                color: '#0071E3',
-                backgroundColor: 'rgba(0, 113, 227, 0.08)',
-                padding: '2px 8px',
-                borderRadius: '9999px',
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-              }}
-            >
-              Pro
-            </span>
           </div>
 
           {/* Nav Actions */}
