@@ -428,7 +428,7 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
                 backgroundColor: 'var(--accent)',
               }}
             >
-              <Eye size={18} /> 👁️ Buka Preview Galeri Klien (Tab Baru)
+              <Eye size={18} /> Buka Preview Galeri Klien (Tab Baru)
             </button>
 
             <button

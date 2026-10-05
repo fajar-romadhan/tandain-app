@@ -171,73 +171,149 @@ a {
 }
 
 /* ==========================================================
-   UI UTILITY CLASSES
+   UI UTILITY CLASSES — PREMIUM BUTTONS & CARDS
    ========================================================== */
 
 .pill-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  height: 44px;
-  padding: 0 20px;
+  gap: 7px;
+  height: 42px;
+  padding: 0 18px;
   border-radius: var(--radius-pill);
-  font-size: 15px;
-  font-weight: 600;
-  transition: all 0.18s ease;
+  font-size: 13.5px;
+  font-weight: 550;
+  letter-spacing: -0.01em;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background 0.2s ease,
+              border-color 0.2s ease,
+              color 0.15s ease;
   white-space: nowrap;
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
+.pill-btn:active {
+  transform: translateY(0.5px) scale(0.98) !important;
+}
+
+/* Primary Dark Obsidian (Apple-like luxury) */
 .pill-btn-primary {
-  background-color: var(--accent);
-  color: var(--accent-foreground);
+  background: linear-gradient(180deg, #2A2A2D 0%, #171719 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16),
+              0 3px 8px rgba(0, 0, 0, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 .pill-btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-.pill-btn-primary:active {
-  transform: scale(0.98);
+  background: linear-gradient(180deg, #36363A 0%, #222225 100%);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22),
+              0 1px 2px rgba(0, 0, 0, 0.12),
+              inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
 }
 
+/* Secondary Clean White (Tactile Surface with soft rim) */
 .pill-btn-secondary {
-  background-color: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAFAFC 100%);
+  color: #1D1D1F;
+  border: 1px solid rgba(0, 0, 0, 0.11);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04),
+              inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 .pill-btn-secondary:hover {
-  background-color: #F8F8FA;
-  border-color: #D1D1D6;
+  background: #FFFFFF;
+  border-color: rgba(0, 0, 0, 0.22);
+  color: #000000;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07),
+              0 1px 3px rgba(0, 0, 0, 0.04),
+              inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
+/* Ghost Subtle Button */
 .pill-btn-ghost {
   background: transparent;
   color: var(--text-secondary);
+  border: 1px solid transparent;
 }
 .pill-btn-ghost:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+  background-color: rgba(0, 0, 0, 0.045);
+  border-color: rgba(0, 0, 0, 0.06);
   color: var(--text);
+  transform: translateY(-1px);
 }
 
-.pill-btn-heart {
-  background-color: var(--heart);
+/* Pro Accent Blue (RAW / Special CTA) */
+.pill-btn-blue {
+  background: linear-gradient(180deg, #0A84FF 0%, #0066EE 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(0, 102, 238, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 102, 238, 0.26),
+              0 1px 2px rgba(0, 0, 0, 0.08),
+              inset 0 1px 0 rgba(255, 255, 255, 0.32);
+}
+.pill-btn-blue:hover {
+  background: linear-gradient(180deg, #1C8DFF 0%, #0070F3 100%);
+  transform: translateY(-1.5px);
+  box-shadow: 0 5px 18px rgba(0, 102, 238, 0.38),
+              0 1px 3px rgba(0, 0, 0, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.38);
   color: #FFFFFF;
 }
+
+/* WhatsApp Emerald Action */
+.pill-btn-whatsapp {
+  background: linear-gradient(180deg, #25D366 0%, #1EB855 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(30, 184, 85, 0.6);
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.25),
+              0 1px 2px rgba(0, 0, 0, 0.06),
+              inset 0 1px 0 rgba(255, 255, 255, 0.32);
+  text-decoration: none;
+}
+.pill-btn-whatsapp:hover {
+  background: linear-gradient(180deg, #2EE06E 0%, #20C45B 100%);
+  transform: translateY(-1.5px);
+  box-shadow: 0 5px 16px rgba(37, 211, 102, 0.36),
+              0 1px 3px rgba(0, 0, 0, 0.08),
+              inset 0 1px 0 rgba(255, 255, 255, 0.38);
+  color: #FFFFFF;
+}
+
+/* Heart Crimson (Copied / Selection) */
+.pill-btn-heart {
+  background: linear-gradient(180deg, #FF3366 0%, #E61E4D 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(230, 30, 77, 0.6);
+  box-shadow: 0 2px 10px rgba(255, 45, 85, 0.3),
+              0 1px 2px rgba(0, 0, 0, 0.08),
+              inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
 .pill-btn-heart:hover {
-  opacity: 0.92;
-  box-shadow: 0 4px 16px var(--heart-glow);
+  background: linear-gradient(180deg, #FF4575 0%, #EF2657 100%);
+  transform: translateY(-1.5px);
+  box-shadow: 0 5px 18px rgba(255, 45, 85, 0.42),
+              0 1px 3px rgba(0, 0, 0, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.32);
+  color: #FFFFFF;
 }
 
 .card-ios {
   background-color: var(--surface);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-light);
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s var(--ease-smooth);
 }
 
 .card-ios:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
 /* Safe area insets for iOS devices */

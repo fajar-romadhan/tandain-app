@@ -7,7 +7,7 @@ import {
   ChevronRight,
   FolderKanban,
   Sliders,
-  ExternalLink,
+  Eye,
   LogIn,
   LogOut,
   MessageCircle,
@@ -374,11 +374,11 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="pill-btn pill-btn-secondary"
-                          style={{ height: '36px', width: '36px', padding: 0, color: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          className="pill-btn pill-btn-whatsapp"
+                          style={{ height: '36px', width: '36px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                           title="Buka WhatsApp dengan teks santai terisi"
                         >
-                          <MessageCircle size={16} />
+                          <MessageCircle size={15} />
                         </a>
 
                         <button
@@ -386,11 +386,11 @@ export const FgDashboard: React.FC<FgDashboardProps> = ({
                             e.stopPropagation();
                             onOpenClientView(project.slug);
                           }}
-                          className="pill-btn pill-btn-ghost"
-                          style={{ height: '36px', width: '36px', padding: 0 }}
-                          title="Buka galeri klien"
+                          className="pill-btn pill-btn-secondary"
+                          style={{ height: '36px', width: '36px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          title="Preview galeri klien"
                         >
-                          <ExternalLink size={16} />
+                          <Eye size={15} />
                         </button>
 
                         <button

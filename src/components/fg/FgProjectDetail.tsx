@@ -5,7 +5,6 @@ import {
   Check,
   HardDrive,
   Sliders,
-  FileSpreadsheet,
   FileText,
   ExternalLink,
   Unlock,
@@ -19,7 +18,7 @@ import {
 import { StatusBadge } from '../StatusBadge';
 import { FgRawModal } from './FgRawModal';
 import { FgLightroomModal } from './FgLightroomModal';
-import { formatAsCsv, formatAsTxtList, downloadBlobFile } from '../../services/lightroom';
+import { formatAsTxtList, downloadBlobFile } from '../../services/lightroom';
 import type { Project, StudioProfile } from '../../types';
 
 interface FgProjectDetailProps {
@@ -72,11 +71,6 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
     setTimeout(() => setCopiedNames(false), 2500);
   };
 
-  const handleExportCsv = () => {
-    const content = formatAsCsv(project.selectedFileNames, project.clientName);
-    downloadBlobFile(content, `${project.clientName.replace(/\s+/g, '_')}_pilihan.csv`, 'text/csv;charset=utf-8;');
-  };
-
   const handleExportTxt = () => {
     const content = formatAsTxtList(project.selectedFileNames);
     downloadBlobFile(content, `${project.clientName.replace(/\s+/g, '_')}_pilihan.txt`, 'text/plain;charset=utf-8;');
@@ -112,7 +106,7 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
       {/* Top Breadcrumb & Controls */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
         <button onClick={onBack} className="pill-btn pill-btn-ghost" style={{ gap: '6px' }}>
-          <ArrowLeft size={18} /> Kembali ke Daftar Project
+          <ArrowLeft size={16} /> Kembali ke Daftar Project
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -121,7 +115,7 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
             className="pill-btn pill-btn-primary"
             style={{ height: '38px', fontSize: '13px', gap: '6px' }}
           >
-            <Eye size={15} /> 👁️ Preview Galeri Klien
+            <Eye size={15} /> Preview Galeri Klien
           </button>
           <button
             onClick={() => {
@@ -131,7 +125,25 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
               }
             }}
             className="pill-btn pill-btn-ghost"
-            style={{ height: '38px', color: 'var(--heart)' }}
+            style={{
+              height: '38px',
+              width: '38px',
+              padding: 0,
+              color: 'var(--text-tertiary)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.18s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--heart)';
+              e.currentTarget.style.backgroundColor = 'var(--heart-light)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
             title="Hapus project"
           >
             <Trash2 size={16} />
@@ -157,15 +169,16 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
                 style={{
                   fontSize: '11.5px',
                   fontWeight: 600,
-                  padding: '3px 9px',
-                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  backgroundColor: project.hasWatermark ? '#E3F2FD' : 'var(--border-light)',
+                  backgroundColor: project.hasWatermark ? '#EBF5FF' : 'var(--border-light)',
                   color: project.hasWatermark ? '#007AFF' : 'var(--text-secondary)',
+                  border: project.hasWatermark ? '1px solid rgba(0, 122, 255, 0.2)' : '1px solid rgba(0, 0, 0, 0.05)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '4px',
-                  border: 'none',
+                  transition: 'all 0.18s ease',
                 }}
                 title="Bebas ubah watermark: klik untuk nyalakan/matikan"
               >
@@ -193,48 +206,38 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
             <button
               onClick={() => onOpenClientView(project.slug)}
               className="pill-btn pill-btn-secondary"
-              style={{ height: '42px', fontSize: '13.5px', gap: '6px' }}
+              style={{ height: '40px', fontSize: '13px', gap: '6px' }}
+              title="Buka galeri versi klien"
             >
-              <Eye size={16} /> 👁️ Preview Klien
+              <Eye size={15} /> Preview Klien
             </button>
             <button
               onClick={handleCopyClientLink}
               className={`pill-btn ${copiedLink ? 'pill-btn-heart' : 'pill-btn-secondary'}`}
-              style={{ height: '42px', fontSize: '13.5px', gap: '6px' }}
+              style={{ height: '40px', fontSize: '13px', gap: '6px' }}
               title="Salin URL link galeri klien saja"
             >
-              {copiedLink ? <Check size={16} /> : <Share2 size={16} />}
+              {copiedLink ? <Check size={15} /> : <Share2 size={15} />}
               {copiedLink ? 'Link Tersalin!' : 'Salin Link'}
             </button>
             <button
               onClick={handleCopyWaText}
               className={`pill-btn ${copiedWaText ? 'pill-btn-heart' : 'pill-btn-primary'}`}
-              style={{ height: '42px', fontSize: '13.5px', gap: '6px' }}
+              style={{ height: '40px', fontSize: '13px', gap: '6px' }}
               title="Salin format chat WA santai siap kirim ke klien"
             >
-              {copiedWaText ? <Check size={16} /> : <Copy size={16} />}
-              {copiedWaText ? 'Pesan Tersalin!' : 'Salin Chat WA Santai 💬'}
+              {copiedWaText ? <Check size={15} /> : <Copy size={15} />}
+              {copiedWaText ? 'Pesan Tersalin!' : 'Salin Chat WA Santai'}
             </button>
             <a
               href={`https://wa.me/?text=${encodeURIComponent(getCasualWaText())}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="pill-btn"
-              style={{
-                height: '42px',
-                fontSize: '13.5px',
-                padding: '0 14px',
-                gap: '6px',
-                backgroundColor: '#25D366',
-                color: '#FFFFFF',
-                boxShadow: '0 2px 8px rgba(37, 211, 102, 0.25)',
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-              }}
+              className="pill-btn pill-btn-whatsapp"
+              style={{ height: '40px', fontSize: '13px', padding: '0 15px', gap: '6px' }}
               title="Buka WhatsApp langsung dengan teks santai terisi"
             >
-              <MessageCircle size={16} /> Buka WA
+              <MessageCircle size={15} /> Buka WA
             </a>
           </div>
         </div>
@@ -244,6 +247,7 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
           style={{
             display: 'flex',
             flexWrap: 'wrap',
+            alignItems: 'center',
             gap: '10px',
             marginTop: '20px',
             paddingTop: '16px',
@@ -253,60 +257,51 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
           {/* Main Action: Ambil RAW dari Laptop */}
           <button
             onClick={() => setIsRawModalOpen(true)}
-            className="pill-btn"
-            style={{
-              height: '42px',
-              backgroundColor: '#007AFF',
-              color: '#FFFFFF',
-              boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
-            }}
+            className="pill-btn pill-btn-blue"
+            style={{ height: '40px', fontSize: '13px' }}
           >
-            <HardDrive size={16} /> Ambil RAW dari Laptop
+            <HardDrive size={15} /> Ambil RAW dari Laptop
           </button>
 
           {/* Salin untuk Lightroom */}
           <button
             onClick={() => setIsLightroomModalOpen(true)}
             className="pill-btn pill-btn-secondary"
-            style={{ height: '42px' }}
+            style={{ height: '40px', fontSize: '13px' }}
           >
-            <Sliders size={16} /> Salin untuk Lightroom
+            <Sliders size={15} /> Salin untuk Lightroom
           </button>
 
           {/* Salin Nama File */}
           <button
             onClick={handleCopyRawFilenames}
-            className="pill-btn pill-btn-secondary"
-            style={{ height: '42px' }}
+            className={`pill-btn ${copiedNames ? 'pill-btn-heart' : 'pill-btn-secondary'}`}
+            style={{ height: '40px', fontSize: '13px' }}
           >
-            {copiedNames ? <Check size={16} /> : <Copy size={16} />}
-            {copiedNames ? 'Tersalin!' : 'Salin Nama File'}
+            {copiedNames ? <Check size={15} /> : <Copy size={15} />}
+            {copiedNames ? 'Nama File Tersalin!' : 'Salin Nama File'}
           </button>
 
-          {/* Export CSV / TXT */}
-          <button
-            onClick={handleExportCsv}
-            className="pill-btn pill-btn-secondary"
-            style={{ height: '42px' }}
-          >
-            <FileSpreadsheet size={16} /> Export CSV
-          </button>
-
+          {/* Export TXT (Export CSV removed per user request) */}
           <button
             onClick={handleExportTxt}
             className="pill-btn pill-btn-secondary"
-            style={{ height: '42px' }}
+            style={{ height: '40px', fontSize: '13px' }}
+            title="Unduh daftar nama file format .txt"
           >
-            <FileText size={16} /> Export TXT
+            <FileText size={15} /> Export TXT
           </button>
+
+          {/* Subtle separator */}
+          <div style={{ width: '1px', height: '22px', backgroundColor: 'var(--border-light)', margin: '0 2px' }} />
 
           {/* Unlock / Lock Toggle */}
           <button
             onClick={handleToggleLock}
             className="pill-btn pill-btn-ghost"
-            style={{ height: '42px' }}
+            style={{ height: '40px', fontSize: '13px' }}
           >
-            {project.locked ? <Unlock size={16} /> : <Lock size={16} />}
+            {project.locked ? <Unlock size={15} /> : <Lock size={15} />}
             {project.locked ? 'Buka Kunci (Beri Revisi)' : 'Kunci Pilihan'}
           </button>
 
@@ -315,13 +310,14 @@ export const FgProjectDetail: React.FC<FgProjectDetailProps> = ({
             onClick={handleToggleWatermark}
             className="pill-btn pill-btn-ghost"
             style={{
-              height: '42px',
+              height: '40px',
+              fontSize: '13px',
               gap: '6px',
               color: project.hasWatermark ? '#007AFF' : 'var(--text-secondary)',
             }}
             title="Klik untuk menyalakan atau mematikan watermark pada preview foto klien"
           >
-            <ShieldCheck size={16} />
+            <ShieldCheck size={15} />
             {project.hasWatermark ? 'Watermark: Aktif' : 'Watermark: Nonaktif'}
           </button>
         </div>
