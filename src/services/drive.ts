@@ -4,17 +4,24 @@ import { SAMPLE_GRADUATION_PHOTOS, SAMPLE_WEDDING_PHOTOS } from './sampleData';
 export const extractDriveFolderId = (url: string): string | null => {
   if (!url) return null;
 
-  // Pattern 1: /folders/FOLDER_ID
-  const folderMatch = url.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  // Clean trailing spaces, commas, quotes
+  const cleaned = url.trim().replace(/^["']|["',;\s]+$/g, '');
+
+  // Pattern 1: /folders/FOLDER_ID (handles /u/0/folders/ etc)
+  const folderMatch = cleaned.match(/\/folders\/([a-zA-Z0-9_-]+)/);
   if (folderMatch && folderMatch[1]) return folderMatch[1];
 
   // Pattern 2: ?id=FOLDER_ID or &id=FOLDER_ID
-  const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  const idMatch = cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   if (idMatch && idMatch[1]) return idMatch[1];
 
-  // Pattern 3: If user pasted just the raw ID string
-  if (/^[a-zA-Z0-9_-]{20,}$/.test(url.trim())) {
-    return url.trim();
+  // Pattern 3: /d/FOLDER_ID
+  const dMatch = cleaned.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (dMatch && dMatch[1]) return dMatch[1];
+
+  // Pattern 4: If user pasted just the raw ID string
+  if (/^[a-zA-Z0-9_-]{20,}$/.test(cleaned)) {
+    return cleaned;
   }
 
   return null;

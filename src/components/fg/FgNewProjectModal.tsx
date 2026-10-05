@@ -53,6 +53,12 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
       return;
     }
 
+    if (fId.length < 28) {
+      setErrorMsg(`Link Google Drive belum lengkap (ID folder baru ${fId.length} karakter, normalnya 33 karakter). Pastikan seluruh link tercopy.`);
+      setDetectedInfo(null);
+      return;
+    }
+
     setIsDetecting(true);
     setErrorMsg('');
 
@@ -210,29 +216,54 @@ export const FgNewProjectModal: React.FC<FgNewProjectModalProps> = ({
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
             Link Folder Google Drive (JPG)*
           </label>
-          <input
-            type="text"
-            required
-            value={driveUrl}
-            onChange={(e) => handleDriveUrlChange(e.target.value)}
-            onPaste={(e) => {
-              const pasted = e.clipboardData.getData('text');
-              if (pasted) {
-                handleDriveUrlChange(pasted);
-              }
-            }}
-            placeholder="https://drive.google.com/drive/folders/..."
-            style={{
-              width: '100%',
-              height: '46px',
-              padding: '0 14px',
-              borderRadius: '12px',
-              border: '1px solid var(--border)',
-              backgroundColor: 'var(--bg)',
-              outline: 'none',
-              fontSize: '14px',
-            }}
-          />
+          <div style={{ position: 'relative' }}>
+            <input
+              type="text"
+              required
+              value={driveUrl}
+              onChange={(e) => handleDriveUrlChange(e.target.value)}
+              placeholder="https://drive.google.com/drive/folders/..."
+              style={{
+                width: '100%',
+                height: '46px',
+                padding: '0 80px 0 14px',
+                borderRadius: '12px',
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--bg)',
+                outline: 'none',
+                fontSize: '14px',
+              }}
+            />
+            {typeof navigator !== 'undefined' && 'clipboard' in navigator && (
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const text = await navigator.clipboard.readText();
+                    if (text) {
+                      handleDriveUrlChange(text);
+                    }
+                  } catch {
+                    // Ignore clipboard permission errors
+                  }
+                }}
+                className="pill-btn pill-btn-ghost"
+                style={{
+                  position: 'absolute',
+                  right: '8px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  height: '30px',
+                  fontSize: '11.5px',
+                  padding: '0 10px',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--bg-secondary, #F0F0F2)',
+                }}
+              >
+                Tempel
+              </button>
+            )}
+          </div>
 
           {/* Smart detection indicator */}
           {isDetecting && (
