@@ -42,7 +42,13 @@ const upsertInList = (list: Project[], project: Project): Project[] => {
   const idx = list.findIndex((p) => p.id === project.id);
   if (idx === -1) return [project, ...list];
   const next = [...list];
-  next[idx] = project;
+  const existing = next[idx];
+  next[idx] = {
+    ...project,
+    // Preserve existing photos if incoming project has empty/null photos
+    // (e.g. from Supabase Realtime updates where TOASTed JSONB photos is omitted)
+    photos: project.photos && project.photos.length > 0 ? project.photos : existing.photos,
+  };
   return next;
 };
 
@@ -179,7 +185,13 @@ export function App() {
 
     fetchProjectFromCloud(clientSlug).then((proj) => {
       if (cancelled) return;
-      const found = proj || findLocalProjectBySlug(clientSlug);
+      let found = proj || findLocalProjectBySlug(clientSlug);
+      if (proj && (!proj.photos || proj.photos.length === 0)) {
+        const local = findLocalProjectBySlug(clientSlug);
+        if (local && local.photos && local.photos.length > 0) {
+          found = { ...proj, photos: local.photos };
+        }
+      }
       if (!found) {
         setClientNotFound(true);
         return;
@@ -203,7 +215,17 @@ export function App() {
   const clientProjectSlug = clientProject?.slug;
   useEffect(() => {
     if (!clientProjectSlug) return;
-    return subscribeProjectFromCloud(clientProjectSlug, (updated) => setClientProject(updated));
+    return subscribeProjectFromCloud(clientProjectSlug, (updated) => {
+      setClientProject((prev) => {
+        if (!prev) return updated;
+        return {
+          ...updated,
+          // CRITICAL: Supabase Realtime UPDATE omits TOASTed JSONB photos column.
+          // Preserve existing photos so photos NEVER vanish when FG toggles lock/unlock!
+          photos: updated.photos && updated.photos.length > 0 ? updated.photos : prev.photos,
+        };
+      });
+    });
   }, [clientProjectSlug]);
 
   // ---------------------------------------------------------------------------
@@ -269,7 +291,10 @@ export function App() {
   const handleUpdateProject = (updated: Project) => {
     if (!ownerId) return;
     commitProjects(upsertInList(projects, updated));
-    saveProjectToCloud(updated, ownerId).then((ok) => reportSync(ok, 'memperbarui galeri'));
+    // preservePhotos=true: never overwrite the photos column on metadata updates
+    // (lock/unlock, watermark toggle, quota change, etc.) to prevent photos from
+    // being wiped when the local cache doesn't hold the full photo array.
+    saveProjectToCloud(updated, ownerId, true).then((ok) => reportSync(ok, 'memperbarui galeri'));
   };
 
   const handleDeleteProject = (id: string) => {

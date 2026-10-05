@@ -106,7 +106,13 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
 
   // Tapping any photo instantly opens Swipe Mode starting from that photo!
   const handlePhotoClick = (index: number) => {
-    setSwipeInitialIndex(index);
+    const clicked = displayedPhotos[index];
+    if (clicked) {
+      const realIndex = project.photos.findIndex((p) => p.name === clicked.name);
+      setSwipeInitialIndex(realIndex >= 0 ? realIndex : 0);
+    } else {
+      setSwipeInitialIndex(0);
+    }
     setIsSwipeMode(true);
   };
 
@@ -649,7 +655,7 @@ export const ClientGallery: React.FC<ClientGalleryProps> = ({
       {/* Swipe Mode Screen - Auto triggered upon tapping any photo */}
       {isSwipeMode && (
         <ClientSwipeMode
-          photos={displayedPhotos}
+          photos={project.photos}
           selectedFileNames={project.selectedFileNames}
           quota={project.quota}
           onToggleSelect={handleTogglePhoto}

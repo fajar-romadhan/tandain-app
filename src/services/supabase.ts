@@ -90,12 +90,56 @@ const rowToProject = (data: any): Project => ({
 // Photographer (owner) operations — protected by RLS: owner_id = auth.uid()
 // ---------------------------------------------------------------------------
 
-/** Insert or update a project owned by the logged-in photographer. */
-export const saveProjectToCloud = async (project: Project, ownerId: string): Promise<boolean> => {
+/**
+ * Insert or update a project owned by the logged-in photographer.
+ * @param preservePhotos - When true, skip updating the `photos` column so
+ *   existing photos in the DB are never accidentally overwritten with an
+ *   empty array from a client-side cache that doesn't hold the full photo list.
+ */
+export const saveProjectToCloud = async (
+  project: Project,
+  ownerId: string,
+  preservePhotos = false,
+): Promise<boolean> => {
   const client = getSupabaseClient();
   if (!client) return false;
 
   try {
+    if (preservePhotos) {
+      // Metadata-only update — never touch the photos column
+      const { error } = await client
+        .from('projects')
+        .update({
+          owner_id: ownerId,
+          client_name: project.clientName,
+          session_date: project.sessionDate || null,
+          drive_folder_url: project.driveFolderUrl,
+          drive_folder_id: project.driveFolderId,
+          quota: project.quota,
+          pin: project.pin || null,
+          has_watermark: project.hasWatermark,
+          status: project.status,
+          locked: project.locked,
+          active_selector_device_id: project.activeSelectorDeviceId || null,
+          selected_file_names: project.selectedFileNames,
+          submission_history: project.submissionHistory,
+          revision_round: project.revisionRound,
+          last_opened_at: project.lastOpenedAt || null,
+          expires_at: project.expiresAt,
+          studio_name: project.studioName || null,
+          studio_whatsapp: project.studioWhatsapp || null,
+          wa_template: project.waTemplate || null,
+        })
+        .eq('id', project.id)
+        .eq('owner_id', ownerId);
+      if (error) {
+        console.error('Supabase update (preservePhotos) error:', error);
+        return false;
+      }
+      return true;
+    }
+
+    // Full upsert including photos (used only on initial project creation)
     const payload = {
       id: project.id,
       slug: project.slug,
