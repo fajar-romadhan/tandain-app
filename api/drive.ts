@@ -31,6 +31,12 @@ export async function scrapeFolder(folderId: string): Promise<{
     },
   });
 
+  if (res.status === 404) {
+    throw new Error(
+      'Folder Google Drive tidak ditemukan (404). Periksa kembali link: pastikan seluruh link tercopy lengkap dan tidak ada huruf/angka terakhir yang tertinggal.'
+    );
+  }
+
   if (!res.ok) {
     throw new Error(`Google Drive merespon dengan status ${res.status}. Pastikan link benar.`);
   }
